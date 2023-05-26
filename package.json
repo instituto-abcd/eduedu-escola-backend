@@ -27,6 +27,7 @@
     "@nestjs/core": "^9.0.0",
     "@nestjs/mapped-types": "^1.2.2",
     "@nestjs/platform-express": "^9.0.0",
+    "@nestjs/swagger": "^6.3.0",
     "@prisma/client": "4.14.1",
     "@prisma/studio": "^0.484.0",
     "prisma": "^4.14.1",
