@@ -2,6 +2,6 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class EduSchoolException extends HttpException {
   constructor(code: string, message: string, status: HttpStatus) {
-    super({ code: `${code}`, message }, status);
+    super({ code, message }, status);
   }
 }

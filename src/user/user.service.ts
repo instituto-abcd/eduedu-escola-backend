@@ -10,7 +10,7 @@ import { PaginationResponse } from './dto/pagination-response.dto';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto, schoolId: string): Promise<User> {
     const { email, document } = createUserDto;
 
     const existingEmail = await this.prisma.user.findUnique({
@@ -36,10 +36,14 @@ export class UserService {
     }
 
     return this.prisma.user.create({
-      data: createUserDto,
+      data: {
+        ...createUserDto,
+        schoolId,
+      },
       include: { school: true },
     });
   }
+
   async findAll(
     pageNumber: number,
     pageSize: number,
@@ -120,8 +124,9 @@ export class UserService {
       );
     }
 
-    if (updateUserDto.schoolId) {
-      delete updateUserDto.schoolId;
+    const data = { ...updateUserDto };
+    if (data && data.schoolId) {
+      delete data.schoolId;
     }
 
     if (updateUserDto.email) {
@@ -156,7 +161,7 @@ export class UserService {
     return this.prisma.user.update({
       where: { id },
       data: {
-        ...updateUserDto,
+        ...data,
         updated_at: new Date(),
       },
     });

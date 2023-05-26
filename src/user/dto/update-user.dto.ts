@@ -1,3 +1,10 @@
+import { PartialType, OmitType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
-export type UpdateUserDto = Partial<CreateUserDto>;
+export class UpdateUserDto extends PartialType(
+  OmitType(CreateUserDto, ['schoolId'] as const),
+) {
+  @ApiProperty({ required: false })
+  schoolId?: string;
+}

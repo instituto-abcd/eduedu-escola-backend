@@ -7,12 +7,12 @@ import {
   Patch,
   Post,
   Query,
-  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { SchoolId } from '../common/school-id.decorator';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -21,7 +21,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { PaginationResponse } from './dto/pagination-response.dto';
-import { SchoolId } from '../common/school-id.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
@@ -40,8 +39,7 @@ export class UserController {
     @Body() createUserDto: CreateUserDto,
     @SchoolId() schoolId: string,
   ): Promise<User> {
-    createUserDto.schoolId = schoolId || '';
-    return this.userService.create(createUserDto);
+    return this.userService.create(createUserDto, schoolId);
   }
 
   @Get()
