@@ -7,20 +7,21 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiResponse,
-  ApiNotFoundResponse,
   ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiNotFoundResponse,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { ApiImplicitParam } from '@nestjs/swagger/dist/decorators/api-implicit-param.decorator';
-import { PaginationResponse } from "./dto/pagination-response.dto";
+import { PaginationResponse } from './dto/pagination-response.dto';
+import { SchoolId } from '../common/school-id.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
@@ -35,7 +36,11 @@ export class UserController {
     type: User,
   })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @SchoolId() schoolId: string,
+  ): Promise<User> {
+    createUserDto.schoolId = schoolId || '';
     return this.userService.create(createUserDto);
   }
 

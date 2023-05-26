@@ -4,7 +4,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EduSchoolException } from '../exceptions/edu-school.exception';
-import { PaginationResponse } from "./dto/pagination-response.dto";
+import { PaginationResponse } from './dto/pagination-response.dto';
 
 @Injectable()
 export class UserService {
@@ -118,6 +118,10 @@ export class UserService {
         'Usuário não encontrado',
         HttpStatus.NOT_FOUND,
       );
+    }
+
+    if (updateUserDto.schoolId) {
+      delete updateUserDto.schoolId;
     }
 
     if (updateUserDto.email) {
