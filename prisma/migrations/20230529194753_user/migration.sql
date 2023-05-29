@@ -1,9 +1,14 @@
 -- CreateEnum
+CREATE TYPE "Status" AS ENUM ('ACTIVE', 'INACTIVE');
+
+-- CreateEnum
 CREATE TYPE "Role" AS ENUM ('MASTER', 'ADMIN', 'USER');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
+    "status" "Status" NOT NULL DEFAULT 'ACTIVE',
+    "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "document" TEXT NOT NULL,

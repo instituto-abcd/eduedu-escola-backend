@@ -9,6 +9,8 @@ datasource db {
 
 model User {
   id         String   @id @default(uuid())
+  status     Status   @default(ACTIVE)
+  password   String
   name       String
   email      String   @unique
   document   String   @unique
@@ -18,6 +20,11 @@ model User {
   school     School?  @relation(fields: [schoolId], references: [id])
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
 }
 
 enum Role {

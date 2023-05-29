@@ -39,6 +39,8 @@ export class UserService {
       data: {
         ...createUserDto,
         schoolId,
+        status: 'ACTIVE',
+        password: '',
       },
       include: { school: true },
     });
