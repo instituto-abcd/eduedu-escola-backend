@@ -1,5 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Status } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+
+const activeStatus =  Status.ACTIVE;
 
 const prismaClient = new PrismaClient();
 
@@ -19,7 +21,7 @@ async function main() {
     data: [
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Andria Bluschke',
         document: '8917404804',
@@ -29,7 +31,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Stormie Munson',
         document: '2220389421',
@@ -39,7 +41,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Ford Leavry',
         document: '7843663711',
@@ -49,7 +51,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Roseline Cornish',
         document: '7449994739',
@@ -59,7 +61,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Hamel Horder',
         document: '3140339690',
@@ -69,7 +71,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Jonah Vice',
         document: '9424612346',
@@ -79,7 +81,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Normy Benn',
         document: '1199955876',
@@ -89,7 +91,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Laney Calcraft',
         document: '6637235598',
@@ -99,7 +101,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Cobbie Yuryichev',
         document: '7581428397',
@@ -109,7 +111,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Miof mela Armfirld',
         document: '2259795951',
@@ -119,7 +121,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Griswold Dencs',
         document: '6958859316',
@@ -129,7 +131,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Christabella Hammond',
         document: '8340577719',
@@ -139,7 +141,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Carina Larvor',
         document: '9717350140',
@@ -149,7 +151,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Gayler Mallall',
         document: '9540670519',
@@ -159,7 +161,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Northrup Manueau',
         document: '1880980703',
@@ -169,7 +171,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Guglielmo Birkby',
         document: '3183903792',
@@ -179,7 +181,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Mallory Andri',
         document: '9167455743',
@@ -189,7 +191,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Georgia Freke',
         document: '5918706615',
@@ -199,7 +201,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Corette Aneley',
         document: '1800836104',
@@ -209,7 +211,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Petrina Martineau',
         document: '4516996006',
@@ -219,7 +221,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Chancey Matei',
         document: '2460000731',
@@ -229,7 +231,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Yasmin Panton',
         document: '7611027735',
@@ -239,7 +241,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Kirbie Stockley',
         document: '1470800969',
@@ -249,7 +251,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Elinor Cud',
         document: '1699452660',
@@ -259,7 +261,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Keene Alan',
         document: '0043684165',
@@ -269,7 +271,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Jaynell Dunniom',
         document: '6905764779',
@@ -279,7 +281,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Nataniel Teasdale-Markie',
         document: '4771982325',
@@ -289,7 +291,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Kasey Blackaller',
         document: '2675748382',
@@ -299,7 +301,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: 'Randal Walne',
         document: '1907519696',
@@ -309,7 +311,7 @@ async function main() {
       },
       {
         id: uuidv4(),
-        status: 'ACTIVE',
+        status: Status.ACTIVE,
         password: 'edu312',
         name: "Ossie O'Brien",
         document: '9214318255',
