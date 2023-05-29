@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   id         String   @id @default(uuid())
-  status     String
+  status     Status   @default(ACTIVE)
   password   String
   name       String
   email      String   @unique
