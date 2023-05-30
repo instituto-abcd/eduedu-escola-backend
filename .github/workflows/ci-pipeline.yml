@@ -26,15 +26,18 @@ jobs:
         run: |
           npm install
           npm run build --if-present
-  
-  deploy: # Deploy only for DEV Env
-    name: Deploy
-    needs: [build]
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Deploy to DEV Env
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+  # ---- MANTER COMENTADO, ENQUANTO ESTIVERMOS UTILIZANDO O RENDER ----
+  # ---- O Render já efetua o deploy toda vez que há um commit na main ----
+
+  # deploy: # Deploy only for DEV Env
+  #   name: Deploy
+  #   needs: [build]
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Deploy to DEV Env
+  #       uses: johnbeynon/render-deploy-action@v0.0.8
+  #       with:
+  #         service-id: ${{ secrets.SERVICE_ID }}
+  #         api-key: ${{ secrets.RENDER_API_KEY }}
