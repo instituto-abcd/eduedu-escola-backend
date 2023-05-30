@@ -26,6 +26,26 @@ jobs:
         run: |
           npm install
           npm run build --if-present
+      
+      - name: Send Success Message
+        if: success()
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          color: "#00ba55"
+          username: ${{ github.actor }}
+          message: "O código se mantém integro. ;)"
+      
+      - name: Send Error Message
+        if: failure()
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          color: "#ba0000"
+          username: ${{ github.actor }}
+          message: "Algo de errado não está certo... =("
 
   # ---- MANTER COMENTADO, ENQUANTO ESTIVERMOS UTILIZANDO O RENDER ----
   # ---- O Render já efetua o deploy toda vez que há um commit na main ----
