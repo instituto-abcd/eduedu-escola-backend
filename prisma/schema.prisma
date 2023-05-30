@@ -8,13 +8,35 @@ datasource db {
 }
 
 model User {
-  id   String @id @default(uuid())
-  name String
-  role Role   @default(USER)
+  id         String   @id @default(uuid())
+  status     Status   @default(ACTIVE)
+  password   String
+  name       String
+  email      String   @unique
+  document   String   @unique
+  profile    String
+  role       Role     @default(USER)
+  schoolId   String
+  school     School  @relation(fields: [schoolId], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
 }
 
 enum Role {
   MASTER
   ADMIN
   USER
+}
+
+model School {
+  id         String   @id @default(uuid())
+  name       String
+  users      User[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
