@@ -35,7 +35,8 @@ jobs:
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
           color: "#ff0000"
           username: "GitHub Bot"
-          message: "Algo de errado não está certo com o código... =("
+          avatar_url: https://i.imgur.com/Kvn45ev.png
+          message: "Backend | Algo de errado não está certo com o código... =("
 
   deploy: # Deploy only for DEV Env
     name: Deploy
@@ -57,4 +58,5 @@ jobs:
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
           color: "#00ba55"
           username: "GitHub Bot"
-          message: ${{ github.event.head_commit.message }}"
+          avatar_url: https://i.imgur.com/Kvn45ev.png
+          message: Backend | Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev.
