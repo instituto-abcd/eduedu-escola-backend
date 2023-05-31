@@ -27,19 +27,20 @@ jobs:
           npm install
           npm run build --if-present
       
-      - name: Send Error Message
+      - name: Send Build Error Message
         if: failure()
         uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.WEBHOOK_ID }}
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
           color: "#ff0000"
-          message: "Algo de errado não está certo... =("
+          message: "Algo de errado não está certo com o código... =("
 
   deploy: # Deploy only for DEV Env
     name: Deploy
     needs: [build]
     runs-on: ubuntu-latest
+    if: always() && !contains(needs.*.result, 'failure')
 
     steps:
       - name: Deploy to DEV Env
@@ -49,10 +50,9 @@ jobs:
           api-key: ${{ secrets.RENDER_API_KEY }}
 
       - name: Send Success Message
-        if: success()
         uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.WEBHOOK_ID }}
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
           color: "#00ba55"
-          message: "Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev 😀"
+          message: "Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev."
