@@ -59,7 +59,7 @@ jobs:
           color: "#00ba55"
           username: "GitHub Bot"
           avatar_url: https://i.imgur.com/Kvn45ev.png
-          message: Backend | Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev - ${{ secrets.API_URL_SWAGGER }}
+          message: Backend | Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev | ${{ secrets.API_URL_SWAGGER }}
       
       - name: Send Build Error Message
         uses: appleboy/discord-action@master
@@ -69,4 +69,4 @@ jobs:
           color: "#ff0000"
           username: "GitHub Bot"
           avatar_url: https://i.imgur.com/Kvn45ev.png
-          message: Backend | Algo de errado não está certo com o código... =( - ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          message: Backend | Algo de errado não está certo com o código... =( | ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
