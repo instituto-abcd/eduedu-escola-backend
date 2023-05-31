@@ -36,12 +36,13 @@ jobs:
           color: "#ff0000"
           username: "GitHub Bot"
           avatar_url: https://i.imgur.com/Kvn45ev.png
-          message: "Backend | Algo de errado não está certo com o código... =("
+          message: Backend | Algo de errado não está certo com o código... =( | ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   deploy: # Deploy only for DEV Env
     name: Deploy
     needs: [build]
     runs-on: ubuntu-latest
+    environment: development
     if: always() && !contains(needs.*.result, 'failure')
 
     steps:
@@ -60,13 +61,3 @@ jobs:
           username: "GitHub Bot"
           avatar_url: https://i.imgur.com/Kvn45ev.png
           message: Backend | Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev | ${{ secrets.API_URL_SWAGGER }}
-      
-      - name: Send Build Error Message
-        uses: appleboy/discord-action@master
-        with:
-          webhook_id: ${{ secrets.WEBHOOK_ID }}
-          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
-          color: "#ff0000"
-          username: "GitHub Bot"
-          avatar_url: https://i.imgur.com/Kvn45ev.png
-          message: Backend | Algo de errado não está certo com o código... =( | ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
