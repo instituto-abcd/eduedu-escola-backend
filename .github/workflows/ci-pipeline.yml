@@ -34,6 +34,7 @@ jobs:
           webhook_id: ${{ secrets.WEBHOOK_ID }}
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
           color: "#ff0000"
+          username: "GitHub Bot"
           message: "Algo de errado não está certo com o código... =("
 
   deploy: # Deploy only for DEV Env
@@ -55,4 +56,5 @@ jobs:
           webhook_id: ${{ secrets.WEBHOOK_ID }}
           webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
           color: "#00ba55"
-          message: "Commit '${{ github.event.head_commit.message }}' disponível no ambiente de Dev."
+          username: "GitHub Bot"
+          message: ${{ github.event.head_commit.message }}"
