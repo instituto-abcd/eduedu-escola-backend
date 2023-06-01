@@ -1,7 +1,66 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { ApiProperty } from '@nestjs/swagger';
 
-export class EduSchoolException extends HttpException {
-  constructor(code: string, message: string, status: HttpStatus) {
-    super({ code, message }, status);
+export const ErrorDetails = {
+  EMAIL_CONFLICT: {
+    message: 'E-mail já cadastrado.',
+    status: HttpStatus.CONFLICT,
+  },
+  PERSONAL_DOCUMENT_CONFLICT: {
+    message: 'Documento pessoal já cadastrado.',
+    status: HttpStatus.CONFLICT,
+  },
+  INVALID_PAGINATION_PARAMETERS: {
+    message: 'Número da página ou tamanho por página inválido.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+  DATABASE_ERROR: {
+    message: 'Erro no banco de dados.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  USER_NOT_FOUND: {
+    message: 'Usuário não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  CANNOT_CREATE_SCHOOL_YEAR: {
+    message: 'Não é possível criar o ano letivo.',
+    status: HttpStatus.FORBIDDEN,
+  },
+  SCHOOL_YEAR_ALREADY_ACTIVE: {
+    message:
+      'Já existe um ano escolar ativo. Não é possível ter mais de um ano escolar ativo ao mesmo tempo.',
+    status: HttpStatus.CONFLICT,
+  },
+  SCHOOL_YEAR_NOT_FOUND: {
+    message: 'Ano letivo não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  SCHOOL_NOT_FOUND: {
+    message: 'Escola não encontrada.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  UNKNOWN_ERROR: {
+    message: 'Erro desconhecido ocorreu.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+};
+
+export class EduException extends HttpException {
+  @ApiProperty({ enum: Object.keys(ErrorDetails) })
+  readonly code: keyof typeof ErrorDetails;
+
+  @ApiProperty()
+  readonly message: string;
+
+  constructor(errorCode: keyof typeof ErrorDetails) {
+    super(
+      {
+        code: errorCode,
+        message: ErrorDetails[errorCode].message,
+      },
+      ErrorDetails[errorCode].status,
+    );
+    this.code = errorCode;
+    this.message = ErrorDetails[errorCode].message;
   }
 }

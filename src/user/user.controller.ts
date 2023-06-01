@@ -17,14 +17,16 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiNotFoundResponse,
+  ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { PaginationResponse } from './dto/pagination-response.dto';
+import { ErrorDetails } from '../exceptions/edu-school.exception';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
-@Controller('users')
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -35,6 +37,15 @@ export class UserController {
     type: User,
   })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiResponse({
+    status: ErrorDetails.EMAIL_CONFLICT.status,
+    description: ErrorDetails.EMAIL_CONFLICT.message,
+  })
+  @ApiResponse({
+    status: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.status,
+    description: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.message,
+  })
+  @ApiOperation({ summary: 'Criar um novo aluno' })
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @SchoolId() schoolId: string,
@@ -42,13 +53,18 @@ export class UserController {
     return this.userService.create(createUserDto, schoolId);
   }
 
-  @Get()
+  @Get('all')
   @ApiResponse({
     status: 200,
     description: 'Usuários encontrados com sucesso',
     type: PaginationResponse,
   })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiResponse({
+    status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
+    description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
+  })
+  @ApiOperation({ summary: 'Obter todos os alunos' })
   async findAll(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
@@ -77,6 +93,7 @@ export class UserController {
     type: User,
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
+  @ApiOperation({ summary: 'Obter aluno por ID' })
   async findOne(@Param('id') id: string): Promise<User> {
     return this.userService.findOne(id);
   }
@@ -89,6 +106,7 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiOperation({ summary: 'Atualizar aluno por ID' })
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -103,6 +121,7 @@ export class UserController {
     type: User,
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
+  @ApiOperation({ summary: 'Excluir um aluno' })
   async remove(@Param('id') id: string): Promise<User> {
     return this.userService.remove(id);
   }

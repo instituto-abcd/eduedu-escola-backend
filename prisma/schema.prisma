@@ -7,36 +7,103 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id         String   @id @default(uuid())
-  status     Status   @default(ACTIVE)
-  password   String
-  name       String
-  email      String   @unique
-  document   String   @unique
-  profile    String
-  role       Role     @default(USER)
-  schoolId   String
-  school     School  @relation(fields: [schoolId], references: [id])
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
+// Enum for status
 enum Status {
   ACTIVE
   INACTIVE
 }
 
-enum Role {
-  MASTER
-  ADMIN
-  USER
+// Enum for Profile
+enum Profile {
+  DIRECTOR
+  TEACHER
 }
 
+// Model for School
 model School {
-  id         String   @id @default(uuid())
-  name       String
-  users      User[]
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id          String        @id @default(uuid())
+  name        String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  users       User[]
+  SchoolYear  SchoolYear[]
+  SchoolClass SchoolClass[]
+}
+
+// Model for SchoolClass
+model SchoolClass {
+  id           String               @id @default(uuid())
+  name         String
+  schoolGrade  String
+  schoolPeriod String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  schoolYearId String
+  schoolYear   SchoolYear           @relation(fields: [schoolYearId], references: [id])
+  users        UserSchoolClass[]
+  students     SchoolClassStudent[]
+  schoolId     String?
+  School       School?              @relation(fields: [schoolId], references: [id])
+}
+
+enum StatusSchoolYear {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+// Model for SchoolYear
+model SchoolYear {
+  id            String           @id @default(uuid())
+  name          Int
+  status        StatusSchoolYear @default(DRAFT)
+  schoolId      String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  school        School           @relation(fields: [schoolId], references: [id])
+  schoolClasses SchoolClass[]
+}
+
+// Model for Student
+model Student {
+  id            String               @id @default(uuid())
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  schoolClasses SchoolClassStudent[]
+}
+
+// Model for User
+model User {
+  id              String            @id @default(uuid())
+  status          Status            @default(ACTIVE)
+  password        String
+  name            String
+  email           String            @unique
+  document        String            @unique
+  profile         Profile           @default(TEACHER)
+  schoolId        String
+  school          School            @relation(fields: [schoolId], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  UserSchoolClass UserSchoolClass[]
+}
+
+// Model for UserSchoolClass
+model UserSchoolClass {
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  schoolClassId String
+  schoolClass   SchoolClass @relation(fields: [schoolClassId], references: [id])
+
+  @@id([userId, schoolClassId])
+}
+
+// Model for SchoolClassStudent
+model SchoolClassStudent {
+  schoolClassId String
+  schoolClass   SchoolClass @relation(fields: [schoolClassId], references: [id])
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id])
+
+  @@id([schoolClassId, studentId])
 }

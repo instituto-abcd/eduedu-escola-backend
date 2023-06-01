@@ -33,6 +33,7 @@
     "@nestjs/swagger": "^6.3.0",
     "@prisma/client": "4.14.1",
     "@prisma/studio": "^0.484.0",
+    "axios": "^1.4.0",
     "prisma": "^4.14.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
