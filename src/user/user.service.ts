@@ -1,22 +1,44 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
+import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { EduException } from '../exceptions/edu-school.exception';
-import { PaginationResponse } from './dto/pagination-response.dto';
+import { PaginationResponse } from './dto/response/pagination-response.dto';
 import { Profile, Status } from '@prisma/client';
-import { ResponseUserDto } from './dto/user.dto';
-import { DeleteUserDto } from './dto/delete-user.dto';
+import { UserResponseDto } from './dto/response/user-response.dto';
+import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
+import { ValidationUtilsService } from './validationUtils.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private validationUtilsService: ValidationUtilsService,
+  ) {}
 
   async create(
-    createUserDto: CreateUserDto,
+    createUserDto: CreateUserRequestDto,
     schoolId: string,
-  ): Promise<ResponseUserDto> {
-    const { email, document, profile } = createUserDto;
+  ): Promise<UserResponseDto> {
+    const { name, email, profile, password } = createUserDto;
+    let { document } = createUserDto;
+
+    if (!name || !email || !document || !profile || !password) {
+      throw new EduException('MISSING_REQUIRED_FIELDS');
+    }
+
+    if (!this.validationUtilsService.isValidEmail(email)) {
+      throw new EduException('INVALID_EMAIL');
+    }
+
+    document = document.replace(/-/g, '');
+    if (!this.validationUtilsService.isValidDocument(document)) {
+      throw new EduException('INVALID_DOCUMENT');
+    }
+
+    if (!this.validationUtilsService.isValidProfile(profile)) {
+      throw new EduException('INVALID_PROFILE');
+    }
 
     const existingEmail = await this.prisma.user.findUnique({
       where: { email },
@@ -34,6 +56,7 @@ export class UserService {
 
     const data: any = {
       ...createUserDto,
+      document: document,
       schoolId,
       profile: profile as any,
       status: Status.ACTIVE,
@@ -58,7 +81,7 @@ export class UserService {
     pageNumber: number,
     pageSize: number,
     filters: any,
-  ): Promise<PaginationResponse<ResponseUserDto>> {
+  ): Promise<PaginationResponse<UserResponseDto>> {
     if (pageNumber <= 0 || pageSize <= 0) {
       throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
@@ -96,7 +119,7 @@ export class UserService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      const responseUsers: ResponseUserDto[] = users.map((user) => ({
+      const responseUsers: UserResponseDto[] = users.map((user) => ({
         id: user.id,
         status: user.status,
         name: user.name,
@@ -111,7 +134,7 @@ export class UserService {
     }
   }
 
-  async findOne(id: string): Promise<ResponseUserDto> {
+  async findOne(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
@@ -129,8 +152,8 @@ export class UserService {
   }
   async update(
     id: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<ResponseUserDto> {
+    updateUserDto: UpdateUserRequestDto,
+  ): Promise<UserResponseDto> {
     const existingUser = await this.prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
       throw new EduException('USER_NOT_FOUND');
@@ -179,7 +202,7 @@ export class UserService {
     };
   }
 
-  async remove(id: string): Promise<DeleteUserDto> {
+  async remove(id: string): Promise<DeleteUserResponseDto> {
     const user = await this.prisma.user.delete({
       where: { id },
       include: { school: true },

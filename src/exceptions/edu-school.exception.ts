@@ -48,6 +48,31 @@ export const ErrorDetails = {
     message: 'Erro ao excluir',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+
+  MISSING_REQUIRED_FIELDS: {
+    message: 'Campos obrigatórios não foram fornecidos.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+
+  INVALID_EMAIL: {
+    message: 'E-mail inválido.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+
+  INVALID_DOCUMENT: {
+    message: 'Documento inválido.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+
+  INVALID_PROFILE: {
+    message: 'Perfil inválido.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+
+  INVALID_PASSWORD: {
+    message: 'Senha inválida.',
+    status: HttpStatus.BAD_REQUEST,
+  },
 };
 
 export class EduException extends HttpException {
