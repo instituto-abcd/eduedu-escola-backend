@@ -26,11 +26,24 @@ jobs:
         run: |
           npm install
           npm run build --if-present
-  
+      
+      - name: Send Build Error Message
+        if: failure()
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          color: "#ff0000"
+          username: "GitHub Bot"
+          avatar_url: https://i.imgur.com/Kvn45ev.png
+          message: Backend | Algo de errado não está certo com o código... | ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
   deploy: # Deploy only for DEV Env
     name: Deploy
     needs: [build]
     runs-on: ubuntu-latest
+    environment: development
+    if: always() && !contains(needs.*.result, 'failure')
 
     steps:
       - name: Deploy to DEV Env
@@ -38,3 +51,13 @@ jobs:
         with:
           service-id: ${{ secrets.SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+
+      - name: Send Success Message
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          color: "#00ba55"
+          username: "GitHub Bot"
+          avatar_url: https://i.imgur.com/Kvn45ev.png
+          message: Backend | Commit '${{ github.event.head_commit.message }}' disponível no ambiente de DEV | ${{ secrets.APP_URL }}
