@@ -3,8 +3,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { EduSchoolException } from '../exceptions/edu-school.exception';
+import { EduException } from '../exceptions/edu-school.exception';
 import { PaginationResponse } from './dto/pagination-response.dto';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -17,46 +18,33 @@ export class UserService {
       where: { email },
     });
     if (existingEmail) {
-      throw new EduSchoolException(
-        'EMAIL_CONFLICT',
-        'E-mail já cadastrado',
-        HttpStatus.CONFLICT,
-      );
+      throw new EduException('EMAIL_CONFLICT');
     }
 
     const existingPersonalDocument = await this.prisma.user.findUnique({
       where: { document },
     });
     if (existingPersonalDocument) {
-      throw new EduSchoolException(
-        'PERSONAL_DOCUMENT_CONFLICT',
-        'Documento pessoal já cadastrado',
-        HttpStatus.CONFLICT,
-      );
+      throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
     return this.prisma.user.create({
       data: {
         ...createUserDto,
         schoolId,
-        status: 'ACTIVE',
-        password: '',
+        status: Status.ACTIVE,
+        password: '', // TODO: Converter senha para hash
       },
       include: { school: true },
     });
   }
-
   async findAll(
     pageNumber: number,
     pageSize: number,
     filters: any,
   ): Promise<PaginationResponse<User>> {
     if (pageNumber <= 0 || pageSize <= 0) {
-      throw new EduSchoolException(
-        'BAD_REQUEST',
-        'Número da página ou tamanho por página inválido',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
 
     const { name, email, document, profile } = filters || {};
@@ -94,11 +82,7 @@ export class UserService {
 
       return new PaginationResponse(users, pagination);
     } catch (error) {
-      throw new EduSchoolException(
-        'DATABASE_ERROR',
-        'Database error occurred',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new EduException('DATABASE_ERROR');
     }
   }
 
@@ -106,11 +90,7 @@ export class UserService {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new EduSchoolException(
-        'USER_NOT_FOUND',
-        'Usuário não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
+      throw new EduException('USER_NOT_FOUND');
     }
 
     return user;
@@ -119,16 +99,7 @@ export class UserService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const existingUser = await this.prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
-      throw new EduSchoolException(
-        'USER_NOT_FOUND',
-        'Usuário não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const data = { ...updateUserDto };
-    if (data && data.schoolId) {
-      delete data.schoolId;
+      throw new EduException('USER_NOT_FOUND');
     }
 
     if (updateUserDto.email) {
@@ -136,11 +107,7 @@ export class UserService {
         where: { email: updateUserDto.email, id: { not: id } },
       });
       if (existingEmail) {
-        throw new EduSchoolException(
-          'EMAIL_CONFLICT',
-          'E-mail já cadastrado por outro usuário',
-          HttpStatus.CONFLICT,
-        );
+        throw new EduException('EMAIL_CONFLICT');
       }
     }
 
@@ -152,19 +119,15 @@ export class UserService {
         },
       });
       if (existingPersonalDocument) {
-        throw new EduSchoolException(
-          'PERSONAL_DOCUMENT_CONFLICT',
-          'Documento pessoal já cadastrado por outro usuário',
-          HttpStatus.CONFLICT,
-        );
+        throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
       }
     }
 
     return this.prisma.user.update({
       where: { id },
       data: {
-        ...data,
-        updated_at: new Date(),
+        ...updateUserDto,
+        updatedAt: new Date(),
       },
     });
   }
