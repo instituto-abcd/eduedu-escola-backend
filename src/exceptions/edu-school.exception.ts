@@ -43,6 +43,11 @@ export const ErrorDetails = {
     message: 'Erro desconhecido ocorreu.',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+
+  ERROR_DELETING: {
+    message: 'Erro ao excluir',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
 
 export class EduException extends HttpException {

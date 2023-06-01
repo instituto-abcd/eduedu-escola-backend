@@ -9,7 +9,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { SchoolId } from '../common/school-id.decorator';
@@ -23,6 +22,9 @@ import {
 } from '@nestjs/swagger';
 import { PaginationResponse } from './dto/pagination-response.dto';
 import { ErrorDetails } from '../exceptions/edu-school.exception';
+import { CreateUserDto } from './dto/create-user.dto';
+import { ResponseUserDto } from './dto/user.dto';
+import { DeleteUserDto } from './dto/delete-user.dto';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
@@ -49,7 +51,7 @@ export class UserController {
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @SchoolId() schoolId: string,
-  ): Promise<User> {
+  ): Promise<ResponseUserDto> {
     return this.userService.create(createUserDto, schoolId);
   }
 
@@ -72,7 +74,7 @@ export class UserController {
     @Query('email') email?: string,
     @Query('document') document?: string,
     @Query('profile') profile?: string,
-  ): Promise<PaginationResponse<User>> {
+  ): Promise<PaginationResponse<ResponseUserDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
 
@@ -94,7 +96,7 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiOperation({ summary: 'Obter aluno por ID' })
-  async findOne(@Param('id') id: string): Promise<User> {
+  async findOne(@Param('id') id: string): Promise<ResponseUserDto> {
     return this.userService.findOne(id);
   }
 
@@ -110,7 +112,7 @@ export class UserController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+  ): Promise<ResponseUserDto> {
     return this.userService.update(id, updateUserDto);
   }
 
@@ -122,7 +124,7 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiOperation({ summary: 'Excluir um aluno' })
-  async remove(@Param('id') id: string): Promise<User> {
+  async remove(@Param('id') id: string): Promise<DeleteUserDto> {
     return this.userService.remove(id);
   }
 }

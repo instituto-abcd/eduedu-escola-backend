@@ -1,18 +1,22 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EduException } from '../exceptions/edu-school.exception';
 import { PaginationResponse } from './dto/pagination-response.dto';
-import { Status } from '@prisma/client';
+import { Profile, Status } from '@prisma/client';
+import { ResponseUserDto } from './dto/user.dto';
+import { DeleteUserDto } from './dto/delete-user.dto';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto, schoolId: string): Promise<User> {
-    const { email, document } = createUserDto;
+  async create(
+    createUserDto: CreateUserDto,
+    schoolId: string,
+  ): Promise<ResponseUserDto> {
+    const { email, document, profile } = createUserDto;
 
     const existingEmail = await this.prisma.user.findUnique({
       where: { email },
@@ -28,21 +32,33 @@ export class UserService {
       throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
-    return this.prisma.user.create({
-      data: {
-        ...createUserDto,
-        schoolId,
-        status: Status.ACTIVE,
-        password: '', // TODO: Converter senha para hash
-      },
+    const data: any = {
+      ...createUserDto,
+      schoolId,
+      profile: profile as any,
+      status: Status.ACTIVE,
+    };
+
+    const createdUser = await this.prisma.user.create({
+      data,
       include: { school: true },
     });
+
+    return {
+      id: createdUser.id,
+      status: createdUser.status,
+      name: createdUser.name,
+      email: createdUser.email,
+      document: createdUser.document,
+      profile: createdUser.profile,
+    };
   }
+
   async findAll(
     pageNumber: number,
     pageSize: number,
     filters: any,
-  ): Promise<PaginationResponse<User>> {
+  ): Promise<PaginationResponse<ResponseUserDto>> {
     if (pageNumber <= 0 || pageSize <= 0) {
       throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
@@ -53,7 +69,7 @@ export class UserService {
       name: name ? { contains: name } : undefined,
       email: email ? { contains: email } : undefined,
       document: document ? { contains: document } : undefined,
-      profile: profile ? { equals: profile } : undefined,
+      profile: profile ? { equals: Profile[profile] } : undefined,
     };
 
     try {
@@ -80,23 +96,41 @@ export class UserService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      return new PaginationResponse(users, pagination);
+      const responseUsers: ResponseUserDto[] = users.map((user) => ({
+        id: user.id,
+        status: user.status,
+        name: user.name,
+        email: user.email,
+        document: user.document,
+        profile: user.profile,
+      }));
+
+      return new PaginationResponse(responseUsers, pagination);
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
     }
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<ResponseUserDto> {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new EduException('USER_NOT_FOUND');
     }
 
-    return user;
+    return {
+      id: user.id,
+      status: user.status,
+      name: user.name,
+      email: user.email,
+      document: user.document,
+      profile: user.profile,
+    };
   }
-
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<ResponseUserDto> {
     const existingUser = await this.prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
       throw new EduException('USER_NOT_FOUND');
@@ -123,16 +157,38 @@ export class UserService {
       }
     }
 
-    return this.prisma.user.update({
+    const { profile, ...rest } = updateUserDto;
+    const data = {
+      ...rest,
+      updatedAt: new Date(),
+      profile: Profile[profile],
+    };
+
+    const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: {
-        ...updateUserDto,
-        updatedAt: new Date(),
-      },
+      data,
     });
+
+    return {
+      id: updatedUser.id,
+      status: updatedUser.status,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      document: updatedUser.document,
+      profile: updatedUser.profile,
+    };
   }
 
-  async remove(id: string): Promise<User> {
-    return this.prisma.user.delete({ where: { id } });
+  async remove(id: string): Promise<DeleteUserDto> {
+    const user = await this.prisma.user.delete({
+      where: { id },
+      include: { school: true },
+    });
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    return { success: true };
   }
 }
