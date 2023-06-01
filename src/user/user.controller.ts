@@ -9,7 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { User } from './entities/user.entity';
 import { SchoolId } from '../common/school-id.decorator';
 import {
@@ -20,11 +20,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationResponse } from './dto/pagination-response.dto';
+import { PaginationResponse } from './dto/response/pagination-response.dto';
 import { ErrorDetails } from '../exceptions/edu-school.exception';
-import { CreateUserDto } from './dto/create-user.dto';
-import { ResponseUserDto } from './dto/user.dto';
-import { DeleteUserDto } from './dto/delete-user.dto';
+import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
+import { UserResponseDto } from './dto/response/user-response.dto';
+import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
@@ -36,7 +36,7 @@ export class UserController {
   @ApiResponse({
     status: 201,
     description: 'Usuário criado com sucesso',
-    type: User,
+    type: UserResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
   @ApiResponse({
@@ -49,9 +49,9 @@ export class UserController {
   })
   @ApiOperation({ summary: 'Criar um novo aluno' })
   async createUser(
-    @Body() createUserDto: CreateUserDto,
+    @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
-  ): Promise<ResponseUserDto> {
+  ): Promise<UserResponseDto> {
     return this.userService.create(createUserDto, schoolId);
   }
 
@@ -74,7 +74,7 @@ export class UserController {
     @Query('email') email?: string,
     @Query('document') document?: string,
     @Query('profile') profile?: string,
-  ): Promise<PaginationResponse<ResponseUserDto>> {
+  ): Promise<PaginationResponse<UserResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
 
@@ -96,7 +96,7 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiOperation({ summary: 'Obter aluno por ID' })
-  async findOne(@Param('id') id: string): Promise<ResponseUserDto> {
+  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
@@ -111,8 +111,8 @@ export class UserController {
   @ApiOperation({ summary: 'Atualizar aluno por ID' })
   async update(
     @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<ResponseUserDto> {
+    @Body() updateUserDto: UpdateUserRequestDto,
+  ): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
   }
 
@@ -124,7 +124,7 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiOperation({ summary: 'Excluir um aluno' })
-  async remove(@Param('id') id: string): Promise<DeleteUserDto> {
+  async remove(@Param('id') id: string): Promise<DeleteUserResponseDto> {
     return this.userService.remove(id);
   }
 }
