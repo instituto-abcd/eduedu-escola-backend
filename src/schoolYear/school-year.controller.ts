@@ -35,7 +35,7 @@ export class SchoolYearController {
   })
   async createSchoolYear(@SchoolId() schoolId: string): Promise<void> {
     try {
-      await this.schoolYearService.createSchoolYear(schoolId);
+      await this.schoolYearService.createNextAvailableSchoolYear(schoolId);
     } catch (error) {
       throw new EduException('CANNOT_CREATE_SCHOOL_YEAR');
     }
@@ -54,9 +54,9 @@ export class SchoolYearController {
   })
   async getAllSchoolYears(): Promise<SchoolYearSummary[]> {
     try {
-      return await this.schoolYearService.getAllSchoolYears();
+      return await this.schoolYearService.findAllSchoolYears();
     } catch (error) {
-      throw new EduException('SCHOOL_YEAR_ALREADY_ACTIVE');
+      throw new EduException('UNKNOWN_ERROR');
     }
   }
 
@@ -81,10 +81,6 @@ export class SchoolYearController {
   @ApiResponse({ status: 200, description: 'Ano letivo excluído com sucesso' })
   @ApiResponse({ status: 404, description: 'Ano letivo não encontrado' })
   async deleteSchoolYear(@Param('id') id: string): Promise<void> {
-    try {
-      await this.schoolYearService.deleteSchoolYear(id);
-    } catch (error) {
-      throw new EduException('SCHOOL_YEAR_NOT_FOUND');
-    }
+    await this.schoolYearService.deleteSchoolYearAndClasses(id);
   }
 }
