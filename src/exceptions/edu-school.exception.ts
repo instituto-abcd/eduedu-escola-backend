@@ -27,8 +27,7 @@ export const ErrorDetails = {
     status: HttpStatus.FORBIDDEN,
   },
   SCHOOL_YEAR_ALREADY_ACTIVE: {
-    message:
-      'Já existe um ano escolar ativo. Não é possível ter mais de um ano escolar ativo ao mesmo tempo.',
+    message: 'Não é possível ativar um ano letivo diferente do ano atual',
     status: HttpStatus.CONFLICT,
   },
   SCHOOL_YEAR_NOT_FOUND: {
@@ -72,6 +71,26 @@ export const ErrorDetails = {
   INVALID_PASSWORD: {
     message: 'Senha inválida.',
     status: HttpStatus.BAD_REQUEST,
+  },
+  SCHOOL_YEAR_IS_ALREADY_ACTIVE: {
+    message: 'O ano letivo já está ativo.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+  SCHOOL_YEAR_IS_INACTIVE: {
+    message: 'Você não pode ativar um ano letivo finalizado.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+  SCHOOL_YEAR_ALREADY_EXISTS: {
+    message: 'O ano letivo atual já existe como rascunho.',
+    status: HttpStatus.CONFLICT,
+  },
+  NEXT_SCHOOL_YEAR_ALREADY_EXISTS: {
+    message: 'O próximo ano letivo já existe.',
+    status: HttpStatus.CONFLICT,
+  },
+  SCHOOL_YEAR_CANNOT_BE_ACTIVATED: {
+    message: 'O ano letivo não pode ser ativado.',
+    status: HttpStatus.CONFLICT,
   },
 };
 
