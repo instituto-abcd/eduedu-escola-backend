@@ -96,6 +96,10 @@ export const ErrorDetails = {
     message: 'O ano letivo não pode ser ativado.',
     status: HttpStatus.CONFLICT,
   },
+  NO_SCHOOL_YEAR_TO_DELETE: {
+    message: 'Você não possui um ano letivo disponível para exclusão.',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
 
 export class EduException extends HttpException {

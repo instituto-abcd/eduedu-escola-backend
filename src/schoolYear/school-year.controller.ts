@@ -19,6 +19,7 @@ import { ActivateSchoolYearDto } from './dto/activate-school-year.dto';
 import { SchoolId } from '../common/school-id.decorator';
 import { SchoolYearSummary } from './dto/list-school-year.dto';
 import { EduException, ErrorDetails } from '../exceptions/edu-school.exception';
+import { DeleteSchoolYearResponseDto } from './dto/delete-school-year-response.dto';
 
 @ApiTags('Ano Letivo')
 @Controller('school-year')
@@ -76,11 +77,11 @@ export class SchoolYearController {
     }
   }
 
-  @Delete(':id')
+  @Delete()
   @ApiOperation({ summary: 'Excluir um ano letivo' })
   @ApiResponse({ status: 200, description: 'Ano letivo excluído com sucesso' })
   @ApiResponse({ status: 404, description: 'Ano letivo não encontrado' })
-  async deleteSchoolYear(@Param('id') id: string): Promise<void> {
-    await this.schoolYearService.deleteSchoolYearAndClasses(id);
+  async deleteSchoolYear(): Promise<DeleteSchoolYearResponseDto> {
+    return await this.schoolYearService.deleteSchoolYearAndClasses();
   }
 }

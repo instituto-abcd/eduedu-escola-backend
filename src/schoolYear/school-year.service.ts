@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EduException } from '../exceptions/edu-school.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { ExternalApiService } from './external-api.service';
 import { StatusSchoolYear } from '@prisma/client';
 import { SchoolYearSummary } from './dto/list-school-year.dto';
+import { DeleteSchoolYearResponseDto } from './dto/delete-school-year-response.dto';
 
 @Injectable()
 export class SchoolYearService {
@@ -164,20 +165,51 @@ export class SchoolYearService {
     }
   }
 
-  async deleteSchoolYearById(id: string): Promise<void> {
-    await this.prismaService.schoolYear.delete({
-      where: { id },
+  async deleteSchoolYearAndClasses(): Promise<DeleteSchoolYearResponseDto> {
+    const schoolYearToDelete = await this.prismaService.schoolYear.findFirst({
+      where: {
+        status: 'DRAFT',
+      },
+      orderBy: {
+        name: 'desc',
+      },
     });
-  }
 
-  async deleteSchoolClassesBySchoolYearId(schoolYearId: string): Promise<void> {
-    await this.prismaService.schoolClass.deleteMany({
-      where: { schoolYearId },
-    });
-  }
+    if (!schoolYearToDelete) {
+      throw new EduException('NO_SCHOOL_YEAR_TO_DELETE');
+    }
 
-  async deleteSchoolYearAndClasses(id: string): Promise<void> {
-    await this.deleteSchoolClassesBySchoolYearId(id);
-    await this.deleteSchoolYearById(id);
+    const { id } = schoolYearToDelete;
+
+    if (schoolYearToDelete) {
+      await this.prismaService.schoolClassStudent.deleteMany({
+        where: {
+          schoolClassId: {
+            in: await this.prismaService.schoolClass
+              .findMany({
+                where: { schoolYearId: id },
+                select: { id: true },
+              })
+              .then((schoolClasses) => schoolClasses.map((sc) => sc.id)),
+          },
+        },
+      });
+
+      const schoolClassesCount = await this.prismaService.schoolClass.count({
+        where: { schoolYearId: id },
+      });
+
+      if (schoolClassesCount > 0) {
+        await this.prismaService.schoolClass.deleteMany({
+          where: { schoolYearId: id },
+        });
+      }
+
+      await this.prismaService.schoolYear.delete({
+        where: { id },
+      });
+    }
+
+    return { success: true };
   }
 }
