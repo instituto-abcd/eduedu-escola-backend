@@ -22,6 +22,10 @@ export const ErrorDetails = {
     message: 'Usuário não encontrado.',
     status: HttpStatus.NOT_FOUND,
   },
+  USERS_NOT_FOUND: {
+    message: 'Nenhum usuário encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
   CANNOT_CREATE_SCHOOL_YEAR: {
     message: 'Não é possível criar o ano letivo.',
     status: HttpStatus.FORBIDDEN,
