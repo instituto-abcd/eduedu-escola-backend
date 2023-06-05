@@ -8,7 +8,6 @@ import { Profile, Status } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from './validationUtils.service';
-import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 
 @Injectable()
 export class UserService {
