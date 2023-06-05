@@ -20,10 +20,10 @@ export class UserService {
     createUserDto: CreateUserRequestDto,
     schoolId: string,
   ): Promise<UserResponseDto> {
-    const { name, email, profile, password } = createUserDto;
+    const { name, email, profile } = createUserDto;
     let { document } = createUserDto;
 
-    if (!name || !email || !document || !profile || !password) {
+    if (!name || !email || !document || !profile) {
       throw new EduException('MISSING_REQUIRED_FIELDS');
     }
 
@@ -57,6 +57,7 @@ export class UserService {
     const data: any = {
       ...createUserDto,
       document: document,
+      password: 'edu312',
       schoolId,
       profile: profile as any,
       status: Status.ACTIVE,
