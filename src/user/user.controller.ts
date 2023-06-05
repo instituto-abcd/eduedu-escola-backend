@@ -47,7 +47,7 @@ export class UserController {
     status: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.status,
     description: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.message,
   })
-  @ApiOperation({ summary: 'Criar um novo aluno' })
+  @ApiOperation({ summary: 'Criar um novo usuário' })
   async createUser(
     @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
@@ -66,7 +66,7 @@ export class UserController {
     status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
     description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
   })
-  @ApiOperation({ summary: 'Obter todos os alunos' })
+  @ApiOperation({ summary: 'Obter todos os usuários' })
   async findAll(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
@@ -95,7 +95,7 @@ export class UserController {
     type: User,
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  @ApiOperation({ summary: 'Obter aluno por ID' })
+  @ApiOperation({ summary: 'Obter usuário por ID' })
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
@@ -108,7 +108,7 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiOperation({ summary: 'Atualizar aluno por ID' })
+  @ApiOperation({ summary: 'Atualizar usuário por ID' })
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserRequestDto,
@@ -123,7 +123,7 @@ export class UserController {
     type: User,
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  @ApiOperation({ summary: 'Excluir um aluno' })
+  @ApiOperation({ summary: 'Excluir um usuário' })
   async remove(@Param('id') id: string): Promise<DeleteUserResponseDto> {
     return this.userService.remove(id);
   }
