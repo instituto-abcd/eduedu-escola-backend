@@ -25,6 +25,7 @@ import { ErrorDetails } from '../exceptions/edu-school.exception';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
+import { DeleteUserRequestDto } from "./dto/request/delete-user-request.dto";
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
@@ -116,15 +117,15 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete()
   @ApiResponse({
     status: 200,
-    description: 'Usuário removido com sucesso',
-    type: User,
+    description: 'Usuários removidos com sucesso',
+    type: DeleteUserResponseDto,
   })
-  @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  @ApiOperation({ summary: 'Excluir um usuário' })
-  async remove(@Param('id') id: string): Promise<DeleteUserResponseDto> {
-    return this.userService.remove(id);
+  @ApiOperation({ summary: 'Excluir usuários' })
+  async remove(@Body() requestDto: DeleteUserRequestDto): Promise<DeleteUserResponseDto> {
+    const { ids } = requestDto;
+    return this.userService.remove(ids);
   }
 }

@@ -4,7 +4,7 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { EduException } from '../exceptions/edu-school.exception';
 import { PaginationResponse } from './dto/response/pagination-response.dto';
-import { Profile, Status } from '@prisma/client';
+import { Prisma, Profile, Status } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from './validationUtils.service';
@@ -89,10 +89,12 @@ export class UserService {
 
     const { name, email, document, profile } = filters || {};
 
-    const where = {
-      name: name ? { contains: name } : undefined,
-      email: email ? { contains: email } : undefined,
-      document: document ? { contains: document } : undefined,
+    const where: Prisma.UserWhereInput = {
+      name: name ? { contains: name, mode: 'insensitive' } : undefined,
+      email: email ? { contains: email, mode: 'insensitive' } : undefined,
+      document: document
+        ? { contains: document, mode: 'insensitive' }
+        : undefined,
       profile: profile ? { equals: Profile[profile] } : undefined,
     };
 
@@ -203,14 +205,25 @@ export class UserService {
     };
   }
 
-  async remove(id: string): Promise<DeleteUserResponseDto> {
-    const user = await this.prisma.user.delete({
-      where: { id },
-      include: { school: true },
+  async remove(ids: string[]): Promise<DeleteUserResponseDto> {
+    await this.prisma.userSchoolClass.deleteMany({
+      where: {
+        userId: {
+          in: ids,
+        },
+      },
     });
 
-    if (!user) {
-      throw new EduException('USER_NOT_FOUND');
+    const deleteResult = await this.prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+
+    if (deleteResult.count === 0) {
+      throw new EduException('USERS_NOT_FOUND');
     }
 
     return { success: true };
