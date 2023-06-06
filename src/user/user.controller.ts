@@ -21,11 +21,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { PaginationResponse } from './dto/response/pagination-response.dto';
-import { ErrorDetails } from '../exceptions/edu-school.exception';
+import { EduException, ErrorDetails } from '../exceptions/edu-school.exception';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
-import { DeleteUserRequestDto } from "./dto/request/delete-user-request.dto";
+import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
+import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
+import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
@@ -124,8 +126,23 @@ export class UserController {
     type: DeleteUserResponseDto,
   })
   @ApiOperation({ summary: 'Excluir usuários' })
-  async remove(@Body() requestDto: DeleteUserRequestDto): Promise<DeleteUserResponseDto> {
+  async remove(
+    @Body() requestDto: DeleteUserRequestDto,
+  ): Promise<DeleteUserResponseDto> {
     const { ids } = requestDto;
     return this.userService.remove(ids);
+  }
+
+  @Post('inactivate')
+  @ApiOperation({ summary: 'Desativar usuários' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuários desativados com sucesso',
+    type: InativeUserRequestDto,
+  })
+  async deactivateUsers(
+    @Body() requestDto: InativeUserRequestDto,
+  ): Promise<InativeUserResponseDto> {
+    return this.userService.deactivateUsers(requestDto);
   }
 }

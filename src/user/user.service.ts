@@ -8,6 +8,9 @@ import { Prisma, Profile, Status } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from './validationUtils.service';
+import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
+import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
+import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 
 @Injectable()
 export class UserService {
@@ -227,5 +230,33 @@ export class UserService {
     }
 
     return { success: true };
+  }
+
+  async deactivateUsers(
+    requestDto: InativeUserRequestDto,
+  ): Promise<InativeUserResponseDto> {
+    try {
+      const { ids } = requestDto;
+
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: ids } },
+      });
+
+      const existingUserIds = users.map((user) => user.id);
+
+      await this.prisma.user.updateMany({
+        where: { id: { in: existingUserIds }, status: Status.ACTIVE },
+        data: { status: Status.INACTIVE },
+      });
+
+      const success = existingUserIds.length > 0;
+
+      return { success };
+    } catch (error) {
+      if (error instanceof EduException) {
+        throw error;
+      }
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 }
