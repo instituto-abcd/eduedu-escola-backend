@@ -5,6 +5,9 @@ export class UserResponseDto {
   @ApiProperty({ description: 'Identificador do Usuário' })
   id: string;
 
+  @ApiProperty({ description: 'Código de Acesso' })
+  accessKey: string;
+
   @ApiProperty({ description: 'Nome do Usuário' })
   name: string;
   @ApiProperty({ description: 'Email do Usuário' })

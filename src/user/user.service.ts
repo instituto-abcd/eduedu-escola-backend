@@ -4,13 +4,13 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { EduException } from '../exceptions/edu-school.exception';
 import { PaginationResponse } from './dto/response/pagination-response.dto';
-import { Prisma, Profile, Status } from '@prisma/client';
+import { Prisma, Profile, Status, User } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from './validationUtils.service';
-import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UserService {
@@ -57,6 +57,12 @@ export class UserService {
       throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
+    let accessKey = this.generateUniqueAccessKey();
+
+    while (await this.isAccessKeyTaken(accessKey)) {
+      accessKey = this.generateUniqueAccessKey();
+    }
+
     const data: any = {
       ...createUserDto,
       document: document,
@@ -64,6 +70,7 @@ export class UserService {
       schoolId,
       profile: profile as any,
       status: Status.ACTIVE,
+      accessKey: accessKey,
     };
 
     const createdUser = await this.prisma.user.create({
@@ -76,6 +83,7 @@ export class UserService {
       status: createdUser.status,
       name: createdUser.name,
       email: createdUser.email,
+      accessKey: createdUser.accessKey, // Utilizar o accessKey salvo no usuário criado
       document: createdUser.document,
       profile: createdUser.profile,
     };
@@ -130,6 +138,7 @@ export class UserService {
         status: user.status,
         name: user.name,
         email: user.email,
+        accessKey: user.accessKey,
         document: user.document,
         profile: user.profile,
       }));
@@ -151,6 +160,7 @@ export class UserService {
       id: user.id,
       status: user.status,
       name: user.name,
+      accessKey: user.accessKey,
       email: user.email,
       document: user.document,
       profile: user.profile,
@@ -191,6 +201,7 @@ export class UserService {
       ...rest,
       updatedAt: new Date(),
       profile: Profile[profile],
+      accessKey: existingUser.accessKey,
     };
 
     const updatedUser = await this.prisma.user.update({
@@ -203,6 +214,7 @@ export class UserService {
       status: updatedUser.status,
       name: updatedUser.name,
       email: updatedUser.email,
+      accessKey: updatedUser.accessKey,
       document: updatedUser.document,
       profile: updatedUser.profile,
     };
@@ -258,5 +270,14 @@ export class UserService {
       }
       throw new EduException('DATABASE_ERROR');
     }
+  }
+
+  private generateUniqueAccessKey(): string {
+    return uuidv4().replace(/-/g, '').substr(0, 10);
+  }
+
+  private async isAccessKeyTaken(accessKey: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { accessKey } });
+    return !!user;
   }
 }
