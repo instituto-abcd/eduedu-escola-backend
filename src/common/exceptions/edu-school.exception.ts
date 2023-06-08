@@ -100,6 +100,26 @@ export const ErrorDetails = {
     message: 'Você não possui um ano letivo disponível para exclusão.',
     status: HttpStatus.NOT_FOUND,
   },
+  INVALID_EMAIL_OR_PASSWORD: {
+    message: 'Email ou senha inválidos.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
+  INVALID_TOKEN: {
+    message: 'Token inválido.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
+  MISSING_TOKEN: {
+    message: 'Token ausente.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
+  PASSWORDS_DO_NOT_MATCH: {
+    message: 'As senhas informadas não coincidem.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+  TOKEN_EXPIRED: {
+    message: 'Token expirado.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
 };
 
 export class EduException extends HttpException {

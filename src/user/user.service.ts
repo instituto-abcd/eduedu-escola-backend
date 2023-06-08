@@ -2,21 +2,23 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
-import { EduException } from '../exceptions/edu-school.exception';
+import { EduException } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from './dto/response/pagination-response.dto';
-import { Prisma, Profile, Status, User } from '@prisma/client';
+import { Prisma, Profile, Status } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
-import { ValidationUtilsService } from './validationUtils.service';
+import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { BcryptService } from '../common/services/bcrypt.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
-    private validationUtilsService: ValidationUtilsService,
+    private readonly validationUtilsService: ValidationUtilsService,
+    private readonly bcryptService: BcryptService,
   ) {}
 
   async create(
@@ -57,20 +59,21 @@ export class UserService {
       throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
+    const hashedPassword = await this.bcryptService.hashPassword('edu312');
     let accessKey = this.generateUniqueAccessKey();
 
     while (await this.isAccessKeyTaken(accessKey)) {
       accessKey = this.generateUniqueAccessKey();
     }
 
-    const data: any = {
+    const data: Prisma.UserUncheckedCreateInput = {
       ...createUserDto,
       document: document,
-      password: 'edu312',
-      schoolId,
-      profile: profile as any,
+      password: hashedPassword,
+      profile: profile as Profile,
       status: Status.ACTIVE,
       accessKey: accessKey,
+      schoolId,
     };
 
     const createdUser = await this.prisma.user.create({
@@ -83,7 +86,7 @@ export class UserService {
       status: createdUser.status,
       name: createdUser.name,
       email: createdUser.email,
-      accessKey: createdUser.accessKey, // Utilizar o accessKey salvo no usuário criado
+      accessKey: createdUser.accessKey,
       document: createdUser.document,
       profile: createdUser.profile,
     };
@@ -94,7 +97,12 @@ export class UserService {
     pageSize: number,
     filters: any,
   ): Promise<PaginationResponse<UserResponseDto>> {
-    if (pageNumber <= 0 || pageSize <= 0) {
+    if (
+      !Number.isInteger(pageNumber) ||
+      pageNumber <= 0 ||
+      !Number.isInteger(pageSize) ||
+      pageSize <= 0
+    ) {
       throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
 
@@ -166,6 +174,7 @@ export class UserService {
       profile: user.profile,
     };
   }
+
   async update(
     id: string,
     updateUserDto: UpdateUserRequestDto,
@@ -197,7 +206,7 @@ export class UserService {
     }
 
     const { profile, ...rest } = updateUserDto;
-    const data = {
+    const data: Prisma.UserUpdateInput = {
       ...rest,
       updatedAt: new Date(),
       profile: Profile[profile],

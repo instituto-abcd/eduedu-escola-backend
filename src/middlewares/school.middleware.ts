@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import { EduException } from '../exceptions/edu-school.exception';
+import { EduException } from '../common/exceptions/edu-school.exception';
 
 interface CustomRequest extends Request {
   schoolId?: string;

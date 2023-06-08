@@ -15,11 +15,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { SchoolYearService } from './school-year.service';
-import { ActivateSchoolYearDto } from './dto/activate-school-year.dto';
+import { ActivateSchoolYearRequestDto } from './dto/request/activate-school-year-request.dto';
 import { SchoolId } from '../common/school-id.decorator';
-import { SchoolYearSummary } from './dto/list-school-year.dto';
-import { EduException, ErrorDetails } from '../exceptions/edu-school.exception';
-import { DeleteSchoolYearResponseDto } from './dto/delete-school-year-response.dto';
+import { SchoolYearSummary } from './dto/response/list-school-year-response.dto';
+import { EduException, ErrorDetails } from '../common/exceptions/edu-school.exception';
+import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
 
 @ApiTags('Ano Letivo')
 @Controller('school-year')
@@ -67,7 +67,7 @@ export class SchoolYearController {
   @ApiResponse({ status: 200, description: 'Ano letivo ativado com sucesso' })
   @ApiResponse({ status: 404, description: 'Ano letivo não encontrado' })
   async activateSchoolYear(
-    @Body() activateSchoolYearDto: ActivateSchoolYearDto,
+    @Body() activateSchoolYearDto: ActivateSchoolYearRequestDto,
   ): Promise<void> {
     const { id } = activateSchoolYearDto;
     try {

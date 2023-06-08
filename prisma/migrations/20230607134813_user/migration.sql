@@ -57,6 +57,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "status" "Status" NOT NULL DEFAULT 'ACTIVE',
     "password" TEXT NOT NULL,
+    "accessKey" TEXT NOT NULL DEFAULT '',
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "document" TEXT NOT NULL,
@@ -84,11 +85,29 @@ CREATE TABLE "SchoolClassStudent" (
     CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("schoolClassId","studentId")
 );
 
+-- CreateTable
+CREATE TABLE "AuthToken" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "AuthToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_accessKey_key" ON "User"("accessKey");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_document_key" ON "User"("document");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AuthToken_token_key" ON "AuthToken"("token");
 
 -- AddForeignKey
 ALTER TABLE "SchoolClass" ADD CONSTRAINT "SchoolClass_schoolYearId_fkey" FOREIGN KEY ("schoolYearId") REFERENCES "SchoolYear"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -113,3 +132,6 @@ ALTER TABLE "SchoolClassStudent" ADD CONSTRAINT "SchoolClassStudent_schoolClassI
 
 -- AddForeignKey
 ALTER TABLE "SchoolClassStudent" ADD CONSTRAINT "SchoolClassStudent_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuthToken" ADD CONSTRAINT "AuthToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
