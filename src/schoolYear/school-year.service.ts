@@ -1,16 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { EduException } from '../exceptions/edu-school.exception';
+import { EduException } from '../common/exceptions/edu-school.exception';
 import { PrismaService } from '../prisma/prisma.service';
-import { ExternalApiService } from './external-api.service';
+import { DateApiService } from '../common/services/date-api.service';
 import { StatusSchoolYear } from '@prisma/client';
-import { SchoolYearSummary } from './dto/list-school-year.dto';
-import { DeleteSchoolYearResponseDto } from './dto/delete-school-year-response.dto';
+import { SchoolYearSummary } from './dto/response/list-school-year-response.dto';
+import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
 
 @Injectable()
 export class SchoolYearService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly externalApiService: ExternalApiService,
+    private readonly externalApiService: DateApiService,
   ) {}
 
   async isSchoolYearCreatable(year: number): Promise<boolean> {
@@ -38,7 +38,7 @@ export class SchoolYearService {
   }
 
   async createNextAvailableSchoolYear(schoolId: string): Promise<void> {
-    const currentYear = await this.externalApiService.getCurrentDateTime();
+    const currentYear = await this.externalApiService.getCurrentYear();
     const currentschoolYear = await this.isSchoolYearCreatable(currentYear);
 
     if (!currentschoolYear) {
@@ -55,7 +55,7 @@ export class SchoolYearService {
   }
 
   async findAllSchoolYears(): Promise<SchoolYearSummary[]> {
-    const currentYear = await this.externalApiService.getCurrentDateTime();
+    const currentYear = await this.externalApiService.getCurrentYear();
     const schoolYears = await this.prismaService.schoolYear.findMany({
       include: {
         schoolClasses: true,
@@ -119,7 +119,7 @@ export class SchoolYearService {
       throw new EduException('SCHOOL_YEAR_NOT_FOUND');
     }
 
-    const currentYear = await this.externalApiService.getCurrentDateTime();
+    const currentYear = await this.externalApiService.getCurrentYear();
 
     if (selectedSchoolYear.name === currentYear) {
       if (selectedSchoolYear.status === StatusSchoolYear.DRAFT) {

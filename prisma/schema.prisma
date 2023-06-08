@@ -26,8 +26,8 @@ model School {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   users       User[]
-  SchoolYear  SchoolYear[]
-  SchoolClass SchoolClass[]
+  schoolYear  SchoolYear[]
+  schoolClass SchoolClass[]
 }
 
 // Model for SchoolClass
@@ -86,7 +86,8 @@ model User {
   school          School            @relation(fields: [schoolId], references: [id])
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  UserSchoolClass UserSchoolClass[]
+  authTokens      AuthToken[]
+  userSchoolClass UserSchoolClass[]
 }
 
 // Model for UserSchoolClass
@@ -108,3 +109,15 @@ model SchoolClassStudent {
 
   @@id([schoolClassId, studentId])
 }
+
+// Model for AuthToken
+model AuthToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+

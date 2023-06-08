@@ -7,10 +7,11 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
-import { User } from './entities/user.entity';
+import { User } from './dto/user.entity';
 import { SchoolId } from '../common/school-id.decorator';
 import {
   ApiBadRequestResponse,
@@ -21,17 +22,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { PaginationResponse } from './dto/response/pagination-response.dto';
-import { EduException, ErrorDetails } from '../exceptions/edu-school.exception';
+import { ErrorDetails } from '../common/exceptions/edu-school.exception';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
+import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
 @Controller('user')
+@UseGuards(TeacherAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
