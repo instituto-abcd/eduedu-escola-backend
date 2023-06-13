@@ -5,10 +5,14 @@ import { SchoolMiddleware } from './middlewares/school.middleware';
 import { SchoolYearModule } from './schoolYear/school-year.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtEduModule } from './auth/jwt-edu.module';
+import { SchoolClassService } from './school-class/school-class.service';
+import { SchoolClassController } from './school-class/school-class.controller';
+import { SchoolClassModule } from './school-class/school-class.module';
 
 @Module({
-  imports: [UserModule, SchoolYearModule, AuthModule, JwtEduModule],
-  providers: [PrismaService],
+  imports: [UserModule, SchoolYearModule, AuthModule, JwtEduModule, SchoolClassModule],
+  providers: [PrismaService, SchoolClassService],
+  controllers: [SchoolClassController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

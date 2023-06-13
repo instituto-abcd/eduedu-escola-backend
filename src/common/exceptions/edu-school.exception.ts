@@ -124,6 +124,30 @@ export const ErrorDetails = {
     message: 'IDs não foram fornecidos.',
     status: HttpStatus.UNAUTHORIZED,
   },
+  IDS_TEACHER_REQUIRED: {
+    message: 'É necessário fornecer pelo menos um professor.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
+  ERROR_ASSOCIATING_TEACHERS: {
+    message: 'Erro ao associar os professores à turma.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  MISSING_NAME: {
+    message: 'O nome da turma é obrigatório.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  MISSING_SCHOOL_YEAR: {
+    message: 'O ID do ano letivo é obrigatório.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  MISSING_SCHOOL_GRADE: {
+    message: 'A série escolar é obrigatória.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  MISSING_SCHOOL_PERIOD: {
+    message: 'O período escolar é obrigatório.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
 
 export class EduException extends HttpException {
