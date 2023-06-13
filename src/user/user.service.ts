@@ -230,6 +230,10 @@ export class UserService {
   }
 
   async remove(ids: string[]): Promise<DeleteUserResponseDto> {
+    if (!ids || ids.length === 0) {
+      throw new EduException('IDS_REQUIRED');
+    }
+
     await this.prisma.userSchoolClass.deleteMany({
       where: {
         userId: {
@@ -258,6 +262,10 @@ export class UserService {
   ): Promise<InativeUserResponseDto> {
     try {
       const { ids } = requestDto;
+
+      if (!ids || ids.length === 0) {
+        throw new EduException('IDS_REQUIRED');
+      }
 
       const users = await this.prisma.user.findMany({
         where: { id: { in: ids } },
