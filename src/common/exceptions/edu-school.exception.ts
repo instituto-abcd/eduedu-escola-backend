@@ -120,6 +120,10 @@ export const ErrorDetails = {
     message: 'Token expirado.',
     status: HttpStatus.UNAUTHORIZED,
   },
+  IDS_REQUIRED: {
+    message: 'IDs não foram fornecidos.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
 };
 
 export class EduException extends HttpException {
