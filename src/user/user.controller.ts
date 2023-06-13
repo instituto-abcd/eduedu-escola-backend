@@ -29,12 +29,12 @@ import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
-import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
+// import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
 @Controller('user')
-@UseGuards(TeacherAuthGuard)
+// @UseGuards(TeacherAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
