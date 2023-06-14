@@ -36,7 +36,7 @@ export class AuthService {
       user.password,
     );
 
-    if (isPasswordValid) {
+    if (!isPasswordValid) {
       throw new EduException('INVALID_EMAIL_OR_PASSWORD');
     }
 
