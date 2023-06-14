@@ -25,7 +25,7 @@ export class UserService {
     createUserDto: CreateUserRequestDto,
     schoolId: string,
   ): Promise<UserResponseDto> {
-    const { name, email, profile } = createUserDto;
+    const { name, email, profile, password } = createUserDto;
     let { document } = createUserDto;
 
     if (!name || !email || !document || !profile) {
@@ -59,7 +59,7 @@ export class UserService {
       throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
-    const hashedPassword = await this.bcryptService.hashPassword('edu312');
+    const hashedPassword = await this.bcryptService.hashPassword(password);
     let accessKey = this.generateUniqueAccessKey();
 
     while (await this.isAccessKeyTaken(accessKey)) {
