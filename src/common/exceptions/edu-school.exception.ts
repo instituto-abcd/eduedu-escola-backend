@@ -148,6 +148,22 @@ export const ErrorDetails = {
     message: 'O período escolar é obrigatório.',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  DATABASE_ERROR_DELETE_SCHOOL_CLASS: {
+    message: 'Erro ao deletar a turma.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  SCHOOL_CLASS_NOT_FOUND: {
+    message: 'Turma não encontrada.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  TEACHER_NOT_FOUND: {
+    message: 'Professor não encontrada.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  UPDATE_ACCESS_CODE_ERROR: {
+    message: 'Erro ao atualizar o Código de Acesso.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
 
 export class EduException extends HttpException {

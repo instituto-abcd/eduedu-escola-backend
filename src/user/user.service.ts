@@ -10,8 +10,8 @@ import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
-import { v4 as uuidv4 } from 'uuid';
 import { BcryptService } from '../common/services/bcrypt.service';
+import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
 
 @Injectable()
 export class UserService {
@@ -60,11 +60,7 @@ export class UserService {
     }
 
     const hashedPassword = await this.bcryptService.hashPassword(password);
-    let accessKey = this.generateUniqueAccessKey();
-
-    while (await this.isAccessKeyTaken(accessKey)) {
-      accessKey = this.generateUniqueAccessKey();
-    }
+    const accessKey = this.generateUniqueAccessKey();
 
     const data: Prisma.UserUncheckedCreateInput = {
       ...createUserDto,
@@ -290,11 +286,79 @@ export class UserService {
   }
 
   private generateUniqueAccessKey(): string {
-    return uuidv4().replace(/-/g, '').substr(0, 10);
+    let accessKey = `${this.generateRandomLetters(
+      4,
+    )}${this.generateRandomNumbers(6)}`;
+
+    while (!this.isAccessKeyTaken(accessKey)) {
+      accessKey = `${this.generateRandomLetters(4)}${this.generateRandomNumbers(
+        6,
+      )}`;
+    }
+
+    return accessKey;
   }
 
-  private async isAccessKeyTaken(accessKey: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({ where: { accessKey } });
+  private generateRandomLetters(length: number): string {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      result += characters.charAt(randomIndex);
+    }
+
+    return result;
+  }
+
+  private generateRandomNumbers(length: number): string {
+    let result = '';
+
+    for (let i = 0; i < length; i++) {
+      const randomDigit = Math.floor(Math.random() * 10);
+      result += randomDigit.toString();
+    }
+
+    return result;
+  }
+
+  private isAccessKeyTaken(accessKey: string): boolean {
+    const user = this.prisma.user.findUnique({ where: { accessKey } });
     return !!user;
+  }
+
+  async getAccessCode(id: string): Promise<UserAccessCodeResponseDto> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+    return {
+      accessKey: user.accessKey,
+    };
+  }
+
+  async updateAccessCode(id: string): Promise<UserAccessCodeResponseDto> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    const data = {
+      accessKey: this.generateUniqueAccessKey(),
+    };
+
+    try {
+      await this.prisma.user.update({
+        where: { id: id },
+        data,
+      });
+      return {
+        accessKey: data.accessKey,
+      };
+    } catch (error) {
+      throw new EduException('UPDATE_ACCESS_CODE_ERROR');
+    }
   }
 }

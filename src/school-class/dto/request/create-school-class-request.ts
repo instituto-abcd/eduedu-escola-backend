@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateSchoolClassResponseDto {
+export class CreateSchoolClassRequestDto {
   @ApiProperty({ description: 'ID da classe escolar' })
   id: string;
 
