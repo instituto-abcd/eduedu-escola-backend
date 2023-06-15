@@ -26,6 +26,7 @@ export class CreateSchoolClassDto {
       'e57136f7-9df1-4644-b9a7-bfddfd799c77',
       '274f258c-cf3b-4bbc-b0cf-48a12f95657f',
     ],
+    type: [String],
   })
   teacherIds: string[];
 }

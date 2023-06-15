@@ -6,8 +6,8 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -29,6 +30,8 @@ import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
+import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
+
 // import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
 @ApiBearerAuth()
@@ -147,5 +150,33 @@ export class UserController {
     @Body() requestDto: InativeUserRequestDto,
   ): Promise<InativeUserResponseDto> {
     return this.userService.deactivateUsers(requestDto);
+  }
+
+  @Get(':id/access-code')
+  @ApiOperation({ summary: 'Obter Código de Acesso do Usuário' })
+  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Código de Acesso do Usuário',
+    type: UserAccessCodeResponseDto,
+  })
+  async getAccessCode(
+    @Param('id') userId: string,
+  ): Promise<UserAccessCodeResponseDto> {
+    return await this.userService.getAccessCode(userId);
+  }
+
+  @Put(':id/access-code')
+  @ApiOperation({ summary: 'Atualizar Código de Acesso do Usuário' })
+  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Código de Acesso atualizado do Usuário',
+    type: UserAccessCodeResponseDto,
+  })
+  async updateAccessCode(
+    @Param('id') userId: string,
+  ): Promise<UserAccessCodeResponseDto> {
+    return await this.userService.updateAccessCode(userId);
   }
 }
