@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateApiService } from '../common/services/date-api.service';
@@ -26,6 +26,16 @@ export class SchoolYearService {
 
     return schoolYears.length === 0;
   }
+  async isSchoolYearCreatableDraft(year: number): Promise<boolean> {
+    const schoolYears = await this.prismaService.schoolYear.findMany({
+      where: {
+        OR: [{ status: StatusSchoolYear.DRAFT }],
+        name: year,
+      },
+    });
+
+    return schoolYears.length === 1;
+  }
 
   async createSchoolYear(year: number, schoolId: string): Promise<void> {
     await this.prismaService.schoolYear.create({
@@ -44,7 +54,10 @@ export class SchoolYearService {
     if (!currentschoolYear) {
       const lastYear = currentYear + 1;
       const lastschoolYear = await this.isSchoolYearCreatable(lastYear);
-      if (lastschoolYear) {
+      const currentschoolYearDraft = await this.isSchoolYearCreatableDraft(
+        currentYear,
+      );
+      if (!currentschoolYearDraft && lastschoolYear) {
         await this.createSchoolYear(lastYear, schoolId);
       } else {
         throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
