@@ -73,6 +73,9 @@ export class SchoolYearService {
       include: {
         schoolClasses: true,
       },
+      orderBy: {
+        name: 'desc',
+      },
     });
 
     return await Promise.all(
