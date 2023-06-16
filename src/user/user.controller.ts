@@ -152,7 +152,7 @@ export class UserController {
     return this.userService.deactivateUsers(requestDto);
   }
 
-  @Get(':id/access-code')
+  @Get(':id/access-key')
   @ApiOperation({ summary: 'Obter Código de Acesso do Usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
   @ApiResponse({
@@ -166,7 +166,7 @@ export class UserController {
     return await this.userService.getAccessCode(userId);
   }
 
-  @Put(':id/access-code')
+  @Put(':id/access-key')
   @ApiOperation({ summary: 'Atualizar Código de Acesso do Usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
   @ApiResponse({
