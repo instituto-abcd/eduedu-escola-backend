@@ -6,7 +6,7 @@ import { FirestoreService } from './firestore.service';
 import { PlanetSync } from './schemas/sync-list.schema';
 
 @Injectable()
-export class ContentSyncService {
+export class PlanetSyncService {
   constructor(
     @InjectModel(Planet.name) private planetModel: Model<Planet>,
     @InjectModel(PlanetSync.name) private planetSyncModel: Model<PlanetSync>,

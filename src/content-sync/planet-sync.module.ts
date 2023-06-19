@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ContentSyncService } from './content-sync.service';
-import { ContentSyncController } from './content-sync.controller';
+import { PlanetSyncService } from './planet-sync.service';
+import { PlanetSyncController } from './planet-sync.controller';
 import { Planet, PlanetSchema } from './schemas/planet.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -14,8 +14,8 @@ import { PlanetSync, PlanetSyncSchema } from './schemas/sync-list.schema';
       { name: PlanetSync.name, schema: PlanetSyncSchema },
     ]),
   ],
-  controllers: [ContentSyncController],
-  providers: [ContentSyncService, PrismaService, FirestoreService],
-  exports: [ContentSyncModule],
+  controllers: [PlanetSyncController],
+  providers: [PlanetSyncService, PrismaService, FirestoreService],
+  exports: [PlanetSyncModule],
 })
-export class ContentSyncModule {}
+export class PlanetSyncModule {}

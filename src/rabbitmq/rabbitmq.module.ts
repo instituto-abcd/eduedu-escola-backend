@@ -3,8 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { connect, Connection, Channel, ConsumeMessage } from 'amqplib';
 import { rabbitmqConstants } from 'src/common/constants';
-import { ContentSyncModule } from 'src/content-sync/content-sync.module';
-import { ContentSyncService } from 'src/content-sync/content-sync.service';
+import { PlanetSyncModule } from 'src/content-sync/planet-sync.module';
+import { PlanetSyncService } from 'src/content-sync/planet-sync.service';
 import { FirestoreService } from 'src/content-sync/firestore.service';
 import { Planet, PlanetSchema } from 'src/content-sync/schemas/planet.schema';
 import {
@@ -14,21 +14,21 @@ import {
 
 @Module({
   imports: [
-    ContentSyncModule,
+    PlanetSyncModule,
     MongooseModule.forFeature([
       { name: Planet.name, schema: PlanetSchema },
       { name: PlanetSync.name, schema: PlanetSyncSchema },
     ]),
   ],
-  providers: [ContentSyncService, FirestoreService],
+  providers: [PlanetSyncService, FirestoreService],
 })
 export class RabbitMQModule implements OnModuleInit {
   private connection: Connection;
   private channel: Channel;
 
   constructor(
-    @Inject(ContentSyncService)
-    private readonly syncService: ContentSyncService,
+    @Inject(PlanetSyncService)
+    private readonly syncService: PlanetSyncService,
   ) {}
 
   async onModuleInit() {

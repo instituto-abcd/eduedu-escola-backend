@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { JwtEduModule } from './auth/jwt-edu.module';
-import { ContentSyncModule } from './content-sync/content-sync.module';
+import { PlanetSyncModule } from './content-sync/planet-sync.module';
 import { SchoolMiddleware } from './middlewares/school.middleware';
 import { PrismaService } from './prisma/prisma.service';
 import { SchoolClassController } from './school-class/school-class.controller';
@@ -28,7 +28,7 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
     AuthModule,
     JwtEduModule,
     SchoolClassModule,
-    ContentSyncModule,
+    PlanetSyncModule,
     RabbitMQModule,
   ],
   providers: [PrismaService, SchoolClassService],
@@ -36,9 +36,6 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(SchoolMiddleware)
-      .exclude('content-sync/(.*)')
-      .forRoutes('*');
+    consumer.apply(SchoolMiddleware).exclude('planet-sync/(.*)').forRoutes('*');
   }
 }
