@@ -19,4 +19,13 @@ export class FirestoreService {
 
     return docs;
   }
+
+  async getPlanet(planetId: string): Promise<Planet> {
+    const docRef = this.db.collection('planets').doc(planetId);
+    const docSnapshot = await docRef.get();
+
+    const doc = docSnapshot.data() as Planet;
+
+    return doc;
+  }
 }

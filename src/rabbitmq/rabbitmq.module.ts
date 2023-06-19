@@ -1,0 +1,60 @@
+import { Inject, Module, OnModuleInit } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+
+import { connect, Connection, Channel, ConsumeMessage } from 'amqplib';
+import { rabbitmqConstants } from 'src/common/constants';
+import { ContentSyncModule } from 'src/content-sync/content-sync.module';
+import { ContentSyncService } from 'src/content-sync/content-sync.service';
+import { FirestoreService } from 'src/content-sync/firestore.service';
+import { Planet, PlanetSchema } from 'src/content-sync/schemas/planet.schema';
+import {
+  PlanetSync,
+  PlanetSyncSchema,
+} from 'src/content-sync/schemas/sync-list.schema';
+
+@Module({
+  imports: [
+    ContentSyncModule,
+    MongooseModule.forFeature([
+      { name: Planet.name, schema: PlanetSchema },
+      { name: PlanetSync.name, schema: PlanetSyncSchema },
+    ]),
+  ],
+  providers: [ContentSyncService, FirestoreService],
+})
+export class RabbitMQModule implements OnModuleInit {
+  private connection: Connection;
+  private channel: Channel;
+
+  constructor(
+    @Inject(ContentSyncService)
+    private readonly syncService: ContentSyncService,
+  ) {}
+
+  async onModuleInit() {
+    this.connection = await connect(process.env.RABBITMQ_URI);
+    this.channel = await this.connection.createChannel();
+    await this.channel.assertQueue(rabbitmqConstants.queueName);
+
+    await this.channel.consume(
+      rabbitmqConstants.queueName,
+      this.handleMessage.bind(this),
+    );
+  }
+
+  async handleMessage(message: ConsumeMessage | null) {
+    if (message) {
+      const content = message.content.toString();
+      const response = JSON.parse(content) as { planetId: string };
+      const SYNC_ALLOWED = true;
+
+      if (!response.planetId || !SYNC_ALLOWED) return;
+      const sync = await this.syncService.addToSyncList(response.planetId);
+
+      if (sync._id) {
+        this.channel.ack(message);
+        console.log(`Planet ${response.planetId} added to sync list.`);
+      }
+    }
+  }
+}

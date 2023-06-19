@@ -5,8 +5,13 @@ import { ContentSyncService } from './content-sync.service';
 export class ContentSyncController {
   constructor(private readonly contentSyncService: ContentSyncService) {}
 
+  @Post()
+  sync() {
+    return this.contentSyncService.sync();
+  }
+
   @Post('sync-all')
-  create() {
+  syncAll() {
     return this.contentSyncService.syncAll();
   }
 }

@@ -11,16 +11,17 @@ import { SchoolClassModule } from './school-class/school-class.module';
 import { SchoolClassService } from './school-class/school-class.service';
 import { SchoolYearModule } from './schoolYear/school-year.module';
 import { UserModule } from './user/user.module';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(process.env.MONGO_URL, {
+    MongooseModule.forRoot(process.env.MONGO_URI, {
       auth: {
         username: process.env.MONGO_USER,
         password: process.env.MONGO_PASSWORD,
       },
-      dbName: 'eduedu-escola',
+      dbName: 'eduedu-escola-admin',
     }),
     UserModule,
     SchoolYearModule,
@@ -28,6 +29,7 @@ import { UserModule } from './user/user.module';
     JwtEduModule,
     SchoolClassModule,
     ContentSyncModule,
+    RabbitMQModule,
   ],
   providers: [PrismaService, SchoolClassService],
   controllers: [SchoolClassController],
