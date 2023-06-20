@@ -164,6 +164,10 @@ export const ErrorDetails = {
     message: 'Erro ao atualizar o Código de Acesso.',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  STUDENT_NOT_FOUND: {
+    message: 'Estudante não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
 
 export class EduException extends HttpException {
