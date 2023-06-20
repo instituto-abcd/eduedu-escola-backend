@@ -8,9 +8,17 @@ import { JwtEduModule } from './auth/jwt-edu.module';
 import { SchoolClassService } from './school-class/school-class.service';
 import { SchoolClassController } from './school-class/school-class.controller';
 import { SchoolClassModule } from './school-class/school-class.module';
+import { StudentModule } from './student/student.module';
 
 @Module({
-  imports: [UserModule, SchoolYearModule, AuthModule, JwtEduModule, SchoolClassModule],
+  imports: [
+    UserModule,
+    SchoolYearModule,
+    AuthModule,
+    JwtEduModule,
+    SchoolClassModule,
+    StudentModule,
+  ],
   providers: [PrismaService, SchoolClassService],
   controllers: [SchoolClassController],
 })

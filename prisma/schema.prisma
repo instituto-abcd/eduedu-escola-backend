@@ -67,6 +67,9 @@ model SchoolYear {
 // Model for Student
 model Student {
   id            String               @id @default(uuid())
+  name          String
+  registry      String               @default("")
+  status        Status               @default(ACTIVE)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   schoolClasses SchoolClassStudent[]
@@ -120,4 +123,3 @@ model AuthToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
-
