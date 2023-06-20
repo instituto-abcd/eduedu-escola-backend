@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationInfo } from './pagination-info.dto';
+import { PaginationInfo } from './pagination-info-response.dto';
 
 export class PaginationResponse<T> {
   @ApiProperty({ type: [Object] })

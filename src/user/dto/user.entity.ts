@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Profile } from '@prisma/client';
 
 export class User {
   @ApiProperty({ description: 'Identificador' })
@@ -14,5 +15,8 @@ export class User {
   document: string;
 
   @ApiProperty({ description: 'Perfil do usuário' })
-  profile: string;
+  profile: Profile;
+
+  @ApiProperty({ description: 'Identificador da Escola' })
+  schoolId: string;
 }

@@ -6,25 +6,38 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
+import { User } from './dto/user.entity';
 import { SchoolId } from '../common/school-id.decorator';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationResponse } from './dto/pagination-response.dto';
+import { PaginationResponse } from './dto/response/pagination-response.dto';
+import { ErrorDetails } from '../common/exceptions/edu-school.exception';
+import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
+import { UserResponseDto } from './dto/response/user-response.dto';
+import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
+import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
+import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
+import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
+import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
+
+// import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
-@Controller('users')
+@Controller('user')
+// @UseGuards(TeacherAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -32,23 +45,37 @@ export class UserController {
   @ApiResponse({
     status: 201,
     description: 'Usuário criado com sucesso',
-    type: User,
+    type: UserResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiResponse({
+    status: ErrorDetails.EMAIL_CONFLICT.status,
+    description: ErrorDetails.EMAIL_CONFLICT.message,
+  })
+  @ApiResponse({
+    status: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.status,
+    description: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.message,
+  })
+  @ApiOperation({ summary: 'Criar um novo usuário' })
   async createUser(
-    @Body() createUserDto: CreateUserDto,
+    @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
-  ): Promise<User> {
+  ): Promise<UserResponseDto> {
     return this.userService.create(createUserDto, schoolId);
   }
 
-  @Get()
+  @Get('all')
   @ApiResponse({
     status: 200,
     description: 'Usuários encontrados com sucesso',
     type: PaginationResponse,
   })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiResponse({
+    status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
+    description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
+  })
+  @ApiOperation({ summary: 'Obter todos os usuários' })
   async findAll(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
@@ -56,7 +83,7 @@ export class UserController {
     @Query('email') email?: string,
     @Query('document') document?: string,
     @Query('profile') profile?: string,
-  ): Promise<PaginationResponse<User>> {
+  ): Promise<PaginationResponse<UserResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
 
@@ -77,7 +104,8 @@ export class UserController {
     type: User,
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  async findOne(@Param('id') id: string): Promise<User> {
+  @ApiOperation({ summary: 'Obter usuário por ID' })
+  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
@@ -89,21 +117,66 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiOperation({ summary: 'Atualizar usuário por ID' })
   async update(
     @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+    @Body() updateUserDto: UpdateUserRequestDto,
+  ): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete()
   @ApiResponse({
     status: 200,
-    description: 'Usuário removido com sucesso',
-    type: User,
+    description: 'Usuários removidos com sucesso',
+    type: DeleteUserResponseDto,
   })
-  @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  async remove(@Param('id') id: string): Promise<User> {
-    return this.userService.remove(id);
+  @ApiOperation({ summary: 'Excluir usuários' })
+  async remove(
+    @Body() requestDto: DeleteUserRequestDto,
+  ): Promise<DeleteUserResponseDto> {
+    const { ids } = requestDto;
+    return this.userService.remove(ids);
+  }
+
+  @Post('inactivate')
+  @ApiOperation({ summary: 'Desativar usuários' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuários desativados com sucesso',
+    type: InativeUserRequestDto,
+  })
+  async deactivateUsers(
+    @Body() requestDto: InativeUserRequestDto,
+  ): Promise<InativeUserResponseDto> {
+    return this.userService.deactivateUsers(requestDto);
+  }
+
+  @Get(':id/access-key')
+  @ApiOperation({ summary: 'Obter Código de Acesso do Usuário' })
+  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Código de Acesso do Usuário',
+    type: UserAccessCodeResponseDto,
+  })
+  async getAccessCode(
+    @Param('id') userId: string,
+  ): Promise<UserAccessCodeResponseDto> {
+    return await this.userService.getAccessCode(userId);
+  }
+
+  @Put(':id/access-key')
+  @ApiOperation({ summary: 'Atualizar Código de Acesso do Usuário' })
+  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Código de Acesso atualizado do Usuário',
+    type: UserAccessCodeResponseDto,
+  })
+  async updateAccessCode(
+    @Param('id') userId: string,
+  ): Promise<UserAccessCodeResponseDto> {
+    return await this.userService.updateAccessCode(userId);
   }
 }

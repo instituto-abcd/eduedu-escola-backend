@@ -1,71 +1,116 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from './entities/user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { EduSchoolException } from '../exceptions/edu-school.exception';
-import { PaginationResponse } from './dto/pagination-response.dto';
+import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
+import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
+import { EduException } from '../common/exceptions/edu-school.exception';
+import { PaginationResponse } from './dto/response/pagination-response.dto';
+import { Prisma, Profile, Status } from '@prisma/client';
+import { UserResponseDto } from './dto/response/user-response.dto';
+import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
+import { ValidationUtilsService } from '../common/utils/validation-utils.service';
+import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
+import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
+import { BcryptService } from '../common/services/bcrypt.service';
+import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly validationUtilsService: ValidationUtilsService,
+    private readonly bcryptService: BcryptService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto, schoolId: string): Promise<User> {
-    const { email, document } = createUserDto;
+  async create(
+    createUserDto: CreateUserRequestDto,
+    schoolId: string,
+  ): Promise<UserResponseDto> {
+    const { name, email, profile, password } = createUserDto;
+    let { document } = createUserDto;
+
+    if (!name || !email || !document || !profile) {
+      throw new EduException('MISSING_REQUIRED_FIELDS');
+    }
+
+    if (!this.validationUtilsService.isValidEmail(email)) {
+      throw new EduException('INVALID_EMAIL');
+    }
+
+    document = document.replace(/-/g, '');
+    if (!this.validationUtilsService.isValidDocument(document)) {
+      throw new EduException('INVALID_DOCUMENT');
+    }
+
+    if (!this.validationUtilsService.isValidProfile(profile)) {
+      throw new EduException('INVALID_PROFILE');
+    }
 
     const existingEmail = await this.prisma.user.findUnique({
       where: { email },
     });
     if (existingEmail) {
-      throw new EduSchoolException(
-        'EMAIL_CONFLICT',
-        'E-mail já cadastrado',
-        HttpStatus.CONFLICT,
-      );
+      throw new EduException('EMAIL_CONFLICT');
     }
 
     const existingPersonalDocument = await this.prisma.user.findUnique({
       where: { document },
     });
     if (existingPersonalDocument) {
-      throw new EduSchoolException(
-        'PERSONAL_DOCUMENT_CONFLICT',
-        'Documento pessoal já cadastrado',
-        HttpStatus.CONFLICT,
-      );
+      throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
-    return this.prisma.user.create({
-      data: {
-        ...createUserDto,
-        schoolId,
-        status: 'ACTIVE',
-        password: '',
-      },
+    const hashedPassword = await this.bcryptService.hashPassword(password);
+    const accessKey = this.generateUniqueAccessKey();
+
+    const data: Prisma.UserUncheckedCreateInput = {
+      ...createUserDto,
+      document: document,
+      password: hashedPassword,
+      profile: profile as Profile,
+      status: Status.ACTIVE,
+      accessKey: accessKey,
+      schoolId,
+    };
+
+    const createdUser = await this.prisma.user.create({
+      data,
       include: { school: true },
     });
+
+    return {
+      id: createdUser.id,
+      status: createdUser.status,
+      name: createdUser.name,
+      email: createdUser.email,
+      accessKey: createdUser.accessKey,
+      document: createdUser.document,
+      profile: createdUser.profile,
+    };
   }
 
   async findAll(
     pageNumber: number,
     pageSize: number,
     filters: any,
-  ): Promise<PaginationResponse<User>> {
-    if (pageNumber <= 0 || pageSize <= 0) {
-      throw new EduSchoolException(
-        'BAD_REQUEST',
-        'Número da página ou tamanho por página inválido',
-        HttpStatus.BAD_REQUEST,
-      );
+  ): Promise<PaginationResponse<UserResponseDto>> {
+    if (
+      !Number.isInteger(pageNumber) ||
+      pageNumber <= 0 ||
+      !Number.isInteger(pageSize) ||
+      pageSize <= 0
+    ) {
+      throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
 
     const { name, email, document, profile } = filters || {};
 
-    const where = {
-      name: name ? { contains: name } : undefined,
-      email: email ? { contains: email } : undefined,
-      document: document ? { contains: document } : undefined,
-      profile: profile ? { equals: profile } : undefined,
+    const where: Prisma.UserWhereInput = {
+      name: name ? { contains: name, mode: 'insensitive' } : undefined,
+      email: email ? { contains: email, mode: 'insensitive' } : undefined,
+      document: document
+        ? { contains: document, mode: 'insensitive' }
+        : undefined,
+      profile: profile ? { equals: Profile[profile] } : undefined,
     };
 
     try {
@@ -92,43 +137,47 @@ export class UserService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      return new PaginationResponse(users, pagination);
+      const responseUsers: UserResponseDto[] = users.map((user) => ({
+        id: user.id,
+        status: user.status,
+        name: user.name,
+        email: user.email,
+        accessKey: user.accessKey,
+        document: user.document,
+        profile: user.profile,
+      }));
+
+      return new PaginationResponse(responseUsers, pagination);
     } catch (error) {
-      throw new EduSchoolException(
-        'DATABASE_ERROR',
-        'Database error occurred',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new EduException('DATABASE_ERROR');
     }
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new EduSchoolException(
-        'USER_NOT_FOUND',
-        'Usuário não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
+      throw new EduException('USER_NOT_FOUND');
     }
 
-    return user;
+    return {
+      id: user.id,
+      status: user.status,
+      name: user.name,
+      accessKey: user.accessKey,
+      email: user.email,
+      document: user.document,
+      profile: user.profile,
+    };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserRequestDto,
+  ): Promise<UserResponseDto> {
     const existingUser = await this.prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
-      throw new EduSchoolException(
-        'USER_NOT_FOUND',
-        'Usuário não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const data = { ...updateUserDto };
-    if (data && data.schoolId) {
-      delete data.schoolId;
+      throw new EduException('USER_NOT_FOUND');
     }
 
     if (updateUserDto.email) {
@@ -136,11 +185,7 @@ export class UserService {
         where: { email: updateUserDto.email, id: { not: id } },
       });
       if (existingEmail) {
-        throw new EduSchoolException(
-          'EMAIL_CONFLICT',
-          'E-mail já cadastrado por outro usuário',
-          HttpStatus.CONFLICT,
-        );
+        throw new EduException('EMAIL_CONFLICT');
       }
     }
 
@@ -152,24 +197,168 @@ export class UserService {
         },
       });
       if (existingPersonalDocument) {
-        throw new EduSchoolException(
-          'PERSONAL_DOCUMENT_CONFLICT',
-          'Documento pessoal já cadastrado por outro usuário',
-          HttpStatus.CONFLICT,
-        );
+        throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
       }
     }
 
-    return this.prisma.user.update({
+    const { profile, ...rest } = updateUserDto;
+    const data: Prisma.UserUpdateInput = {
+      ...rest,
+      updatedAt: new Date(),
+      profile: Profile[profile],
+      accessKey: existingUser.accessKey,
+    };
+
+    const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: {
-        ...data,
-        updated_at: new Date(),
-      },
+      data,
     });
+
+    return {
+      id: updatedUser.id,
+      status: updatedUser.status,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      accessKey: updatedUser.accessKey,
+      document: updatedUser.document,
+      profile: updatedUser.profile,
+    };
   }
 
-  async remove(id: string): Promise<User> {
-    return this.prisma.user.delete({ where: { id } });
+  async remove(ids: string[]): Promise<DeleteUserResponseDto> {
+    if (!ids || ids.length === 0) {
+      throw new EduException('IDS_REQUIRED');
+    }
+
+    await this.prisma.userSchoolClass.deleteMany({
+      where: {
+        userId: {
+          in: ids,
+        },
+      },
+    });
+
+    const deleteResult = await this.prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+
+    if (deleteResult.count === 0) {
+      throw new EduException('USERS_NOT_FOUND');
+    }
+
+    return { success: true };
+  }
+
+  async deactivateUsers(
+    requestDto: InativeUserRequestDto,
+  ): Promise<InativeUserResponseDto> {
+    try {
+      const { ids } = requestDto;
+
+      if (!ids || ids.length === 0) {
+        throw new EduException('IDS_REQUIRED');
+      }
+
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: ids } },
+      });
+
+      const existingUserIds = users.map((user) => user.id);
+
+      await this.prisma.user.updateMany({
+        where: { id: { in: existingUserIds }, status: Status.ACTIVE },
+        data: { status: Status.INACTIVE },
+      });
+
+      const success = existingUserIds.length > 0;
+
+      return { success };
+    } catch (error) {
+      if (error instanceof EduException) {
+        throw error;
+      }
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  private generateUniqueAccessKey(): string {
+    let accessKey = `${this.generateRandomLetters(
+      4,
+    )}${this.generateRandomNumbers(6)}`;
+
+    while (!this.isAccessKeyTaken(accessKey)) {
+      accessKey = `${this.generateRandomLetters(4)}${this.generateRandomNumbers(
+        6,
+      )}`;
+    }
+
+    return accessKey;
+  }
+
+  private generateRandomLetters(length: number): string {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      result += characters.charAt(randomIndex);
+    }
+
+    return result;
+  }
+
+  private generateRandomNumbers(length: number): string {
+    let result = '';
+
+    for (let i = 0; i < length; i++) {
+      const randomDigit = Math.floor(Math.random() * 10);
+      result += randomDigit.toString();
+    }
+
+    return result;
+  }
+
+  private isAccessKeyTaken(accessKey: string): boolean {
+    const user = this.prisma.user.findUnique({ where: { accessKey } });
+    return !!user;
+  }
+
+  async getAccessCode(id: string): Promise<UserAccessCodeResponseDto> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+    return {
+      accessKey: user.accessKey,
+    };
+  }
+
+  async updateAccessCode(id: string): Promise<UserAccessCodeResponseDto> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    const data = {
+      accessKey: this.generateUniqueAccessKey(),
+    };
+
+    try {
+      await this.prisma.user.update({
+        where: { id: id },
+        data,
+      });
+      return {
+        accessKey: data.accessKey,
+      };
+    } catch (error) {
+      throw new EduException('UPDATE_ACCESS_CODE_ERROR');
+    }
   }
 }
