@@ -3,14 +3,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { connect, Connection, Channel, ConsumeMessage } from 'amqplib';
 import { rabbitmqConstants } from 'src/common/constants';
-import { PlanetSyncModule } from 'src/content-sync/planet-sync.module';
-import { PlanetSyncService } from 'src/content-sync/planet-sync.service';
-import { FirestoreService } from 'src/content-sync/firestore.service';
-import { Planet, PlanetSchema } from 'src/content-sync/schemas/planet.schema';
+import { PlanetSyncModule } from 'src/planet-sync/planet-sync.module';
+import { PlanetSyncService } from 'src/planet-sync/planet-sync.service';
+import { FirestoreService } from 'src/planet-sync/firestore.service';
+import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
 import {
   PlanetSync,
   PlanetSyncSchema,
-} from 'src/content-sync/schemas/sync-list.schema';
+} from 'src/planet-sync/schemas/sync-list.schema';
 
 @Module({
   imports: [

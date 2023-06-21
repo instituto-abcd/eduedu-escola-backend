@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { JwtEduModule } from './auth/jwt-edu.module';
-import { PlanetSyncModule } from './content-sync/planet-sync.module';
+import { PlanetSyncModule } from './planet-sync/planet-sync.module';
 import { SchoolMiddleware } from './middlewares/school.middleware';
 import { PrismaService } from './prisma/prisma.service';
 import { SchoolClassController } from './school-class/school-class.controller';
