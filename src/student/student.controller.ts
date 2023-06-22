@@ -25,9 +25,9 @@ import {
 } from '../common/exceptions/edu-school.exception';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { DeleteStudentResponseDto } from './dto/response/delete-student-response.dto';
-import { PaginationResponse } from './dto/response/pagination-student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 
 @Controller('student')
 @ApiTags('Estudante')

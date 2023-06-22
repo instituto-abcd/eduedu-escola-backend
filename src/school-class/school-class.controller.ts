@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -23,6 +24,7 @@ import { DeleteSchoolClassRequestDto } from './dto/request/delete-school-class-r
 import { DeleteSchoolClassResponseDto } from './dto/response/delete-school-class-response.dto';
 import { SchoolClassResponseDto } from './dto/response/school-class-response';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -44,14 +46,26 @@ export class SchoolClassController {
   }
 
   @Get('all')
-  @ApiOperation({ summary: 'Obter todas as turmas' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de todas as turmas',
-    type: [SchoolClassResponseDto],
-  })
-  async getAllSchoolClasses(): Promise<SchoolClassResponseDto[]> {
-    return await this.schoolClassService.findAllUserSchoolClasses();
+  async findAll(
+    @Query('page-number') page?: string,
+    @Query('page-size') limit?: string,
+    @Query('name') name?: string,
+    @Query('schoolGrade') schoolGrade?: string,
+    @Query('schoolPeriod') schoolPeriod?: string,
+    @Query('schoolYearName') schoolYearName?: number,
+    @Query('teacherName') teacherName?: string,
+  ): Promise<PaginationResponse<SchoolClassResponseDto>> {
+    const pageNumber = parseInt(page || '1');
+    const pageSize = parseInt(limit || '10');
+    const filters = {
+      name,
+      schoolGrade,
+      schoolPeriod,
+      schoolYearName,
+      teacherName,
+    };
+
+    return this.schoolClassService.findAll(pageNumber, pageSize, filters);
   }
 
   @Get(':id')
