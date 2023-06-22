@@ -13,6 +13,8 @@ import { SchoolYearModule } from './schoolYear/school-year.module';
 import { UserModule } from './user/user.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { StudentModule } from './student/student.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -23,6 +25,10 @@ import { StudentModule } from './student/student.module';
         password: process.env.MONGO_PASSWORD,
       },
       dbName: 'eduedu-escola-admin',
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'dist', 'templates'),
+      serveRoot: '/static',
     }),
     UserModule,
     SchoolYearModule,

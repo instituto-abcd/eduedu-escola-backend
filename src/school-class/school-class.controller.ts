@@ -7,6 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -25,6 +28,11 @@ import { DeleteSchoolClassResponseDto } from './dto/response/delete-school-class
 import { SchoolClassResponseDto } from './dto/response/school-class-response';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
+import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { EduException } from '../common/exceptions/edu-school.exception';
+import { Response } from 'express';
+import { join } from 'path';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -108,5 +116,55 @@ export class SchoolClassController {
   ): Promise<DeleteSchoolClassResponseDto> {
     const { ids } = requestDto;
     return this.schoolClassService.remove(ids);
+  }
+
+  @Post('/:id/students/spreadsheet')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Adicionar alunos por meio de uma planilha' })
+  @ApiResponse({ status: 201, description: 'Alunos adicionados com sucesso' })
+  @ApiResponse({ status: 400, description: 'Erro na validação da planilha' })
+  async addStudentsFromSpreadsheet(
+    @Param('id') schoolClassId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ items: CreateStudentRequestDto[] }> {
+    const studentsData: CreateStudentRequestDto[] =
+      await this.schoolClassService.parseSpreadsheet(file);
+
+    const validationErrors: string[] =
+      this.schoolClassService.validateSpreadsheetData(studentsData);
+
+    if (validationErrors.length > 0) {
+      throw new EduException('INVALID_FIELDS_WORKSHEET');
+    }
+
+    const createdStudents = await this.schoolClassService.addStudentsToClass(
+      schoolClassId,
+      studentsData,
+    );
+
+    return { items: createdStudents };
+  }
+
+  @Get('/students/spreadsheet-template')
+  @ApiOperation({
+    summary: 'Download do modelo de planilha para upload de alunos',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Modelo de planilha baixado com sucesso',
+  })
+  downloadSpreadsheetTemplate(@Res() res: Response): void {
+    try {
+      const templateFilePath = join(
+        __dirname,
+        '..',
+        '..',
+        'templates',
+        'eduedu-escola-aluno-template.xlsx',
+      );
+      res.download(templateFilePath, 'eduedu-escola-aluno-template.xlsx');
+    } catch (e) {
+      throw new EduException('UNKNOWN_ERROR');
+    }
   }
 }
