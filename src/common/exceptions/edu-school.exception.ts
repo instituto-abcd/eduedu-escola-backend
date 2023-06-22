@@ -168,6 +168,19 @@ export const ErrorDetails = {
     message: 'Estudante não encontrado.',
     status: HttpStatus.NOT_FOUND,
   },
+  INVALID_FIELDS_WORKSHEET: {
+    message: 'Campos inválidos na planilha',
+    status: HttpStatus.NOT_FOUND,
+  },
+  STUDENT_CREATION_FAILED: {
+    message: 'Falha ao criar o estudante.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+
+  SCHOOL_CLASS_STUDENT_CREATION_FAILED: {
+    message: 'Falha ao associar o estudante à turma.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
 
 export class EduException extends HttpException {
