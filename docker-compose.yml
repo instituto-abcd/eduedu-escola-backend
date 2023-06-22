@@ -1,18 +1,26 @@
 version: '3.4'
 
 services:
-
   database:
     container_name: database
     image: postgres:latest
     hostname: localhost
     ports:
-        - 5432:5432
+      - 5432:5432
     environment:
-        - POSTGRES_USER=postgres
-        - POSTGRES_PASSWORD=senhaS3creta
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=senhaS3creta
     networks:
       - app-network
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: senhaS3creta
+    ports:
+      - 27017:27017
 
 networks:
   app-network:

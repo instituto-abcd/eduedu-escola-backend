@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
-import { PaginationResponse } from './dto/response/pagination-response.dto';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { Prisma, Profile, Status } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
@@ -12,6 +12,7 @@ import { InativeUserResponseDto } from './dto/response/inative-user-response.dto
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
+import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
 
 @Injectable()
 export class UserService {
@@ -285,38 +286,35 @@ export class UserService {
     }
   }
 
+  // Podem ser Gerados até 1.000.000 sem repetição
   private generateUniqueAccessKey(): string {
-    let accessKey = `${this.generateRandomLetters(
-      4,
-    )}${this.generateRandomNumbers(6)}`;
+    const object = this.getRandomObject();
+    const number = this.generateRandomNumber(1, 9999);
+
+    let accessKey = `${object}${this.formatNumber(number, 4)}`;
 
     while (!this.isAccessKeyTaken(accessKey)) {
-      accessKey = `${this.generateRandomLetters(4)}${this.generateRandomNumbers(
-        6,
-      )}`;
+      accessKey = `${object}${this.formatNumber(number, 4)}`;
     }
 
     return accessKey;
   }
 
-  private generateRandomLetters(length: number): string {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      result += characters.charAt(randomIndex);
-    }
-
-    return result;
+  private getRandomObject(): ObjectAccessKeyEnum {
+    const objects = Object.values(ObjectAccessKeyEnum);
+    const randomIndex = Math.floor(Math.random() * objects.length);
+    return objects[randomIndex];
   }
 
-  private generateRandomNumbers(length: number): string {
-    let result = '';
+  private generateRandomNumber(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
 
-    for (let i = 0; i < length; i++) {
-      const randomDigit = Math.floor(Math.random() * 10);
-      result += randomDigit.toString();
+  private formatNumber(number: number, length: number): string {
+    let result = number.toString();
+
+    while (result.length < length) {
+      result = '0' + result;
     }
 
     return result;
