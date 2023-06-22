@@ -5,9 +5,9 @@ import { UpdateStudentRequestDto } from './dto/request/update-student-request.dt
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { Prisma, Status } from '@prisma/client';
 import { StudentResponseDto } from './dto/response/student-response.dto';
-import { PaginationResponse } from './dto/response/pagination-student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 
 @Injectable()
 export class StudentService {

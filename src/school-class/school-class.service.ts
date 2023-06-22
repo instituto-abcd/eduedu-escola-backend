@@ -5,6 +5,9 @@ import { EduException } from '../common/exceptions/edu-school.exception';
 import { CreateSchoolClassResponseDto } from './dto/response/create-school-class-response';
 import { SchoolClassResponseDto } from './dto/response/school-class-response';
 import { DeleteUserResponseDto } from '../user/dto/response/delete-user-response.dto';
+import { PaginationInfo } from '../common/pagination/pagination-info-response.dto';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class SchoolClassService {
@@ -46,30 +49,91 @@ export class SchoolClassService {
     };
   }
 
-  async findAllUserSchoolClasses(): Promise<SchoolClassResponseDto[]> {
-    const userSchoolClasses = await this.prismaService.userSchoolClass.findMany(
-      {
-        include: {
-          schoolClass: {
-            include: {
-              schoolYear: true,
-            },
-          },
-          user: true,
-        },
-      },
-    );
+  async findAll(
+    pageNumber: number,
+    pageSize: number,
+    filters: any,
+  ): Promise<PaginationResponse<SchoolClassResponseDto>> {
+    if (
+      !Number.isInteger(pageNumber) ||
+      pageNumber <= 0 ||
+      !Number.isInteger(pageSize) ||
+      pageSize <= 0
+    ) {
+      throw new EduException('INVALID_PAGINATION_PARAMETERS');
+    }
 
-    const groupedClasses = new Map<string, SchoolClassResponseDto>();
+    const skip = (pageNumber - 1) * pageSize;
 
-    for (const userSchoolClass of userSchoolClasses) {
-      const { schoolClass } = userSchoolClass;
-      const classId = schoolClass.id;
+    const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } =
+      filters || {};
 
-      let schoolClassResponse = groupedClasses.get(classId);
+    try {
+      const where: Prisma.SchoolClassWhereInput = {};
 
-      if (!schoolClassResponse) {
-        schoolClassResponse = {
+      if (name !== undefined) {
+        where.name = { equals: name };
+      }
+
+      if (schoolGrade !== undefined) {
+        where.schoolGrade = { equals: schoolGrade };
+      }
+
+      if (schoolPeriod !== undefined) {
+        where.schoolPeriod = { equals: schoolPeriod };
+      }
+
+      if (schoolYearName !== undefined) {
+        const schoolYear = await this.prismaService.schoolYear.findFirst({
+          where: { name: Number(schoolYearName) },
+          select: { id: true },
+        });
+
+        if (schoolYear !== null) {
+          where.schoolYearId = schoolYear.id;
+        }
+
+      }
+
+      if (teacherName !== undefined) {
+        const teachers = await this.prismaService.user.findMany({
+          where: { name: teacherName },
+          select: { id: true },
+        });
+
+        if (teachers.length > 0) {
+          const teacherIds = teachers.map((teacher) => teacher.id);
+          where.users = { some: { userId: { in: teacherIds } } };
+        }
+      }
+
+      const totalCount = await this.prismaService.schoolClass.count({
+        where,
+      });
+
+      const schoolClasses = await this.prismaService.schoolClass.findMany({
+        where,
+        skip,
+        take: pageSize,
+        include: { schoolYear: true, users: { include: { user: true } } },
+      });
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      const pagination: PaginationInfo = {
+        totalItems: totalCount,
+        pageSize,
+        pageNumber,
+        totalPages,
+        previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
+        nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
+        lastPage: totalPages,
+        hasPreviousPage: pageNumber > 1,
+        hasNextPage: pageNumber < totalPages,
+      };
+
+      const responseSchoolClasses: SchoolClassResponseDto[] = schoolClasses.map(
+        (schoolClass) => ({
           id: schoolClass.id,
           name: schoolClass.name,
           schoolGrade: schoolClass.schoolGrade,
@@ -78,19 +142,20 @@ export class SchoolClassService {
             id: schoolClass.schoolYear.id,
             name: schoolClass.schoolYear.name,
           },
-          teachers: [],
-        };
+          teachers: schoolClass.users.map((user) => ({
+            id: user.user.id,
+            name: user.user.name,
+          })),
+        }),
+      );
 
-        groupedClasses.set(classId, schoolClassResponse);
-      }
-
-      schoolClassResponse.teachers.push({
-        id: userSchoolClass.user.id,
-        name: userSchoolClass.user.name,
-      });
+      return {
+        items: responseSchoolClasses,
+        pagination,
+      };
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
     }
-
-    return Array.from(groupedClasses.values());
   }
 
   async findOne(schoolClassId: string): Promise<SchoolClassResponseDto> {

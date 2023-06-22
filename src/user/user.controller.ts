@@ -22,7 +22,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationResponse } from './dto/response/pagination-response.dto';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { ErrorDetails } from '../common/exceptions/edu-school.exception';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UserResponseDto } from './dto/response/user-response.dto';
