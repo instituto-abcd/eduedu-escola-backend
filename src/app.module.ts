@@ -15,6 +15,7 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { StudentModule } from './student/student.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { join } from 'path';
     PlanetSyncModule,
     RabbitMQModule,
     StudentModule,
+    SettingsModule,
   ],
   providers: [PrismaService, SchoolClassService],
   controllers: [SchoolClassController],

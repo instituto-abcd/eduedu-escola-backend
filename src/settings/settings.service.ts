@@ -1,0 +1,141 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Settings } from './dto/settings.entity';
+import { UpdateSettingsDto } from './dto/update-settings';
+import { UpdateSchoolNameDto } from './dto/update-school-name';
+import { BcryptService } from '../common/services/bcrypt.service';
+import { EduException } from '../common/exceptions/edu-school.exception';
+
+@Injectable()
+export class SettingsService {
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly bcryptService: BcryptService,
+  ) {}
+
+  async getSettingsBySchoolId(schoolId: string): Promise<Settings> {
+    if (!schoolId) {
+      throw new EduException('MISSING_REQUIRED_FIELDS');
+    }
+
+    const settings = await this.prismaService.settings.findUnique({
+      where: { schoolId },
+      include: {
+        school: {
+          select: { id: true, name: true, createdAt: true, updatedAt: true },
+        },
+      },
+    });
+
+    if (!settings) {
+      throw new EduException('SETTINGS_NOT_FOUND');
+    }
+
+    return {
+      id: settings.id,
+      schoolName: settings.school?.name,
+      synchronizationPlanets: settings.synchronizationPlanets,
+      smtpHostName: settings.smtpHostName,
+      smtpUserName: settings.smtpUserName,
+      smtpPassword: settings.smtpPassword,
+      sslIsActive: settings.sslIsActive,
+      schoolId: settings.schoolId,
+      createdAt: settings.createdAt,
+      updatedAt: settings.updatedAt,
+    };
+  }
+
+  async updateSettings(
+    schoolId: string,
+    updateSettingsDto: UpdateSettingsDto,
+  ): Promise<Settings> {
+    if (!schoolId) {
+      throw new EduException('MISSING_REQUIRED_FIELDS');
+    }
+    const settings = await this.getSettingsBySchoolId(schoolId);
+
+    const updateData: any = {};
+
+    if (updateSettingsDto.synchronizationPlanets !== undefined) {
+      updateData.synchronizationPlanets =
+        updateSettingsDto.synchronizationPlanets;
+    }
+
+    if (updateSettingsDto.smtpHostName !== undefined) {
+      updateData.smtpHostName = updateSettingsDto.smtpHostName;
+    }
+
+    if (updateSettingsDto.smtpUserName !== undefined) {
+      updateData.smtpUserName = updateSettingsDto.smtpUserName;
+    }
+
+    if (updateSettingsDto.smtpPassword !== undefined) {
+      updateData.smtpPassword = await this.bcryptService.hashPassword(
+        updateSettingsDto.smtpPassword,
+      );
+    }
+
+    if (updateSettingsDto.sslIsActive !== undefined) {
+      updateData.sslIsActive = updateSettingsDto.sslIsActive;
+    }
+
+    if (updateSettingsDto.schoolName !== undefined) {
+      settings.schoolName = updateSettingsDto.schoolName;
+      updateData.school = { update: { name: updateSettingsDto.schoolName } };
+    }
+
+    const updatedSettings = await this.prismaService.settings.update({
+      where: { id: settings.id },
+      data: updateData,
+    });
+
+    return {
+      id: updatedSettings.id,
+      schoolName: settings.schoolName,
+      synchronizationPlanets: updatedSettings.synchronizationPlanets,
+      smtpHostName: updatedSettings.smtpHostName,
+      smtpUserName: updatedSettings.smtpUserName,
+      smtpPassword: updatedSettings.smtpPassword,
+      sslIsActive: updatedSettings.sslIsActive,
+      schoolId: updatedSettings.schoolId,
+      createdAt: updatedSettings.createdAt,
+      updatedAt: updatedSettings.updatedAt,
+    };
+  }
+
+  async updateSchoolName(
+    schoolId: string,
+    updateSchoolNameDto: UpdateSchoolNameDto,
+  ): Promise<Settings> {
+    const { schoolName } = updateSchoolNameDto;
+
+    if (!schoolId || !schoolName) {
+      throw new EduException('MISSING_REQUIRED_FIELDS');
+    }
+
+    const school = await this.prismaService.school.update({
+      where: { id: schoolId },
+      data: { name: updateSchoolNameDto.schoolName },
+    });
+
+    const settings = await this.getSettingsBySchoolId(schoolId);
+
+    const updatedSettings = await this.prismaService.settings.update({
+      where: { id: settings.id },
+      data: { school: { update: { name: updateSchoolNameDto.schoolName } } },
+    });
+
+    return {
+      id: updatedSettings.id,
+      schoolName: school.name,
+      synchronizationPlanets: updatedSettings.synchronizationPlanets,
+      smtpHostName: updatedSettings.smtpHostName,
+      smtpUserName: updatedSettings.smtpUserName,
+      smtpPassword: updatedSettings.smtpPassword,
+      sslIsActive: updatedSettings.sslIsActive,
+      schoolId: updatedSettings.schoolId,
+      createdAt: updatedSettings.createdAt,
+      updatedAt: updatedSettings.updatedAt,
+    };
+  }
+}

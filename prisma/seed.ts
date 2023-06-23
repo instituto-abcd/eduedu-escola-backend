@@ -13,6 +13,19 @@ async function main() {
     },
   });
 
+  const settings = await prismaClient.settings.create({
+    data: {
+      id: uuidv4(),
+      synchronizationPlanets: true,
+      smtpHostName: 'smtp.office365.com',
+      smtpUserName: 'suporte@eduedu.com.br',
+      smtpPassword:
+        '$2b$10$eMCiyozJb3ChrOm55B4lt.3bIpx5GjXEQFtCeWT0166INp/PsdDT6',
+      sslIsActive: true,
+      schoolId: schoolId,
+    },
+  });
+
   // TODO: Criar usuários apenas em Dev
   const users = await prismaClient.user.createMany({
     data: [

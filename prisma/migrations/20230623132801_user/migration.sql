@@ -100,6 +100,21 @@ CREATE TABLE "AuthToken" (
     CONSTRAINT "AuthToken_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Settings" (
+    "id" TEXT NOT NULL,
+    "synchronizationPlanets" BOOLEAN NOT NULL,
+    "smtpHostName" TEXT NOT NULL,
+    "smtpUserName" TEXT NOT NULL,
+    "smtpPassword" TEXT NOT NULL,
+    "sslIsActive" BOOLEAN NOT NULL,
+    "schoolId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Settings_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_accessKey_key" ON "User"("accessKey");
 
@@ -111,6 +126,9 @@ CREATE UNIQUE INDEX "User_document_key" ON "User"("document");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "AuthToken_token_key" ON "AuthToken"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Settings_schoolId_key" ON "Settings"("schoolId");
 
 -- AddForeignKey
 ALTER TABLE "SchoolClass" ADD CONSTRAINT "SchoolClass_schoolYearId_fkey" FOREIGN KEY ("schoolYearId") REFERENCES "SchoolYear"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -138,3 +156,6 @@ ALTER TABLE "SchoolClassStudent" ADD CONSTRAINT "SchoolClassStudent_studentId_fk
 
 -- AddForeignKey
 ALTER TABLE "AuthToken" ADD CONSTRAINT "AuthToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Settings" ADD CONSTRAINT "Settings_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
