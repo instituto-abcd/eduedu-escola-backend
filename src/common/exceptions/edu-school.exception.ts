@@ -181,6 +181,10 @@ export const ErrorDetails = {
     message: 'Falha ao associar o estudante à turma.',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  SETTINGS_NOT_FOUND: {
+    message: 'Configuração não encontrada.',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
 
 export class EduException extends HttpException {
