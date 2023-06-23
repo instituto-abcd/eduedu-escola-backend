@@ -5,6 +5,7 @@ import { DateApiService } from '../common/services/date-api.service';
 import { StatusSchoolYear } from '@prisma/client';
 import { SchoolYearSummary } from './dto/response/list-school-year-response.dto';
 import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
+import { SchoolYearResponse } from './dto/response/school-year-response';
 
 @Injectable()
 export class SchoolYearService {
@@ -26,6 +27,7 @@ export class SchoolYearService {
 
     return schoolYears.length === 0;
   }
+
   async isSchoolYearCreatableDraft(year: number): Promise<boolean> {
     const schoolYears = await this.prismaService.schoolYear.findMany({
       where: {
@@ -37,8 +39,11 @@ export class SchoolYearService {
     return schoolYears.length === 1;
   }
 
-  async createSchoolYear(year: number, schoolId: string): Promise<void> {
-    await this.prismaService.schoolYear.create({
+  async createSchoolYear(
+    year: number,
+    schoolId: string,
+  ): Promise<SchoolYearResponse> {
+    return this.prismaService.schoolYear.create({
       data: {
         name: year,
         schoolId: schoolId,
@@ -47,23 +52,30 @@ export class SchoolYearService {
     });
   }
 
-  async createNextAvailableSchoolYear(schoolId: string): Promise<void> {
+  async createNextAvailableSchoolYear(
+    schoolId: string,
+  ): Promise<SchoolYearResponse> {
     const currentYear = await this.externalApiService.getCurrentYear();
-    const currentschoolYear = await this.isSchoolYearCreatable(currentYear);
+    const currentSchoolYearCreatable = await this.isSchoolYearCreatable(
+      currentYear,
+    );
 
-    if (!currentschoolYear) {
+    if (!currentSchoolYearCreatable) {
       const lastYear = currentYear + 1;
-      const lastschoolYear = await this.isSchoolYearCreatable(lastYear);
-      const currentschoolYearDraft = await this.isSchoolYearCreatableDraft(
+      const lastSchoolYearCreatable = await this.isSchoolYearCreatable(
+        lastYear,
+      );
+      const currentSchoolYearDraft = await this.isSchoolYearCreatableDraft(
         currentYear,
       );
-      if (!currentschoolYearDraft && lastschoolYear) {
-        await this.createSchoolYear(lastYear, schoolId);
+
+      if (!currentSchoolYearDraft && lastSchoolYearCreatable) {
+        return await this.createSchoolYear(lastYear, schoolId);
       } else {
         throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
       }
     } else {
-      await this.createSchoolYear(currentYear, schoolId);
+      return await this.createSchoolYear(currentYear, schoolId);
     }
   }
 
@@ -135,49 +147,42 @@ export class SchoolYearService {
       throw new EduException('SCHOOL_YEAR_NOT_FOUND');
     }
 
-    const currentYear = await this.externalApiService.getCurrentYear();
+    if (selectedSchoolYear.status === StatusSchoolYear.DRAFT) {
+      await this.prismaService.schoolYear.update({
+        where: { id },
+        data: {
+          status: StatusSchoolYear.ACTIVE,
+        },
+      });
 
-    if (selectedSchoolYear.name === currentYear) {
-      if (selectedSchoolYear.status === StatusSchoolYear.DRAFT) {
-        await this.prismaService.schoolYear.update({
-          where: { id },
-          data: {
+      const lastYear = selectedSchoolYear.name - 1;
+
+      const schoolLastYear = await this.prismaService.schoolYear.findFirst({
+        where: { name: lastYear },
+      });
+
+      if (schoolLastYear != null) {
+        const previousYears = await this.prismaService.schoolYear.findMany({
+          where: {
+            name: { lte: lastYear },
+            schoolId: schoolLastYear.schoolId,
             status: StatusSchoolYear.ACTIVE,
           },
         });
 
-        const lastYear = currentYear - 1;
-
-        const schoolLastYear = await this.prismaService.schoolYear.findFirst({
-          where: { name: lastYear },
+        await this.prismaService.schoolYear.updateMany({
+          where: {
+            id: { in: previousYears.map((year) => year.id) },
+          },
+          data: {
+            status: StatusSchoolYear.INACTIVE,
+          },
         });
-
-        if (schoolLastYear != null) {
-          const previousYears = await this.prismaService.schoolYear.findMany({
-            where: {
-              name: { lte: lastYear },
-              schoolId: schoolLastYear.schoolId,
-              status: StatusSchoolYear.ACTIVE,
-            },
-          });
-
-          await this.prismaService.schoolYear.updateMany({
-            where: {
-              id: { in: previousYears.map((year) => year.id) },
-            },
-            data: {
-              status: StatusSchoolYear.INACTIVE,
-            },
-          });
-        }
-      } else if (selectedSchoolYear.status === StatusSchoolYear.ACTIVE) {
-        throw new EduException('SCHOOL_YEAR_IS_ALREADY_ACTIVE');
-      } else if (selectedSchoolYear.status === StatusSchoolYear.INACTIVE) {
-        throw new EduException('SCHOOL_YEAR_IS_INACTIVE');
       }
-    } else {
-      if (selectedSchoolYear)
-        throw new EduException('SCHOOL_YEAR_CANNOT_BE_ACTIVATED');
+    } else if (selectedSchoolYear.status === StatusSchoolYear.ACTIVE) {
+      throw new EduException('SCHOOL_YEAR_IS_ALREADY_ACTIVE');
+    } else if (selectedSchoolYear.status === StatusSchoolYear.INACTIVE) {
+      throw new EduException('SCHOOL_YEAR_IS_INACTIVE');
     }
   }
 

@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserModule } from '../user/user.module';
-import { SchoolYearModule } from '../schoolYear/school-year.module';
+import { SchoolYearModule } from '../school-year/school-year.module';
 import { DateApiService } from '../common/services/date-api.service';
 import { BcryptService } from '../common/services/bcrypt.service';
 
