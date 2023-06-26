@@ -54,7 +54,7 @@ export class SchoolYearService {
 
   async createNextAvailableSchoolYear(
     schoolId: string,
-  ): Promise<SchoolYearResponse> {
+  ): Promise<SchoolYearSummary> {
     const currentYear = await this.externalApiService.getCurrentYear();
     const currentSchoolYearCreatable = await this.isSchoolYearCreatable(
       currentYear,
@@ -70,13 +70,39 @@ export class SchoolYearService {
       );
 
       if (!currentSchoolYearDraft && lastSchoolYearCreatable) {
-        return await this.createSchoolYear(lastYear, schoolId);
+        const createdSchoolYear = await this.createSchoolYear(
+          lastYear,
+          schoolId,
+        );
+        return this.mapToSchoolYearSummary(createdSchoolYear);
       } else {
         throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
       }
     } else {
-      return await this.createSchoolYear(currentYear, schoolId);
+      const createdSchoolYear = await this.createSchoolYear(
+        currentYear,
+        schoolId,
+      );
+      return this.mapToSchoolYearSummary(createdSchoolYear);
     }
+  }
+
+  private mapToSchoolYearSummary(
+    schoolYear: SchoolYearResponse,
+  ): SchoolYearSummary {
+    return {
+      id: schoolYear.id,
+      name: schoolYear.name,
+      status: schoolYear.status,
+      createdAt: schoolYear.createdAt,
+      updatedAt: schoolYear.updatedAt,
+      summary: {
+        totalSchoolClasses: 0,
+        totalStudents: 0,
+        totalTeachers: 0,
+        buttonEnabled: false,
+      },
+    };
   }
 
   async findAllSchoolYears(): Promise<SchoolYearSummary[]> {

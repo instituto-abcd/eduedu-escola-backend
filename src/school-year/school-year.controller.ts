@@ -32,7 +32,7 @@ export class SchoolYearController {
   })
   async createSchoolYear(
     @SchoolId() schoolId: string,
-  ): Promise<SchoolYearResponse> {
+  ): Promise<SchoolYearSummary> {
     try {
       return await this.schoolYearService.createNextAvailableSchoolYear(
         schoolId,
