@@ -6,12 +6,15 @@ export class CreateSchoolClassDto {
 
   @ApiProperty({
     description: 'Série escolar',
-    example: 'PRIMEIRO_ANO_FUNDAMENTAL',
+    enum: ['FIRST_GRADE', 'SECOND_GRADE', 'THIRD_GRADE'],
   })
-  schoolGrade: string;
+  schoolGrade: 'FIRST_GRADE' | 'SECOND_GRADE' | 'THIRD_GRADE';
 
-  @ApiProperty({ description: 'Período escolar', example: 'MANHA' })
-  schoolPeriod: string;
+  @ApiProperty({
+    description: 'Período escolar',
+    enum: ['MORNING', 'AFTERNOON', 'FULL'],
+  })
+  schoolPeriod: 'MORNING' | 'AFTERNOON' | 'FULL';
 
   @ApiProperty({
     description: 'ID do ano letivo',
