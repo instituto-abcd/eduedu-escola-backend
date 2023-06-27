@@ -5,12 +5,17 @@ import { UpdateSettingsDto } from './dto/update-settings';
 import { UpdateSchoolNameDto } from './dto/update-school-name';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { EduException } from '../common/exceptions/edu-school.exception';
+import { StatusResponseDto } from './dto/status-response.dto';
+import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
+import { UserResponseDto } from 'src/user/dto/response/user-response.dto';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class SettingsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly bcryptService: BcryptService,
+    private readonly userService: UserService,
   ) {}
 
   async getSettingsBySchoolId(schoolId: string): Promise<Settings> {
@@ -140,5 +145,42 @@ export class SettingsService {
       createdAt: updatedSettings.createdAt,
       updatedAt: updatedSettings.updatedAt,
     };
+  }
+
+  async getStatus(): Promise<StatusResponseDto> {
+    const owner = await this.prismaService.user.findFirst({
+      where: { owner: true },
+    });
+
+    const completedOwnerSetup = Boolean(owner);
+
+    const schoolName = await this.prismaService.school.findFirst({
+      where: {
+        name: {
+          notIn: ['', 'EduEdu Escola'],
+        },
+      },
+    });
+
+    const completedSchoolSetup = Boolean(schoolName);
+
+    return {
+      completedOwnerSetup,
+      completedSchoolSetup,
+    };
+  }
+
+  async createOwner(
+    data: CreateUserRequestDto,
+    schoolId: string,
+  ): Promise<UserResponseDto> {
+    const result = await this.userService.create(data, schoolId);
+
+    const owner = await this.prismaService.user.update({
+      where: { id: result.id },
+      data: { owner: true },
+    });
+
+    return owner;
   }
 }

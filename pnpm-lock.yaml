@@ -50,6 +50,9 @@ dependencies:
   bcrypt:
     specifier: ^5.1.0
     version: 5.1.0
+  crypto-js:
+    specifier: ^4.1.1
+    version: 4.1.1
   firebase-admin:
     specifier: ^11.9.0
     version: 11.9.0
@@ -85,6 +88,9 @@ devDependencies:
   '@types/amqplib':
     specifier: ^0.10.1
     version: 0.10.1
+  '@types/crypto-js':
+    specifier: ^4.1.1
+    version: 4.1.1
   '@types/express':
     specifier: ^4.17.17
     version: 4.17.17
@@ -1508,6 +1514,10 @@ packages:
     resolution: {integrity: sha512-t73xJJrvdTjXrn4jLS9VSGRbz0nUY3cl2DMGDU48lKl+HR9dbbjW2A9r3g40VA++mQpy6uuHg33gy7du2BKpog==}
     dev: true
 
+  /@types/crypto-js@4.1.1:
+    resolution: {integrity: sha512-BG7fQKZ689HIoc5h+6D2Dgq1fABRa0RbBWKBd9SP/MVRVXROflpm5fhwyATX5duFmbStzyzyycPB8qUYKDH3NA==}
+    dev: true
+
   /@types/eslint-scope@3.7.4:
     resolution: {integrity: sha512-9K4zoImiZc3HlIp6AVUDE4CWYx22a+lhSZMYNpbjW04+YF0KWj4pJXnEMjdnFTiQibFFmElcsasJXDbdI/EPhA==}
     dependencies:
@@ -2815,6 +2825,10 @@ packages:
       shebang-command: 2.0.0
       which: 2.0.2
     dev: true
+
+  /crypto-js@4.1.1:
+    resolution: {integrity: sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw==}
+    dev: false
 
   /date-fns@2.30.0:
     resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}

@@ -8,7 +8,10 @@ export class CreateUserRequestDto {
   @ApiProperty({ description: 'Senha do Usuário', example: 'password123' })
   password: string;
 
-  @ApiProperty({ description: 'Email do Usuário', example: 'johndoe@example.com' })
+  @ApiProperty({
+    description: 'Email do Usuário',
+    example: 'johndoe@example.com',
+  })
   email: string;
 
   @ApiProperty({ description: 'CPF do Usuário', example: '12345678900' })
