@@ -19,8 +19,7 @@ async function main() {
       synchronizationPlanets: true,
       smtpHostName: 'smtp.office365.com',
       smtpUserName: 'suporte@eduedu.com.br',
-      smtpPassword:
-        '$2b$10$eMCiyozJb3ChrOm55B4lt.3bIpx5GjXEQFtCeWT0166INp/PsdDT6',
+      smtpPassword: 'U2FsdGVkX1+EbIw/A/eKm214FZsLg0Afb3E2/rEfJrU=', //123456
       sslIsActive: true,
       schoolId: schoolId,
     },
@@ -39,6 +38,7 @@ async function main() {
         email: 'abluschke0@hc360.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU001',
       },
       {
@@ -51,6 +51,7 @@ async function main() {
         email: 'smunson1@blinklist.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU002',
       },
       {
@@ -63,6 +64,7 @@ async function main() {
         email: 'fleavry2@ameblo.jp',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU003',
       },
       {
@@ -75,6 +77,7 @@ async function main() {
         email: 'rcornish3@telegraph.co.uk',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU004',
       },
       {
@@ -87,6 +90,7 @@ async function main() {
         email: 'hhorder4@discuz.net',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU005',
       },
       {
@@ -99,6 +103,7 @@ async function main() {
         email: 'jvice5@wufoo.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU006',
       },
       {
@@ -111,6 +116,7 @@ async function main() {
         email: 'nbenn6@squarespace.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU007',
       },
       {
@@ -123,6 +129,7 @@ async function main() {
         email: 'lcalcraft7@theatlantic.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU08',
       },
       {
@@ -135,6 +142,7 @@ async function main() {
         email: 'cyuryichev8@nationalgeographic.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU009',
       },
       {
@@ -147,6 +155,7 @@ async function main() {
         email: 'mmela9@ustream.tv',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU010',
       },
       {
@@ -159,6 +168,7 @@ async function main() {
         email: 'gdencs0@uol.com.br',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU011',
       },
       {
@@ -171,6 +181,7 @@ async function main() {
         email: 'chammond1@photobucket.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU012',
       },
       {
@@ -183,6 +194,7 @@ async function main() {
         email: 'clarvor2@icio.us',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU013',
       },
       {
@@ -195,6 +207,7 @@ async function main() {
         email: 'gmallall3@dot.gov',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU014',
       },
       {
@@ -207,6 +220,7 @@ async function main() {
         email: 'nmanueau4@prweb.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU015',
       },
       {
@@ -219,6 +233,7 @@ async function main() {
         email: 'gbirkby5@usa.gov',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU016',
       },
       {
@@ -231,6 +246,7 @@ async function main() {
         email: 'mandri6@bloglovin.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU017',
       },
       {
@@ -243,6 +259,7 @@ async function main() {
         email: 'gfreke7@un.org',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU018',
       },
       {
@@ -255,6 +272,7 @@ async function main() {
         email: 'caneley8@accuweather.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU019',
       },
       {
@@ -267,6 +285,7 @@ async function main() {
         email: 'pmartineau9@mapquest.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU020',
       },
       {
@@ -279,6 +298,7 @@ async function main() {
         email: 'cmateia@bing.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU021',
       },
       {
@@ -291,6 +311,7 @@ async function main() {
         email: 'ypantonb@hud.gov',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU022',
       },
       {
@@ -303,6 +324,7 @@ async function main() {
         email: 'kstockleyc@forbes.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU023',
       },
       {
@@ -315,6 +337,7 @@ async function main() {
         email: 'ecudd@arizona.edu',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU024',
       },
       {
@@ -327,6 +350,7 @@ async function main() {
         email: 'kalane@cdbaby.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU025',
       },
       {
@@ -339,6 +363,7 @@ async function main() {
         email: 'jdunniomf@dedecms.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU026',
       },
       {
@@ -351,6 +376,7 @@ async function main() {
         email: 'nteasdalemarkieg@jugem.jp',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU027',
       },
       {
@@ -363,6 +389,7 @@ async function main() {
         email: 'kblackallerh@mashable.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU028',
       },
       {
@@ -375,6 +402,7 @@ async function main() {
         email: 'rwalnei@virginia.edu',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU029',
       },
       {
@@ -387,6 +415,7 @@ async function main() {
         email: 'oobrienj@lycos.com',
         profile: Profile.TEACHER,
         schoolId: schoolId,
+        owner: true,
         accessKey: 'EDUEDU030',
       },
     ],

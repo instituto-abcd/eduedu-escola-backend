@@ -5,6 +5,12 @@ CREATE TYPE "Status" AS ENUM ('ACTIVE', 'INACTIVE');
 CREATE TYPE "Profile" AS ENUM ('DIRECTOR', 'TEACHER');
 
 -- CreateEnum
+CREATE TYPE "SchoolGradeEnum" AS ENUM ('FIRST_GRADE', 'SECOND_GRADE', 'THIRD_GRADE');
+
+-- CreateEnum
+CREATE TYPE "SchoolPeriodEnum" AS ENUM ('MORNING', 'AFTERNOON', 'FULL');
+
+-- CreateEnum
 CREATE TYPE "StatusSchoolYear" AS ENUM ('ACTIVE', 'INACTIVE', 'DRAFT');
 
 -- CreateTable
@@ -21,8 +27,8 @@ CREATE TABLE "School" (
 CREATE TABLE "SchoolClass" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "schoolGrade" TEXT NOT NULL,
-    "schoolPeriod" TEXT NOT NULL,
+    "schoolGrade" "SchoolGradeEnum" NOT NULL,
+    "schoolPeriod" "SchoolPeriodEnum" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "schoolYearId" TEXT NOT NULL,
@@ -58,6 +64,7 @@ CREATE TABLE "Student" (
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
+    "owner" BOOLEAN NOT NULL DEFAULT false,
     "status" "Status" NOT NULL DEFAULT 'ACTIVE',
     "password" TEXT NOT NULL,
     "accessKey" TEXT NOT NULL DEFAULT '',

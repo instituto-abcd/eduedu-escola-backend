@@ -35,8 +35,8 @@ model School {
 model SchoolClass {
   id           String               @id @default(uuid())
   name         String
-  schoolGrade  String
-  schoolPeriod String
+  schoolGrade  SchoolGradeEnum
+  schoolPeriod SchoolPeriodEnum
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   schoolYearId String
@@ -45,6 +45,18 @@ model SchoolClass {
   students     SchoolClassStudent[]
   schoolId     String?
   School       School?              @relation(fields: [schoolId], references: [id])
+}
+
+enum SchoolGradeEnum {
+  FIRST_GRADE
+  SECOND_GRADE
+  THIRD_GRADE
+}
+
+enum SchoolPeriodEnum {
+  MORNING
+  AFTERNOON
+  FULL
 }
 
 enum StatusSchoolYear {
@@ -79,6 +91,7 @@ model Student {
 // Model for User
 model User {
   id              String            @id @default(uuid())
+  owner           Boolean           @default(false)
   status          Status            @default(ACTIVE)
   password        String
   accessKey       String            @unique @default("")

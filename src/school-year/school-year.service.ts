@@ -17,10 +17,6 @@ export class SchoolYearService {
   async isSchoolYearCreatable(year: number): Promise<boolean> {
     const schoolYears = await this.prismaService.schoolYear.findMany({
       where: {
-        OR: [
-          { status: StatusSchoolYear.ACTIVE },
-          { status: StatusSchoolYear.DRAFT },
-        ],
         name: year,
       },
     });
@@ -74,7 +70,10 @@ export class SchoolYearService {
           lastYear,
           schoolId,
         );
-        return this.mapToSchoolYearSummary(createdSchoolYear);
+        const buttonEnabled =
+          createdSchoolYear.status === 'DRAFT' &&
+          currentYear == createdSchoolYear.name;
+        return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
       } else {
         throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
       }
@@ -83,13 +82,33 @@ export class SchoolYearService {
         currentYear,
         schoolId,
       );
-      return this.mapToSchoolYearSummary(createdSchoolYear);
+      const buttonEnabled =
+        createdSchoolYear.status === 'DRAFT' &&
+        currentYear == createdSchoolYear.name;
+      return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
     }
+
+    throw new EduException('SCHOOL_YEAR_ALREADY_EXISTS');
   }
 
-  private mapToSchoolYearSummary(
+  private async mapToSchoolYearSummary(
     schoolYear: SchoolYearResponse,
-  ): SchoolYearSummary {
+    buttonEnabled: boolean,
+  ): Promise<SchoolYearSummary> {
+    const totalSchoolClasses = await this.prismaService.schoolClass.count({
+      where: {
+        schoolYearId: schoolYear.id,
+      },
+    });
+    const totalStudents = await this.getNumberOfStudents(schoolYear.id);
+    const totalTeachers = await this.prismaService.userSchoolClass.count({
+      where: {
+        schoolClass: {
+          schoolYearId: schoolYear.id,
+        },
+      },
+    });
+
     return {
       id: schoolYear.id,
       name: schoolYear.name,
@@ -97,10 +116,10 @@ export class SchoolYearService {
       createdAt: schoolYear.createdAt,
       updatedAt: schoolYear.updatedAt,
       summary: {
-        totalSchoolClasses: 0,
-        totalStudents: 0,
-        totalTeachers: 0,
-        buttonEnabled: false,
+        totalSchoolClasses,
+        totalStudents,
+        totalTeachers,
+        buttonEnabled,
       },
     };
   }

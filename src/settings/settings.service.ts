@@ -31,13 +31,15 @@ export class SettingsService {
       throw new EduException('SETTINGS_NOT_FOUND');
     }
 
+    const password = this.bcryptService.decrypt(settings.smtpPassword);
+
     return {
       id: settings.id,
       schoolName: settings.school?.name,
       synchronizationPlanets: settings.synchronizationPlanets,
       smtpHostName: settings.smtpHostName,
       smtpUserName: settings.smtpUserName,
-      smtpPassword: settings.smtpPassword,
+      smtpPassword: password,
       sslIsActive: settings.sslIsActive,
       schoolId: settings.schoolId,
       createdAt: settings.createdAt,
@@ -70,7 +72,7 @@ export class SettingsService {
     }
 
     if (updateSettingsDto.smtpPassword !== undefined) {
-      updateData.smtpPassword = await this.bcryptService.hashPassword(
+      updateData.smtpPassword = this.bcryptService.encrypt(
         updateSettingsDto.smtpPassword,
       );
     }
@@ -95,7 +97,7 @@ export class SettingsService {
       synchronizationPlanets: updatedSettings.synchronizationPlanets,
       smtpHostName: updatedSettings.smtpHostName,
       smtpUserName: updatedSettings.smtpUserName,
-      smtpPassword: updatedSettings.smtpPassword,
+      smtpPassword: updateSettingsDto.smtpPassword,
       sslIsActive: updatedSettings.sslIsActive,
       schoolId: updatedSettings.schoolId,
       createdAt: updatedSettings.createdAt,
@@ -125,13 +127,14 @@ export class SettingsService {
       data: { school: { update: { name: updateSchoolNameDto.schoolName } } },
     });
 
+    const password = this.bcryptService.decrypt(settings.smtpPassword);
     return {
       id: updatedSettings.id,
       schoolName: school.name,
       synchronizationPlanets: updatedSettings.synchronizationPlanets,
       smtpHostName: updatedSettings.smtpHostName,
       smtpUserName: updatedSettings.smtpUserName,
-      smtpPassword: updatedSettings.smtpPassword,
+      smtpPassword: password,
       sslIsActive: updatedSettings.sslIsActive,
       schoolId: updatedSettings.schoolId,
       createdAt: updatedSettings.createdAt,
