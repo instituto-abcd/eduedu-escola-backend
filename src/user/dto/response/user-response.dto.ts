@@ -5,6 +5,9 @@ export class UserResponseDto {
   @ApiProperty({ description: 'Identificador do Usuário', example: '1a2b3c4d' })
   id: string;
 
+  @ApiProperty({ description: 'Proprietário', example: true })
+  owner: boolean;
+
   @ApiProperty({ description: 'Código de Acesso', example: 'abcd1234' })
   accessKey: string;
 
