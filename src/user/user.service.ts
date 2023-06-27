@@ -4,7 +4,7 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma, Profile, Status } from '@prisma/client';
+import { Prisma, Profile, Status, User } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
@@ -13,13 +13,16 @@ import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
 import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
+import { AuthService } from 'src/auth/auth.service';
+import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 
 @Injectable()
 export class UserService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly validationUtilsService: ValidationUtilsService,
     private readonly bcryptService: BcryptService,
+    private readonly authService: AuthService,
   ) {}
 
   async create(
@@ -46,14 +49,14 @@ export class UserService {
       throw new EduException('INVALID_PROFILE');
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
+    const existingEmail = await this.prismaService.user.findUnique({
       where: { email },
     });
     if (existingEmail) {
       throw new EduException('EMAIL_CONFLICT');
     }
 
-    const existingPersonalDocument = await this.prisma.user.findUnique({
+    const existingPersonalDocument = await this.prismaService.user.findUnique({
       where: { document },
     });
     if (existingPersonalDocument) {
@@ -73,7 +76,7 @@ export class UserService {
       schoolId,
     };
 
-    const createdUser = await this.prisma.user.create({
+    const createdUser = await this.prismaService.user.create({
       data,
       include: { school: true },
     });
@@ -116,8 +119,8 @@ export class UserService {
 
     try {
       const [totalCount, users] = await Promise.all([
-        this.prisma.user.count({ where }),
-        this.prisma.user.findMany({
+        this.prismaService.user.count({ where }),
+        this.prismaService.user.findMany({
           where,
           skip: (pageNumber - 1) * pageSize,
           take: pageSize,
@@ -155,7 +158,7 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prismaService.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new EduException('USER_NOT_FOUND');
@@ -176,13 +179,15 @@ export class UserService {
     id: string,
     updateUserDto: UpdateUserRequestDto,
   ): Promise<UserResponseDto> {
-    const existingUser = await this.prisma.user.findUnique({ where: { id } });
+    const existingUser = await this.prismaService.user.findUnique({
+      where: { id },
+    });
     if (!existingUser) {
       throw new EduException('USER_NOT_FOUND');
     }
 
     if (updateUserDto.email) {
-      const existingEmail = await this.prisma.user.findFirst({
+      const existingEmail = await this.prismaService.user.findFirst({
         where: { email: updateUserDto.email, id: { not: id } },
       });
       if (existingEmail) {
@@ -191,7 +196,7 @@ export class UserService {
     }
 
     if (updateUserDto.document) {
-      const existingPersonalDocument = await this.prisma.user.findFirst({
+      const existingPersonalDocument = await this.prismaService.user.findFirst({
         where: {
           document: updateUserDto.document,
           id: { not: id },
@@ -210,7 +215,7 @@ export class UserService {
       accessKey: existingUser.accessKey,
     };
 
-    const updatedUser = await this.prisma.user.update({
+    const updatedUser = await this.prismaService.user.update({
       where: { id },
       data,
     });
@@ -231,7 +236,7 @@ export class UserService {
       throw new EduException('IDS_REQUIRED');
     }
 
-    await this.prisma.userSchoolClass.deleteMany({
+    await this.prismaService.userSchoolClass.deleteMany({
       where: {
         userId: {
           in: ids,
@@ -239,7 +244,7 @@ export class UserService {
       },
     });
 
-    const deleteResult = await this.prisma.user.deleteMany({
+    const deleteResult = await this.prismaService.user.deleteMany({
       where: {
         id: {
           in: ids,
@@ -264,13 +269,13 @@ export class UserService {
         throw new EduException('IDS_REQUIRED');
       }
 
-      const users = await this.prisma.user.findMany({
+      const users = await this.prismaService.user.findMany({
         where: { id: { in: ids } },
       });
 
       const existingUserIds = users.map((user) => user.id);
 
-      await this.prisma.user.updateMany({
+      await this.prismaService.user.updateMany({
         where: { id: { in: existingUserIds }, status: Status.ACTIVE },
         data: { status: Status.INACTIVE },
       });
@@ -321,12 +326,12 @@ export class UserService {
   }
 
   private isAccessKeyTaken(accessKey: string): boolean {
-    const user = this.prisma.user.findUnique({ where: { accessKey } });
+    const user = this.prismaService.user.findUnique({ where: { accessKey } });
     return !!user;
   }
 
   async getAccessCode(id: string): Promise<UserAccessCodeResponseDto> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prismaService.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new EduException('USER_NOT_FOUND');
@@ -337,7 +342,7 @@ export class UserService {
   }
 
   async updateAccessCode(id: string): Promise<UserAccessCodeResponseDto> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prismaService.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new EduException('USER_NOT_FOUND');
@@ -348,7 +353,7 @@ export class UserService {
     };
 
     try {
-      await this.prisma.user.update({
+      await this.prismaService.user.update({
         where: { id: id },
         data,
       });
@@ -358,5 +363,32 @@ export class UserService {
     } catch (error) {
       throw new EduException('UPDATE_ACCESS_CODE_ERROR');
     }
+  }
+
+  async updatePassword(
+    user: User,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<AuthResponseDto> {
+    const isPasswordValid = await this.bcryptService.comparePasswords(
+      oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new EduException('INVALID_PASSWORD');
+    }
+
+    const hashedPassword = await this.bcryptService.hashPassword(newPassword);
+
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    return await this.authService.authenticateUser({
+      email: user.email,
+      password: newPassword,
+    });
   }
 }
