@@ -9,11 +9,17 @@ export class UpdateSchoolClassRequestDto {
   @ApiProperty({ description: 'Nome da classe escolar' })
   name: string;
 
-  @ApiProperty({ description: 'Série escolar' })
-  schoolGrade: string;
+  @ApiProperty({
+    description: 'Série escolar',
+    enum: ['FIRST_GRADE', 'SECOND_GRADE', 'THIRD_GRADE'],
+  })
+  schoolGrade: 'FIRST_GRADE' | 'SECOND_GRADE' | 'THIRD_GRADE';
 
-  @ApiProperty({ description: 'Período escolar' })
-  schoolPeriod: string;
+  @ApiProperty({
+    description: 'Período escolar',
+    enum: ['MORNING', 'AFTERNOON', 'FULL'],
+  })
+  schoolPeriod: 'MORNING' | 'AFTERNOON' | 'FULL';
 
   @ApiProperty({
     description: 'Lista de professores associados à classe escolar',

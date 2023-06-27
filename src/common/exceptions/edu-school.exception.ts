@@ -185,6 +185,10 @@ export const ErrorDetails = {
     message: 'Configuração não encontrada.',
     status: HttpStatus.NOT_FOUND,
   },
+  CANNOT_DELETE_OWNER_USERS: {
+    message: 'Não é possível excluir usuários proprietários.',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
 
 export class EduException extends HttpException {

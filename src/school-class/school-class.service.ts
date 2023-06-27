@@ -11,6 +11,7 @@ import { Prisma, SchoolClassStudent, Status, Student } from '@prisma/client';
 import * as xlsx from 'xlsx';
 import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
 
 @Injectable()
 export class SchoolClassService {
@@ -199,7 +200,7 @@ export class SchoolClassService {
 
   async updateSchoolClass(
     id: string,
-    data: SchoolClassResponseDto,
+    data: UpdateSchoolClassRequestDto,
   ): Promise<SchoolClassResponseDto> {
     const { name, schoolGrade, schoolPeriod, teachers } = data;
 

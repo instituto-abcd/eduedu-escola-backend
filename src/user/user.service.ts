@@ -80,6 +80,7 @@ export class UserService {
 
     return {
       id: createdUser.id,
+      owner: createdUser.owner,
       status: createdUser.status,
       name: createdUser.name,
       email: createdUser.email,
@@ -140,6 +141,7 @@ export class UserService {
 
       const responseUsers: UserResponseDto[] = users.map((user) => ({
         id: user.id,
+        owner: user.owner,
         status: user.status,
         name: user.name,
         email: user.email,
@@ -163,6 +165,7 @@ export class UserService {
 
     return {
       id: user.id,
+      owner: user.owner,
       status: user.status,
       name: user.name,
       accessKey: user.accessKey,
@@ -208,6 +211,7 @@ export class UserService {
       updatedAt: new Date(),
       profile: Profile[profile],
       accessKey: existingUser.accessKey,
+      owner: existingUser.owner,
     };
 
     const updatedUser = await this.prisma.user.update({
@@ -217,6 +221,7 @@ export class UserService {
 
     return {
       id: updatedUser.id,
+      owner: updatedUser.owner,
       status: updatedUser.status,
       name: updatedUser.name,
       email: updatedUser.email,
@@ -231,10 +236,29 @@ export class UserService {
       throw new EduException('IDS_REQUIRED');
     }
 
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+      select: {
+        id: true,
+        owner: true,
+      },
+    });
+
+    const usersToDelete = users.filter((user) => !user.owner);
+    const deleteIds = usersToDelete.map((user) => user.id);
+
+    if (deleteIds.length === 0) {
+      throw new EduException('CANNOT_DELETE_OWNER_USERS');
+    }
+
     await this.prisma.userSchoolClass.deleteMany({
       where: {
         userId: {
-          in: ids,
+          in: deleteIds,
         },
       },
     });
@@ -242,7 +266,7 @@ export class UserService {
     const deleteResult = await this.prisma.user.deleteMany({
       where: {
         id: {
-          in: ids,
+          in: deleteIds,
         },
       },
     });
