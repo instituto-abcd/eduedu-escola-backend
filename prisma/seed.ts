@@ -19,8 +19,7 @@ async function main() {
       synchronizationPlanets: true,
       smtpHostName: 'smtp.office365.com',
       smtpUserName: 'suporte@eduedu.com.br',
-      smtpPassword:
-        '$2b$10$eMCiyozJb3ChrOm55B4lt.3bIpx5GjXEQFtCeWT0166INp/PsdDT6',
+      smtpPassword: 'U2FsdGVkX1+EbIw/A/eKm214FZsLg0Afb3E2/rEfJrU=', //123456
       sslIsActive: true,
       schoolId: schoolId,
     },
