@@ -7,8 +7,9 @@ import { BcryptService } from '../common/services/bcrypt.service';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { StatusResponseDto } from './dto/status-response.dto';
 import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
-import { UserResponseDto } from 'src/user/dto/response/user-response.dto';
 import { UserService } from 'src/user/user.service';
+import { AuthService } from 'src/auth/auth.service';
+import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 
 @Injectable()
 export class SettingsService {
@@ -16,6 +17,7 @@ export class SettingsService {
     private readonly prismaService: PrismaService,
     private readonly bcryptService: BcryptService,
     private readonly userService: UserService,
+    private readonly authService: AuthService,
   ) {}
 
   async getSettingsBySchoolId(schoolId: string): Promise<Settings> {
@@ -173,7 +175,7 @@ export class SettingsService {
   async createOwner(
     data: CreateUserRequestDto,
     schoolId: string,
-  ): Promise<UserResponseDto> {
+  ): Promise<AuthResponseDto> {
     const result = await this.userService.create(data, schoolId);
 
     const owner = await this.prismaService.user.update({
@@ -181,6 +183,9 @@ export class SettingsService {
       data: { owner: true },
     });
 
-    return owner;
+    return await this.authService.authenticateUser({
+      email: owner.email,
+      password: data.password,
+    });
   }
 }

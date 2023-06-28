@@ -93,7 +93,7 @@ model User {
   id              String            @id @default(uuid())
   owner           Boolean           @default(false)
   status          Status            @default(ACTIVE)
-  password        String
+  password        String?
   accessKey       String            @unique @default("")
   name            String
   email           String            @unique

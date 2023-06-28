@@ -63,34 +63,35 @@ export class UserService {
       throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
-    const hashedPassword = await this.bcryptService.hashPassword(password);
+    const hashedPassword = password
+      ? await this.bcryptService.hashPassword(password)
+      : null;
+
     const accessKey = this.generateUniqueAccessKey();
 
-    const data: Prisma.UserUncheckedCreateInput = {
-      ...createUserDto,
-      document: document,
-      password: hashedPassword,
-      profile: profile as Profile,
-      status: Status.ACTIVE,
-      accessKey: accessKey,
-      schoolId,
-    };
-
     const createdUser = await this.prismaService.user.create({
-      data,
-      include: { school: true },
+      data: {
+        ...createUserDto,
+        document: document,
+        password: hashedPassword,
+        profile: profile as Profile,
+        status: Status.ACTIVE,
+        accessKey: accessKey,
+        schoolId,
+      },
+      select: {
+        id: true,
+        owner: true,
+        status: true,
+        name: true,
+        email: true,
+        accessKey: true,
+        document: true,
+        profile: true,
+      },
     });
 
-    return {
-      id: createdUser.id,
-      owner: createdUser.owner,
-      status: createdUser.status,
-      name: createdUser.name,
-      email: createdUser.email,
-      accessKey: createdUser.accessKey,
-      document: createdUser.document,
-      profile: createdUser.profile,
-    };
+    return createdUser;
   }
 
   async findAll(

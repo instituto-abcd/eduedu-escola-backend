@@ -6,8 +6,8 @@ import { UpdateSettingsDto } from './dto/update-settings';
 import { SchoolId } from '../common/school-id.decorator';
 import { UpdateSchoolNameDto } from './dto/update-school-name';
 import { StatusResponseDto } from './dto/status-response.dto';
-import { UserResponseDto } from 'src/user/dto/response/user-response.dto';
 import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
+import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 
 @ApiTags('Settings')
 @Controller('system-configuration')
@@ -68,13 +68,13 @@ export class SettingsController {
   @ApiOperation({ summary: 'Criar usuário master' })
   @ApiResponse({
     status: 201,
-    description: 'Usuário criado com sucesso',
-    type: UserResponseDto,
+    description: 'Usuário criado e autenticado com sucesso',
+    type: AuthResponseDto,
   })
   async createOwner(
     @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
-  ): Promise<UserResponseDto> {
+  ): Promise<AuthResponseDto> {
     return this.settingsService.createOwner(createUserDto, schoolId);
   }
 }
