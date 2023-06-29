@@ -47,18 +47,22 @@ model SchoolClass {
   School       School?              @relation(fields: [schoolId], references: [id])
 }
 
+// Enum for SchoolGrade
 enum SchoolGradeEnum {
+  CHILDREN
   FIRST_GRADE
   SECOND_GRADE
   THIRD_GRADE
 }
 
+// Enum for SchoolPeriod
 enum SchoolPeriodEnum {
   MORNING
   AFTERNOON
   FULL
 }
 
+// Enum for StatusSchoolYear
 enum StatusSchoolYear {
   ACTIVE
   INACTIVE
@@ -151,6 +155,66 @@ model Settings {
   school                 School   @relation(fields: [schoolId], references: [id])
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+}
+
+// Model for Dashboard
+model Dashboard {
+  id                    String                 @id @default(uuid())
+  schoolYear            Int
+  teachersCounter       Int
+  schoolClassesCounter  Int
+  studentsCounter       Int
+  dashboardSchoolGrades DashboardSchoolGrade[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+}
+
+// Model for DashboardSchoolGrade
+model DashboardSchoolGrade {
+  id                   String                 @id @default(uuid())
+  name                 SchoolGradeEnum
+  teachersCounter      Int
+  schoolClassesCounter Int
+  studentsCounter      Int
+  dashboardSchoolClass DashboardSchoolClass[]
+  dashboardPerformance DashboardPerformance[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  dashboardId          String
+  dashboard            Dashboard              @relation(fields: [dashboardId], references: [id])
+}
+
+// Model for DashboardSchoolClass
+model DashboardSchoolClass {
+  id                    String                 @id @default(uuid())
+  name                  String
+  studentsCounter       Int
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  dashboardGradeId      String
+  dashboardGrade        DashboardSchoolGrade   @relation(fields: [dashboardGradeId], references: [id])
+  dashboardPerformances DashboardPerformance[]
+}
+
+// Model for DashboardPerformance
+model DashboardPerformance {
+  id                     String                @id @default(uuid())
+  axis                   String
+  percentage             String
+  type                   String
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  dashboardSchoolClassId String
+  dashboardSchoolClass   DashboardSchoolClass  @relation(fields: [dashboardSchoolClassId], references: [id])
+  DashboardSchoolGrade   DashboardSchoolGrade? @relation(fields: [dashboardSchoolGradeId], references: [id])
+  dashboardSchoolGradeId String?
+}
+
+// Enum for Axis
+enum AxisEnum {
+  PHONOLOGICAL_AWARENESS
+  ALPHABETIC_WRITING_SYSTEM
+  READING_AND_TEXT_COMPREHENSION
 }
 
 model Notification {

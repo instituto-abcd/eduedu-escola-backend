@@ -6,9 +6,9 @@ export class CreateSchoolClassDto {
 
   @ApiProperty({
     description: 'Série escolar',
-    enum: ['FIRST_GRADE', 'SECOND_GRADE', 'THIRD_GRADE'],
+    enum: ['CHILDREN', 'FIRST_GRADE', 'SECOND_GRADE', 'THIRD_GRADE'],
   })
-  schoolGrade: 'FIRST_GRADE' | 'SECOND_GRADE' | 'THIRD_GRADE';
+  schoolGrade: 'CHILDREN' | 'FIRST_GRADE' | 'SECOND_GRADE' | 'THIRD_GRADE';
 
   @ApiProperty({
     description: 'Período escolar',

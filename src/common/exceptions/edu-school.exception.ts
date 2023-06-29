@@ -193,6 +193,14 @@ export const ErrorDetails = {
     message: 'Notificação não encontrada.',
     status: HttpStatus.BAD_REQUEST,
   },
+  DASHBOARD_NOT_FOUND: {
+    message: 'Painel não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  INVALID_DATA: {
+    message: 'Dados inválidos.',
+    status: HttpStatus.BAD_REQUEST,
+  },
 };
 
 export class EduException extends HttpException {

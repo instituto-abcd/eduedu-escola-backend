@@ -6,12 +6,14 @@ import { StatusSchoolYear } from '@prisma/client';
 import { SchoolYearSummary } from './dto/response/list-school-year-response.dto';
 import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
 import { SchoolYearResponse } from './dto/response/school-year-response';
+import { DashboardService } from '../dashboard/dashboard.service';
 
 @Injectable()
 export class SchoolYearService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly externalApiService: DateApiService,
+    private readonly dashboardService: DashboardService,
   ) {}
 
   async isSchoolYearCreatable(year: number): Promise<boolean> {
@@ -73,6 +75,7 @@ export class SchoolYearService {
         const buttonEnabled =
           createdSchoolYear.status === 'DRAFT' &&
           currentYear == createdSchoolYear.name;
+        await this.dashboardService.createSchoolYear(createdSchoolYear.name);
         return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
       } else {
         throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
@@ -85,6 +88,7 @@ export class SchoolYearService {
       const buttonEnabled =
         createdSchoolYear.status === 'DRAFT' &&
         currentYear == createdSchoolYear.name;
+      await this.dashboardService.createSchoolYear(createdSchoolYear.name);
       return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
     }
 
