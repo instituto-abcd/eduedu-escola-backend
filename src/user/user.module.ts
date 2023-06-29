@@ -4,6 +4,8 @@ import { UserController } from './user.controller';
 import { PrismaService } from '../prisma/prisma.service';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 import { BcryptService } from '../common/services/bcrypt.service';
+import { AuthService } from 'src/auth/auth.service';
+import { DateApiService } from 'src/common/services/date-api.service';
 
 @Module({
   controllers: [UserController],
@@ -12,6 +14,8 @@ import { BcryptService } from '../common/services/bcrypt.service';
     PrismaService,
     ValidationUtilsService,
     BcryptService,
+    AuthService,
+    DateApiService,
   ],
 })
 export class UserModule {}

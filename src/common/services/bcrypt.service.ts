@@ -10,7 +10,7 @@ export class BcryptService {
   // Criptografar senha (não pode ser descriptografada)
   async hashPassword(password: string): Promise<string> {
     const salt = await genSalt(this.saltRounds);
-    return hash(password, salt);
+    return await hash(password, salt);
   }
 
   // Verificar senha se são iguais

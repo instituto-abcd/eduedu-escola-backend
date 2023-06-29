@@ -8,6 +8,8 @@ import {
   Post,
   Put,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
@@ -31,6 +33,9 @@ import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
+import { UserGuard } from 'src/auth/guard/user.guard';
+import { UpdatePasswordRequestDto } from './dto/request/update-password-request.dto';
+import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 
 // import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
@@ -178,5 +183,24 @@ export class UserController {
     @Param('id') userId: string,
   ): Promise<UserAccessCodeResponseDto> {
     return await this.userService.updateAccessCode(userId);
+  }
+
+  @ApiOperation({ summary: 'Trocar a senha do usuário logado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Alteração de senha realizada com sucesso',
+    type: AuthResponseDto,
+  })
+  @UseGuards(UserGuard)
+  @Put('password')
+  async updatePassword(
+    @Req() request,
+    @Body() { newPassword, oldPassword }: UpdatePasswordRequestDto,
+  ): Promise<AuthResponseDto> {
+    return this.userService.updatePassword(
+      request.user,
+      oldPassword,
+      newPassword,
+    );
   }
 }

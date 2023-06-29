@@ -94,21 +94,22 @@ model Student {
 
 // Model for User
 model User {
-  id              String            @id @default(uuid())
-  owner           Boolean           @default(false)
-  status          Status            @default(ACTIVE)
-  password        String
-  accessKey       String            @unique @default("")
-  name            String
-  email           String            @unique
-  document        String            @unique
-  profile         Profile           @default(TEACHER)
-  schoolId        String
-  school          School            @relation(fields: [schoolId], references: [id])
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  authTokens      AuthToken[]
-  userSchoolClass UserSchoolClass[]
+  id               String             @id @default(uuid())
+  owner            Boolean            @default(false)
+  status           Status             @default(ACTIVE)
+  password         String?
+  accessKey        String             @unique @default("")
+  name             String
+  email            String             @unique
+  document         String             @unique
+  profile          Profile            @default(TEACHER)
+  schoolId         String
+  school           School             @relation(fields: [schoolId], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  authTokens       AuthToken[]
+  userSchoolClass  UserSchoolClass[]
+  UserNotification UserNotification[]
 }
 
 // Model for UserSchoolClass
@@ -214,4 +215,22 @@ enum AxisEnum {
   PHONOLOGICAL_AWARENESS
   ALPHABETIC_WRITING_SYSTEM
   READING_AND_TEXT_COMPREHENSION
+}
+
+model Notification {
+  id               String             @id @default(uuid())
+  text             String
+  profiles         Profile[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  UserNotification UserNotification[]
+}
+
+model UserNotification {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  read           Boolean      @default(false)
 }

@@ -189,6 +189,10 @@ export const ErrorDetails = {
     message: 'Não é possível excluir usuários proprietários.',
     status: HttpStatus.NOT_FOUND,
   },
+  NOTIFICATION_NOT_FOUND: {
+    message: 'Notificação não encontrada.',
+    status: HttpStatus.BAD_REQUEST,
+  },
   DASHBOARD_NOT_FOUND: {
     message: 'Painel não encontrado.',
     status: HttpStatus.NOT_FOUND,

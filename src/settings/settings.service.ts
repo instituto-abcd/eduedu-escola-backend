@@ -5,12 +5,19 @@ import { UpdateSettingsDto } from './dto/update-settings';
 import { UpdateSchoolNameDto } from './dto/update-school-name';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { EduException } from '../common/exceptions/edu-school.exception';
+import { StatusResponseDto } from './dto/status-response.dto';
+import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
+import { UserService } from 'src/user/user.service';
+import { AuthService } from 'src/auth/auth.service';
+import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 
 @Injectable()
 export class SettingsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly bcryptService: BcryptService,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
   ) {}
 
   async getSettingsBySchoolId(schoolId: string): Promise<Settings> {
@@ -140,5 +147,45 @@ export class SettingsService {
       createdAt: updatedSettings.createdAt,
       updatedAt: updatedSettings.updatedAt,
     };
+  }
+
+  async getStatus(): Promise<StatusResponseDto> {
+    const owner = await this.prismaService.user.findFirst({
+      where: { owner: true },
+    });
+
+    const completedOwnerSetup = Boolean(owner);
+
+    const schoolName = await this.prismaService.school.findFirst({
+      where: {
+        name: {
+          notIn: ['', 'EduEdu Escola'],
+        },
+      },
+    });
+
+    const completedSchoolSetup = Boolean(schoolName);
+
+    return {
+      completedOwnerSetup,
+      completedSchoolSetup,
+    };
+  }
+
+  async createOwner(
+    data: CreateUserRequestDto,
+    schoolId: string,
+  ): Promise<AuthResponseDto> {
+    const result = await this.userService.create(data, schoolId);
+
+    const owner = await this.prismaService.user.update({
+      where: { id: result.id },
+      data: { owner: true },
+    });
+
+    return await this.authService.authenticateUser({
+      email: owner.email,
+      password: data.password,
+    });
   }
 }
