@@ -11,11 +11,9 @@ import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserGuard } from 'src/auth/guard/user.guard';
-import { ReadNotificationResponseDto } from './dto/read-notification-response.dto';
 import { NotificationDto } from './dto/notifications.dto';
 import { NotifiedCountDto } from './dto/notified-count.dto';
 import { CreateNotificationResponseDto } from './dto/create-notification-response.dto';
-import { Profile } from '@prisma/client';
 import { SendNotificationDto } from './dto/send-notification.dto';
 
 @ApiTags('Notificação')

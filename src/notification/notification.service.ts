@@ -2,21 +2,36 @@ import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationDto } from './dto/notifications.dto';
-import { Profile } from '@prisma/client';
 import { EduException } from 'src/common/exceptions/edu-school.exception';
 import { NotifiedCountDto } from './dto/notified-count.dto';
-import { CreateNotificationResponseDto } from './dto/create-notification-response.dto';
 
 @Injectable()
 export class NotificationService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async create(
-    data: CreateNotificationDto,
-  ): Promise<CreateNotificationResponseDto> {
-    return this.prismaService.notification.create({
+  async create(data: CreateNotificationDto): Promise<NotifiedCountDto> {
+    const notification = await this.prismaService.notification.create({
       data: data,
     });
+
+    const notifiedUsers = await this.prismaService.user.findMany({
+      where: {
+        profile: {
+          in: notification.profiles,
+        },
+      },
+    });
+
+    const result = await this.prismaService.userNotification.createMany({
+      data: notifiedUsers.map((user) => ({
+        userId: user.id,
+        notificationId: notification.id,
+      })),
+    });
+
+    return {
+      notifiedUsers: result.count,
+    };
   }
 
   async markNotificationRead(userId: string): Promise<NotifiedCountDto> {
