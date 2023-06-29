@@ -69,7 +69,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "owner" BOOLEAN NOT NULL DEFAULT false,
     "status" "Status" NOT NULL DEFAULT 'ACTIVE',
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "accessKey" TEXT NOT NULL DEFAULT '',
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -178,6 +178,27 @@ CREATE TABLE "DashboardPerformance" (
     CONSTRAINT "DashboardPerformance_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "profiles" "Profile"[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserNotification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "notificationId" TEXT NOT NULL,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "UserNotification_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_accessKey_key" ON "User"("accessKey");
 
@@ -234,3 +255,9 @@ ALTER TABLE "DashboardPerformance" ADD CONSTRAINT "DashboardPerformance_dashboar
 
 -- AddForeignKey
 ALTER TABLE "DashboardPerformance" ADD CONSTRAINT "DashboardPerformance_dashboardSchoolGradeId_fkey" FOREIGN KEY ("dashboardSchoolGradeId") REFERENCES "DashboardSchoolGrade"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserNotification" ADD CONSTRAINT "UserNotification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserNotification" ADD CONSTRAINT "UserNotification_notificationId_fkey" FOREIGN KEY ("notificationId") REFERENCES "Notification"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
