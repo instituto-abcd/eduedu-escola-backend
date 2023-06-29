@@ -189,6 +189,14 @@ export const ErrorDetails = {
     message: 'Não é possível excluir usuários proprietários.',
     status: HttpStatus.NOT_FOUND,
   },
+  DASHBOARD_NOT_FOUND: {
+    message: 'Painel não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  INVALID_DATA: {
+    message: 'Dados inválidos.',
+    status: HttpStatus.BAD_REQUEST,
+  },
 };
 
 export class EduException extends HttpException {
