@@ -194,7 +194,7 @@ export const ErrorDetails = {
     status: HttpStatus.BAD_REQUEST,
   },
   DASHBOARD_NOT_FOUND: {
-    message: 'Painel não encontrado.',
+    message: 'Dashboard não encontrado.',
     status: HttpStatus.NOT_FOUND,
   },
   INVALID_DATA: {

@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { DashboardDto } from './dto/dashboard.dto';
@@ -8,14 +8,17 @@ import { DashboardDto } from './dto/dashboard.dto';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
-  @Get()
+  @Get(':schoolYear')
   @ApiOperation({ summary: 'Obter contadores de Turmas' })
   @ApiResponse({
     status: 200,
     description: 'Painel de controle obtido com sucesso',
     type: DashboardDto,
   })
-  async getDashboard(): Promise<DashboardDto[]> {
-    return this.dashboardService.getDashboard();
+  @ApiOperation({ summary: 'Obter dashboard por ano escolar' })
+  async getDashboard(
+    @Param('schoolYear') schoolYear: number,
+  ): Promise<DashboardDto> {
+    return this.dashboardService.getDashboard(schoolYear);
   }
 }
