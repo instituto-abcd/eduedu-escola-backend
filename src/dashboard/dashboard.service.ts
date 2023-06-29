@@ -15,46 +15,46 @@ import { v4 as uuidv4 } from 'uuid';
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboard(): Promise<DashboardDto[]> {
-    try {
-      const dashboards = await this.prisma.dashboard.findMany({
-        include: {
-          dashboardSchoolGrades: {
-            include: {
-              dashboardSchoolClass: {
-                include: {
-                  dashboardPerformances: true,
-                },
+  async getDashboard(schoolYear: number): Promise<DashboardDto> {
+    const dashboard = await this.prisma.dashboard.findFirst({
+      where: {
+        schoolYear: parseInt(schoolYear.toString()),
+      },
+      include: {
+        dashboardSchoolGrades: {
+          include: {
+            dashboardSchoolClass: {
+              include: {
+                dashboardPerformances: true,
               },
             },
           },
         },
-      });
+      },
+    });
 
-      if (!dashboards || dashboards.length === 0) {
-        throw new EduException('DASHBOARD_NOT_FOUND');
-      }
+    if (!dashboard) {
+      throw new EduException('DASHBOARD_NOT_FOUND');
+    }
 
-      return dashboards.map((dashboard) => {
-        const schoolGrades: SchoolGradeDto[] =
-          dashboard.dashboardSchoolGrades.map((grade) => ({
-            name: grade.name,
-            teachersCounter: grade.teachersCounter,
-            schoolClassesCounter: grade.schoolClassesCounter,
-            studentsCounter: grade.studentsCounter,
-            schoolClasses: grade.dashboardSchoolClass.map((schoolClass) =>
-              this.mapSchoolClassDto(schoolClass),
-            ),
-          }));
-
-        return {
-          schoolYear: dashboard.schoolYear,
-          teachersCounter: dashboard.teachersCounter,
-          schoolClassesCounter: dashboard.schoolClassesCounter,
-          studentsCounter: dashboard.studentsCounter,
-          schoolGrades,
-        };
-      });
+    try {
+      const schoolGrades: SchoolGradeDto[] =
+        dashboard.dashboardSchoolGrades.map((grade) => ({
+          name: grade.name,
+          teachersCounter: grade.teachersCounter,
+          schoolClassesCounter: grade.schoolClassesCounter,
+          studentsCounter: grade.studentsCounter,
+          schoolClasses: grade.dashboardSchoolClass.map((schoolClass) =>
+            this.mapSchoolClassDto(schoolClass),
+          ),
+        }));
+      return {
+        schoolYear: dashboard.schoolYear,
+        teachersCounter: dashboard.teachersCounter,
+        schoolClassesCounter: dashboard.schoolClassesCounter,
+        studentsCounter: dashboard.studentsCounter,
+        schoolGrades,
+      };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         throw new EduException('DATABASE_ERROR');
