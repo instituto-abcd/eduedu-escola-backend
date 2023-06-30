@@ -28,14 +28,15 @@ model School {
   users       User[]
   schoolYear  SchoolYear[]
   schoolClass SchoolClass[]
+  Settings    Settings[]
 }
 
 // Model for SchoolClass
 model SchoolClass {
   id           String               @id @default(uuid())
   name         String
-  schoolGrade  String
-  schoolPeriod String
+  schoolGrade  SchoolGradeEnum
+  schoolPeriod SchoolPeriodEnum
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   schoolYearId String
@@ -46,6 +47,22 @@ model SchoolClass {
   School       School?              @relation(fields: [schoolId], references: [id])
 }
 
+// Enum for SchoolGrade
+enum SchoolGradeEnum {
+  CHILDREN
+  FIRST_GRADE
+  SECOND_GRADE
+  THIRD_GRADE
+}
+
+// Enum for SchoolPeriod
+enum SchoolPeriodEnum {
+  MORNING
+  AFTERNOON
+  FULL
+}
+
+// Enum for StatusSchoolYear
 enum StatusSchoolYear {
   ACTIVE
   INACTIVE
@@ -77,20 +94,22 @@ model Student {
 
 // Model for User
 model User {
-  id              String            @id @default(uuid())
-  status          Status            @default(ACTIVE)
-  password        String
-  accessKey       String            @unique @default("")
-  name            String
-  email           String            @unique
-  document        String            @unique
-  profile         Profile           @default(TEACHER)
-  schoolId        String
-  school          School            @relation(fields: [schoolId], references: [id])
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  authTokens      AuthToken[]
-  userSchoolClass UserSchoolClass[]
+  id               String             @id @default(uuid())
+  owner            Boolean            @default(false)
+  status           Status             @default(ACTIVE)
+  password         String?
+  accessKey        String             @unique @default("")
+  name             String
+  email            String             @unique
+  document         String             @unique
+  profile          Profile            @default(TEACHER)
+  schoolId         String
+  school           School             @relation(fields: [schoolId], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  authTokens       AuthToken[]
+  userSchoolClass  UserSchoolClass[]
+  UserNotification UserNotification[]
 }
 
 // Model for UserSchoolClass
@@ -122,4 +141,96 @@ model AuthToken {
   updatedAt DateTime @updatedAt
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+}
+
+// Model for Settings
+model Settings {
+  id                     String   @id @default(uuid())
+  synchronizationPlanets Boolean
+  smtpHostName           String
+  smtpUserName           String
+  smtpPassword           String
+  sslIsActive            Boolean
+  schoolId               String   @unique
+  school                 School   @relation(fields: [schoolId], references: [id])
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// Model for Dashboard
+model Dashboard {
+  id                    String                 @id @default(uuid())
+  schoolYear            Int
+  teachersCounter       Int
+  schoolClassesCounter  Int
+  studentsCounter       Int
+  dashboardSchoolGrades DashboardSchoolGrade[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+}
+
+// Model for DashboardSchoolGrade
+model DashboardSchoolGrade {
+  id                   String                 @id @default(uuid())
+  name                 SchoolGradeEnum
+  teachersCounter      Int
+  schoolClassesCounter Int
+  studentsCounter      Int
+  dashboardSchoolClass DashboardSchoolClass[]
+  dashboardPerformance DashboardPerformance[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  dashboardId          String
+  dashboard            Dashboard              @relation(fields: [dashboardId], references: [id])
+}
+
+// Model for DashboardSchoolClass
+model DashboardSchoolClass {
+  id                    String                 @id @default(uuid())
+  name                  String
+  studentsCounter       Int
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  dashboardGradeId      String
+  dashboardGrade        DashboardSchoolGrade   @relation(fields: [dashboardGradeId], references: [id])
+  dashboardPerformances DashboardPerformance[]
+}
+
+// Model for DashboardPerformance
+model DashboardPerformance {
+  id                     String                @id @default(uuid())
+  axis                   String
+  percentage             String
+  type                   String
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  dashboardSchoolClassId String
+  dashboardSchoolClass   DashboardSchoolClass  @relation(fields: [dashboardSchoolClassId], references: [id])
+  DashboardSchoolGrade   DashboardSchoolGrade? @relation(fields: [dashboardSchoolGradeId], references: [id])
+  dashboardSchoolGradeId String?
+}
+
+// Enum for Axis
+enum AxisEnum {
+  PHONOLOGICAL_AWARENESS
+  ALPHABETIC_WRITING_SYSTEM
+  READING_AND_TEXT_COMPREHENSION
+}
+
+model Notification {
+  id               String             @id @default(uuid())
+  text             String
+  profiles         Profile[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  UserNotification UserNotification[]
+}
+
+model UserNotification {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  read           Boolean      @default(false)
 }

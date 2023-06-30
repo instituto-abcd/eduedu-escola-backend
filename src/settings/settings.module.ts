@@ -1,21 +1,23 @@
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { UserController } from './user.controller';
+import { SettingsService } from './settings.service';
+import { SettingsController } from './settings.controller';
 import { PrismaService } from '../prisma/prisma.service';
-import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 import { BcryptService } from '../common/services/bcrypt.service';
+import { UserService } from 'src/user/user.service';
+import { ValidationUtilsService } from 'src/common/utils/validation-utils.service';
 import { AuthService } from 'src/auth/auth.service';
 import { DateApiService } from 'src/common/services/date-api.service';
 
 @Module({
-  controllers: [UserController],
+  controllers: [SettingsController],
   providers: [
-    UserService,
+    SettingsService,
     PrismaService,
-    ValidationUtilsService,
     BcryptService,
+    UserService,
+    ValidationUtilsService,
     AuthService,
     DateApiService,
   ],
 })
-export class UserModule {}
+export class SettingsModule {}

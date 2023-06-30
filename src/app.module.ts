@@ -9,10 +9,15 @@ import { PrismaService } from './prisma/prisma.service';
 import { SchoolClassController } from './school-class/school-class.controller';
 import { SchoolClassModule } from './school-class/school-class.module';
 import { SchoolClassService } from './school-class/school-class.service';
-import { SchoolYearModule } from './schoolYear/school-year.module';
+import { SchoolYearModule } from './school-year/school-year.module';
 import { UserModule } from './user/user.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { StudentModule } from './student/student.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { SettingsModule } from './settings/settings.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -24,6 +29,10 @@ import { StudentModule } from './student/student.module';
       },
       dbName: 'eduedu-escola-admin',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'dist', 'templates'),
+      serveRoot: '/static',
+    }),
     UserModule,
     SchoolYearModule,
     AuthModule,
@@ -32,6 +41,9 @@ import { StudentModule } from './student/student.module';
     PlanetSyncModule,
     RabbitMQModule,
     StudentModule,
+    SettingsModule,
+    DashboardModule,
+    NotificationModule,
   ],
   providers: [PrismaService, SchoolClassService],
   controllers: [SchoolClassController],

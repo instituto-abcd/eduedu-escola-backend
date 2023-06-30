@@ -6,15 +6,27 @@ const prismaClient = new PrismaClient();
 async function main() {
   const schoolId = uuidv4();
 
-  const school = await prismaClient.school.create({
+  await prismaClient.school.create({
     data: {
       id: schoolId,
       name: 'EduEdu Escola',
     },
   });
 
+  await prismaClient.settings.create({
+    data: {
+      id: uuidv4(),
+      synchronizationPlanets: true,
+      smtpHostName: 'smtp.office365.com',
+      smtpUserName: 'suporte@eduedu.com.br',
+      smtpPassword: 'U2FsdGVkX1+EbIw/A/eKm214FZsLg0Afb3E2/rEfJrU=', //123456
+      sslIsActive: true,
+      schoolId: schoolId,
+    },
+  });
+
   // TODO: Criar usuários apenas em Dev
-  const users = await prismaClient.user.createMany({
+  await prismaClient.user.createMany({
     data: [
       {
         id: uuidv4(),
@@ -110,7 +122,7 @@ async function main() {
         email: 'lcalcraft7@theatlantic.com',
         profile: Profile.DIRECTOR,
         schoolId: schoolId,
-        accessKey: 'EDUEDU08',
+        accessKey: 'EDUEDU008',
       },
       {
         id: uuidv4(),
@@ -378,8 +390,6 @@ async function main() {
       },
     ],
   });
-
-  console.log(school);
 }
 
 main()

@@ -7,7 +7,11 @@ import { SchoolClassResponseDto } from './dto/response/school-class-response';
 import { DeleteUserResponseDto } from '../user/dto/response/delete-user-response.dto';
 import { PaginationInfo } from '../common/pagination/pagination-info-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, SchoolClassStudent, Status, Student } from '@prisma/client';
+import * as xlsx from 'xlsx';
+import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
 
 @Injectable()
 export class SchoolClassService {
@@ -92,7 +96,6 @@ export class SchoolClassService {
         if (schoolYear !== null) {
           where.schoolYearId = schoolYear.id;
         }
-
       }
 
       if (teacherName !== undefined) {
@@ -197,7 +200,7 @@ export class SchoolClassService {
 
   async updateSchoolClass(
     id: string,
-    data: SchoolClassResponseDto,
+    data: UpdateSchoolClassRequestDto,
   ): Promise<SchoolClassResponseDto> {
     const { name, schoolGrade, schoolPeriod, teachers } = data;
 
@@ -315,5 +318,134 @@ export class SchoolClassService {
       data: userSchoolClassData,
       skipDuplicates: true,
     });
+  }
+
+  async parseSpreadsheet(
+    file: Express.Multer.File,
+  ): Promise<CreateStudentRequestDto[]> {
+    return new Promise((resolve) => {
+      const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const studentsData: string[][] = xlsx.utils.sheet_to_json(worksheet, {
+        header: 1,
+        blankrows: false,
+      }) as string[][];
+
+      const headerRow = studentsData[0];
+      const nameColumnIndex = headerRow.findIndex((column) =>
+        /nome|nome completo|nome do aluno/i.test(column),
+      );
+      const registryColumnIndex = headerRow.findIndex((column) =>
+        /matrícula|ra|cpf/i.test(column),
+      );
+
+      const students: CreateStudentRequestDto[] = studentsData
+        .slice(1)
+        .filter((row) => row.length > 0)
+        .map((row) => {
+          const name = row[nameColumnIndex]?.toString().trim();
+          const registry = row[registryColumnIndex]?.toString().trim();
+
+          if (!name || !registry) {
+            throw new EduException('INVALID_FIELDS_WORKSHEET');
+          }
+
+          return {
+            id: uuidv4(),
+            name,
+            registry,
+            status: Status.ACTIVE,
+          };
+        });
+
+      resolve(students);
+    });
+  }
+
+  validateSpreadsheetData(studentsData: CreateStudentRequestDto[]): string[] {
+    const errors: string[] = [];
+
+    studentsData.forEach((student, index) => {
+      if (!student.name || !student.registry) {
+        errors.push(`Registro inválido na linha ${index + 1}`);
+      }
+    });
+
+    return errors;
+  }
+
+  async addStudentsToClass(
+    schoolClassId: string,
+    studentsData: CreateStudentRequestDto[],
+  ): Promise<Student[]> {
+    const schoolClass = await this.prismaService.schoolClass.findUnique({
+      where: { id: schoolClassId },
+      include: { students: true },
+    });
+
+    if (!schoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
+    const createdStudents: Student[] = [];
+
+    for (const studentData of studentsData) {
+      const existingStudent = await this.prismaService.student.findFirst({
+        where: {
+          id: studentData.id,
+        },
+      });
+
+      if (existingStudent) {
+        continue;
+      }
+
+      let createdStudent: Student;
+      try {
+        createdStudent = await this.prismaService.student.create({
+          data: {
+            name: studentData.name,
+            registry: studentData.registry.toString(),
+            status: studentData.status || Status.ACTIVE,
+            schoolClasses: {
+              create: [{ schoolClass: { connect: { id: schoolClassId } } }],
+            },
+          },
+        });
+      } catch (error) {
+        throw new EduException('STUDENT_CREATION_FAILED');
+      }
+
+      const existingSchoolClassStudent =
+        await this.prismaService.schoolClassStudent.findFirst({
+          where: {
+            schoolClassId: schoolClassId,
+            studentId: createdStudent.id,
+          },
+        });
+
+      if (!existingSchoolClassStudent) {
+        const schoolClassStudent: SchoolClassStudent = {
+          schoolClassId: schoolClassId,
+          studentId: createdStudent.id,
+        };
+
+        try {
+          await this.prismaService.schoolClassStudent.create({
+            data: schoolClassStudent,
+          });
+        } catch (error) {
+          // Rollback student creation if adding to schoolClassStudent fails
+          await this.prismaService.student.delete({
+            where: { id: createdStudent.id },
+          });
+          throw new EduException('SCHOOL_CLASS_STUDENT_CREATION_FAILED');
+        }
+      }
+
+      createdStudents.push(createdStudent);
+    }
+
+    return createdStudents;
   }
 }

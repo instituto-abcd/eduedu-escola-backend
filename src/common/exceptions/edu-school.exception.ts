@@ -168,6 +168,39 @@ export const ErrorDetails = {
     message: 'Estudante não encontrado.',
     status: HttpStatus.NOT_FOUND,
   },
+  INVALID_FIELDS_WORKSHEET: {
+    message: 'Campos inválidos na planilha',
+    status: HttpStatus.NOT_FOUND,
+  },
+  STUDENT_CREATION_FAILED: {
+    message: 'Falha ao criar o estudante.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+
+  SCHOOL_CLASS_STUDENT_CREATION_FAILED: {
+    message: 'Falha ao associar o estudante à turma.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  SETTINGS_NOT_FOUND: {
+    message: 'Configuração não encontrada.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  CANNOT_DELETE_OWNER_USERS: {
+    message: 'Não é possível excluir usuários proprietários.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  NOTIFICATION_NOT_FOUND: {
+    message: 'Notificação não encontrada.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+  DASHBOARD_NOT_FOUND: {
+    message: 'Dashboard não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  INVALID_DATA: {
+    message: 'Dados inválidos.',
+    status: HttpStatus.BAD_REQUEST,
+  },
 };
 
 export class EduException extends HttpException {

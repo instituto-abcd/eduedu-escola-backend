@@ -46,7 +46,11 @@ export class AuthService {
   }
 
   generateAccessToken(user: User): string {
-    const payload = { email: user.email, profile: user.profile };
+    const payload = {
+      email: user.email,
+      profile: user.profile,
+      owner: user.owner,
+    };
     return this.jwtService.sign(payload);
   }
 
@@ -66,7 +70,6 @@ export class AuthService {
     password: string,
     passwordConfirmation: string,
   ): Promise<ChangePasswordResponseDto> {
-    // Verificar se as senhas informadas são iguais
     if (password !== passwordConfirmation) {
       throw new EduException('PASSWORDS_DO_NOT_MATCH');
     }
@@ -84,56 +87,47 @@ export class AuthService {
     }
 
     if (currentDateTime > authToken.expiresAt) {
-      // Se o token estiver expirado, excluir o AuthToken do banco de dados
       await this.prismaService.authToken.delete({
         where: { id: authToken.id },
       });
       throw new EduException('TOKEN_EXPIRED');
     }
 
-    // Gerar o hash da nova senha
     const hashedPassword = await this.bcryptService.hashPassword(password);
 
-    // Atualizar a senha do usuário no banco de dados
     await this.prismaService.user.update({
       where: { id: authToken.userId },
       data: { password: hashedPassword },
     });
 
-    // Excluir o AuthToken do banco de dados
     await this.prismaService.authToken.delete({
       where: { id: authToken.id },
     });
 
-    // Retornar uma instância de ChangePasswordResponseDto indicando o sucesso da alteração de senha
     return { success: true };
   }
 
   async generateAuthToken(userId: string): Promise<AuthToken> {
     const currentDateTime = await this.externalApiService.getCurrentTime();
 
-    // Verificar se já existe um token ativo para o usuário
     const existingToken = await this.prismaService.authToken.findFirst({
       where: {
         user: { id: userId },
-        expiresAt: { gt: currentDateTime }, // Verificar se a data de expiração é maior que a data atual
+        expiresAt: { gt: currentDateTime },
       },
     });
 
     if (existingToken) {
-      // Se houver um token ativo, atualizar a data de expiração e retornar o token existente
-      const newExpiresAt = new Date(currentDateTime.getTime() + 3600000); // Adicionar 1 hora à data atual
-
+      const newExpiresAt = new Date(currentDateTime.getTime() + 24 * 3600000);
       return this.prismaService.authToken.update({
         where: { id: existingToken.id },
         data: { expiresAt: newExpiresAt },
       });
     }
 
-    // Se não houver um token ativo, criar um novo token
-    const token = this.jwtService.sign({ userId }, { expiresIn: '1h' });
+    const token = this.jwtService.sign({ userId }, { expiresIn: '24h' });
 
-    const expiresAt = new Date(currentDateTime.getTime() + 3600000); // Adicionar 1 hora à data atual
+    const expiresAt = new Date(currentDateTime.getTime() + 24 * 3600000);
 
     return this.prismaService.authToken.create({
       data: {
