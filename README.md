@@ -1,4 +1,6 @@
-[![CI Pipeline](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/ci-pipeline.yml/badge.svg?branch=main)](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/ci-pipeline.yml)
+[![DEVELOPMENT - CI/CD Pipeline](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/ci-pipeline.yml/badge.svg?branch=main)](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/ci-pipeline.yml)
+
+[![STAGING - CI/CD Pipeline](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/gcp.staging.yml/badge.svg?branch=staging)](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/gcp.staging.yml)
 
 ---
 
