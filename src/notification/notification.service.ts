@@ -49,6 +49,7 @@ export class NotificationService {
     return this.prismaService.userNotification.findMany({
       where: {
         userId,
+        read: false,
       },
       include: {
         notification: true,
