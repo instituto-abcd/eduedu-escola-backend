@@ -37,20 +37,16 @@ export class _AuditGuard implements CanActivate {
       DELETE: 'Excluir',
     };
 
-    console.log(request.method, methodDict[request.method]);
-
     if (!Object.keys(methodDict).includes(request.method)) {
       throw new HttpException('AUDIT__METHOD_NOT_ALLOWED', 405);
     }
 
     const entityDict = {
       '/school-year': 'Ano letivo',
-      '/school-class': 'Turma',
+      '/schoolclass': 'Turma',
       '/student': 'Aluno',
       '/user': 'Usuário',
     };
-
-    console.log(request.url, entityDict[request.url]);
 
     if (!Object.keys(entityDict).includes(request.url)) {
       throw new HttpException('AUDIT__ENTITY_NOT_ALLOWED', 400);

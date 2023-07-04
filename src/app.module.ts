@@ -18,6 +18,7 @@ import { join } from 'path';
 import { SettingsModule } from './settings/settings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationModule } from './notification/notification.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { NotificationModule } from './notification/notification.module';
     SettingsModule,
     DashboardModule,
     NotificationModule,
+    AuditModule,
   ],
   providers: [PrismaService, SchoolClassService],
   controllers: [SchoolClassController],
