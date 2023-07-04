@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -126,7 +127,10 @@ export class SchoolClassController {
   async addStudentsFromSpreadsheet(
     @Param('id') schoolClassId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Req() req,
   ): Promise<{ items: CreateStudentRequestDto[] }> {
+    console.log('REQUEST', file);
+
     const studentsData: CreateStudentRequestDto[] =
       await this.schoolClassService.parseSpreadsheet(file);
 
