@@ -129,8 +129,9 @@ model SchoolClassStudent {
   schoolClass   SchoolClass @relation(fields: [schoolClassId], references: [id])
   studentId     String
   student       Student     @relation(fields: [studentId], references: [id])
+  active        Boolean     @default(true)
 
-  @@id([schoolClassId, studentId])
+  @@id([schoolClassId])
 }
 
 // Model for AuthToken

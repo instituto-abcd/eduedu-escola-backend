@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSchoolClassDto } from './dto/create-school-class.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
@@ -12,6 +12,7 @@ import * as xlsx from 'xlsx';
 import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
+import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 
 @Injectable()
 export class SchoolClassService {
@@ -259,6 +260,12 @@ export class SchoolClassService {
     return { success: true };
   }
 
+  studentsByClass(schoolClassId: string) {
+    return this.prismaService.student.findMany({
+      where: { schoolClasses: { some: { schoolClassId } } },
+    });
+  }
+
   private validateCreateSchoolClassDto(
     schoolClassData: CreateSchoolClassDto,
     teacherIds: string[],
@@ -428,6 +435,7 @@ export class SchoolClassService {
         const schoolClassStudent: SchoolClassStudent = {
           schoolClassId: schoolClassId,
           studentId: createdStudent.id,
+          active: true,
         };
 
         try {
@@ -447,5 +455,67 @@ export class SchoolClassService {
     }
 
     return createdStudents;
+  }
+
+  async moveStudentsToClass(
+    destinationId: string,
+    data: AddStudentsToClassDto,
+  ) {
+    const destinationClass = await this.prismaService.schoolClass.findUnique({
+      where: { id: destinationId },
+    });
+
+    if (!destinationClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
+    const originClass = await this.prismaService.schoolClass.findUnique({
+      where: { id: data.originId },
+    });
+
+    if (!originClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
+    if (originClass.id === destinationClass.id) {
+      throw new HttpException(
+        'Classe destino precisa ser diferente da atual',
+        400,
+      );
+    }
+
+    await this.prismaService.schoolClassStudent.update({
+      where: {
+        schoolClassId: originClass.id,
+      },
+      data: {
+        active: false,
+      },
+    });
+
+    const promises_moveToDestination = data.studentIds.map((studentId) =>
+      this.prismaService.schoolClassStudent.upsert({
+        where: {
+          schoolClassId: destinationClass.id,
+        },
+        create: {
+          schoolClassId: destinationClass.id,
+          studentId,
+          active: true,
+        },
+        update: {
+          schoolClassId: destinationClass.id,
+          active: true,
+        },
+      }),
+    );
+
+    await Promise.all(promises_moveToDestination);
+
+    return {
+      studentsMoved: promises_moveToDestination.length,
+      destinationClass: destinationClass.name,
+      originClass: originClass.name,
+    };
   }
 }
