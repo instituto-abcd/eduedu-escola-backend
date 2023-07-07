@@ -94,8 +94,9 @@ CREATE TABLE "UserSchoolClass" (
 CREATE TABLE "SchoolClassStudent" (
     "schoolClassId" TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
 
-    CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("schoolClassId","studentId")
+    CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("schoolClassId")
 );
 
 -- CreateTable
