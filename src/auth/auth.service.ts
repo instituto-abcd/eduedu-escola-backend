@@ -9,6 +9,7 @@ import { ChangePasswordResponseDto } from './dto/response/change-password-respon
 import { ResetPasswordResponseDto } from './dto/response/reset-password-response.dto';
 import { DateApiService } from '../common/services/date-api.service';
 import { BcryptService } from '../common/services/bcrypt.service';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly externalApiService: DateApiService,
     private readonly bcryptService: BcryptService,
+    private readonly emailService: EmailService,
   ) {}
 
   async authenticateUser(
@@ -54,13 +56,19 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  async resetPassword(email: string): Promise<ResetPasswordResponseDto> {
+  async resetPassword(
+    email: string,
+    origin: string,
+  ): Promise<ResetPasswordResponseDto> {
     const user = await this.prismaService.user.findUnique({ where: { email } });
     if (!user) {
       throw new EduException('USER_NOT_FOUND');
     }
 
     const authToken = await this.generateAuthToken(user.id);
+    const url = `${origin}/login?token=${authToken.token}`;
+
+    await this.emailService.resetPassword({ url, name: user.name, email });
 
     return { token: authToken.token };
   }

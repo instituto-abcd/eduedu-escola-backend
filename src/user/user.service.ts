@@ -15,6 +15,7 @@ import { UserAccessCodeResponseDto } from './dto/response/user-access-code-respo
 import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class UserService {
@@ -23,11 +24,13 @@ export class UserService {
     private readonly validationUtilsService: ValidationUtilsService,
     private readonly bcryptService: BcryptService,
     private readonly authService: AuthService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(
     createUserDto: CreateUserRequestDto,
     schoolId: string,
+    origin: string,
   ): Promise<UserResponseDto> {
     const { name, email, profile, password } = createUserDto;
     let { document } = createUserDto;
@@ -89,6 +92,13 @@ export class UserService {
         document: true,
         profile: true,
       },
+    });
+
+    const { token } = await this.authService.generateAuthToken(createdUser.id);
+
+    await this.emailService.confirmEmail({
+      email: createdUser.email,
+      url: `${origin}/login?token=${token}`,
     });
 
     return createdUser;

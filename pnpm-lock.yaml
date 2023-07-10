@@ -59,6 +59,9 @@ dependencies:
   mongoose:
     specifier: ^7.2.4
     version: 7.2.4
+  nodemailer:
+    specifier: ^6.9.3
+    version: 6.9.3
   prisma:
     specifier: ^4.14.1
     version: 4.14.1
@@ -106,6 +109,9 @@ devDependencies:
   '@types/node':
     specifier: 18.15.11
     version: 18.15.11
+  '@types/nodemailer':
+    specifier: ^6.4.8
+    version: 6.4.8
   '@types/supertest':
     specifier: ^2.0.11
     version: 2.0.11
@@ -1662,6 +1668,12 @@ packages:
 
   /@types/node@18.15.11:
     resolution: {integrity: sha512-E5Kwq2n4SbMzQOn6wnmBjuK9ouqlURrcZDVfbo9ftDDTFt3nk7ZKK4GMOzoYgnpQJKcxwQw+lGaBvvlMo0qN/Q==}
+
+  /@types/nodemailer@6.4.8:
+    resolution: {integrity: sha512-oVsJSCkqViCn8/pEu2hfjwVO+Gb3e+eTWjg3PcjeFKRItfKpKwHphQqbYmPQrlMk+op7pNNWPbsJIEthpFN/OQ==}
+    dependencies:
+      '@types/node': 18.15.11
+    dev: true
 
   /@types/parse-json@4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
@@ -5110,6 +5122,11 @@ packages:
   /node-releases@2.0.12:
     resolution: {integrity: sha512-QzsYKWhXTWx8h1kIvqfnC++o0pEmpRQA/aenALsL2F4pqNVr7YzcdMlDij5WBnwftRbJCNJL/O7zdKaxKPHqgQ==}
     dev: true
+
+  /nodemailer@6.9.3:
+    resolution: {integrity: sha512-fy9v3NgTzBngrMFkDsKEj0r02U7jm6XfC3b52eoNV+GCrGj+s8pt5OqhiJdWKuw51zCTdiNR/IUD1z33LIIGpg==}
+    engines: {node: '>=6.0.0'}
+    dev: false
 
   /nopt@5.0.0:
     resolution: {integrity: sha512-Tbj67rffqceeLpcRXrT7vKAN8CwfPeIBgM7E6iBkmKLV7bEMwpGgYLGv0jACUsECaa/vuxP0IjEont6umdMgtQ==}

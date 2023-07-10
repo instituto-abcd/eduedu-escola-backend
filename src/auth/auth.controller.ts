@@ -1,4 +1,10 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -13,6 +19,7 @@ import { ResetPasswordDto } from './dto/request/reset-password-request.dto';
 import { ChangePasswordDto } from './dto/request/change-password-resquest.dto';
 import { ResetPasswordResponseDto } from './dto/response/reset-password-response.dto';
 import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
+import { Request } from 'express';
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -48,9 +55,10 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
+    @Req() req: Request,
   ): Promise<ResetPasswordResponseDto> {
     const { email } = resetPasswordDto;
-    return await this.authService.resetPassword(email);
+    return await this.authService.resetPassword(email, req.headers.origin);
   }
 
   @Post('change-password')
