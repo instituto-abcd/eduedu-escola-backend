@@ -22,7 +22,7 @@ export class AuditService {
       entity: params.entity,
     };
 
-    const totalCount = await this.prismaService.student.count({
+    const totalCount = await this.prismaService.audit.count({
       where: whereFilter,
     });
 
