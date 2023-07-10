@@ -33,6 +33,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { Response } from 'express';
 import { join } from 'path';
+import { StudentResponseDto } from 'src/student/dto/response/student-response.dto';
+import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -166,5 +168,29 @@ export class SchoolClassController {
     } catch (e) {
       throw new EduException('UNKNOWN_ERROR');
     }
+  }
+
+  @ApiOperation({
+    summary: 'Listar alunos percetences a uma turma',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [StudentResponseDto],
+  })
+  @Get(':id/students')
+  studentsByClass(@Param('id') id: string) {
+    return this.schoolClassService.studentsByClass(id);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Alunos movimentados com sucesso',
+  })
+  @Post(':destinationId/students')
+  addStudentsToClass(
+    @Param('destinationId') destinationId: string,
+    @Body() data: AddStudentsToClassDto,
+  ) {
+    return this.schoolClassService.moveStudentsToClass(destinationId, data);
   }
 }

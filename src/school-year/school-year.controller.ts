@@ -15,13 +15,14 @@ import {
   ErrorDetails,
 } from '../common/exceptions/edu-school.exception';
 import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
-import { SchoolYearResponse } from './dto/response/school-year-response';
+import { AuditGuard } from 'src/common/guard/audit.guard';
 
 @ApiTags('Ano Letivo')
 @Controller('school-year')
 export class SchoolYearController {
   constructor(private readonly schoolYearService: SchoolYearService) {}
 
+  @AuditGuard()
   @Post()
   @ApiOperation({ summary: 'Criar um novo ano letivo' })
   @ApiCreatedResponse({ description: 'Ano Letivo criado com sucesso' })
@@ -77,6 +78,7 @@ export class SchoolYearController {
     }
   }
 
+  @AuditGuard()
   @Delete()
   @ApiOperation({ summary: 'Excluir um ano letivo' })
   @ApiResponse({ status: 200, description: 'Ano letivo excluído com sucesso' })

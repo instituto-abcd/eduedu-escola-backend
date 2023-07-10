@@ -6,6 +6,7 @@ import { ValidationUtilsService } from '../common/utils/validation-utils.service
 import { BcryptService } from '../common/services/bcrypt.service';
 import { AuthService } from 'src/auth/auth.service';
 import { DateApiService } from 'src/common/services/date-api.service';
+import { EmailService } from 'src/email/email.service';
 
 @Module({
   controllers: [UserController],
@@ -16,6 +17,7 @@ import { DateApiService } from 'src/common/services/date-api.service';
     BcryptService,
     AuthService,
     DateApiService,
+    EmailService,
   ],
 })
 export class UserModule {}
