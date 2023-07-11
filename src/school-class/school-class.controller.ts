@@ -35,12 +35,14 @@ import { Response } from 'express';
 import { join } from 'path';
 import { StudentResponseDto } from 'src/student/dto/response/student-response.dto';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
+import { AuditGuard } from 'src/common/guard/audit.guard';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
 export class SchoolClassController {
   constructor(private readonly schoolClassService: SchoolClassService) {}
 
+  @AuditGuard()
   @Post()
   @ApiOperation({ summary: 'Criar uma nova turma' })
   @ApiCreatedResponse({
@@ -120,6 +122,7 @@ export class SchoolClassController {
     return this.schoolClassService.remove(ids);
   }
 
+  @AuditGuard()
   @Post('/:id/students/spreadsheet')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Adicionar alunos por meio de uma planilha' })
