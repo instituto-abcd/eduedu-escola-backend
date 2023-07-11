@@ -3,10 +3,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as nodemailer from 'nodemailer';
 import { passwordTemplate } from 'src/templates/password-reset-template';
 import { emailConfirmTemplate } from 'src/templates/email-confirm-template';
+import { BcryptService } from 'src/common/services/bcrypt.service';
 
 @Injectable()
 export class EmailService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly bcryptService: BcryptService) {}
 
   private async getClient() {
     const credentials = await this.prismaService.settings.findFirst();
@@ -14,14 +17,11 @@ export class EmailService {
     try {
       const transport = nodemailer.createTransport({
         host: credentials.smtpHostName,
-        port: 587,
-        secure:
-          process.env.NODE_ENV === 'production'
-            ? credentials.sslIsActive
-            : false,
+        port: 465,
+        secure: credentials.sslIsActive,
         auth: {
           user: credentials.smtpUserName,
-          pass: credentials.smtpPassword,
+          pass: this.bcryptService.decrypt(credentials.smtpPassword),
         },
       });
 
