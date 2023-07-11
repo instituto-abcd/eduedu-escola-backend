@@ -38,6 +38,7 @@ import { UpdatePasswordRequestDto } from './dto/request/update-password-request.
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
 import { Request } from 'express';
+import { UserSchoolClassesDto } from './dto/response/user-classes.dto';
 
 // import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
@@ -211,5 +212,16 @@ export class UserController {
       oldPassword,
       newPassword,
     );
+  }
+  @ApiOperation({ summary: 'Turmas do usuário logado' })
+  @ApiResponse({
+    status: 200,
+    type: [UserSchoolClassesDto],
+  })
+  @UseGuards(UserGuard)
+  @Get('school-classes/all')
+  async schoolClasses(@Req() req) {
+    const user: User = req.user;
+    return this.userService.userClasses(user.id, user.profile);
   }
 }
