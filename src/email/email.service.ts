@@ -14,7 +14,7 @@ export class EmailService {
     try {
       const transport = nodemailer.createTransport({
         host: credentials.smtpHostName,
-        port: 465,
+        port: 587,
         secure:
           process.env.NODE_ENV === 'production'
             ? credentials.sslIsActive
