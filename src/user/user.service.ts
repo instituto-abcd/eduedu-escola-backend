@@ -15,6 +15,7 @@ import { UserAccessCodeResponseDto } from './dto/response/user-access-code-respo
 import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { DashboardService } from '../dashboard/dashboard.service';
 import { EmailService } from 'src/email/email.service';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class UserService {
     private readonly bcryptService: BcryptService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
+    private readonly dashboard: DashboardService,
   ) {}
 
   async create(
@@ -291,6 +293,7 @@ export class UserService {
       throw new EduException('USERS_NOT_FOUND');
     }
 
+    this.dashboard.updateDashboardData().then();
     return { success: true };
   }
 

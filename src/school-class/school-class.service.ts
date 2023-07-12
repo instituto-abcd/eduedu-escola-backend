@@ -12,11 +12,15 @@ import * as xlsx from 'xlsx';
 import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
+import { DashboardService } from '../dashboard/dashboard.service';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 
 @Injectable()
 export class SchoolClassService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly dashboard: DashboardService,
+  ) {}
 
   async create(
     createSchoolClassDto: CreateSchoolClassDto,
@@ -33,6 +37,14 @@ export class SchoolClassService {
         schoolId,
       },
     });
+
+    this.dashboard
+      .createSchoolClass(
+        schoolClass.id,
+        schoolClass.name,
+        schoolClass.schoolGrade,
+      )
+      .then((r) => console.log(r));
 
     await this.associateTeachersWithSchoolClass(schoolClass.id, teacherIds);
 
@@ -233,6 +245,7 @@ export class SchoolClassService {
       });
     }
 
+    this.dashboard.updateDashboardData().then();
     return this.findOne(id);
   }
 
@@ -248,6 +261,8 @@ export class SchoolClassService {
         },
       },
     });
+
+    this.dashboard.updateDashboardData().then();
 
     await this.prismaService.schoolClass.deleteMany({
       where: {
@@ -325,6 +340,8 @@ export class SchoolClassService {
       data: userSchoolClassData,
       skipDuplicates: true,
     });
+
+    this.dashboard.updateDashboardData().then();
   }
 
   async parseSpreadsheet(
@@ -454,6 +471,7 @@ export class SchoolClassService {
       createdStudents.push(createdStudent);
     }
 
+    this.dashboard.updateDashboardData().then();
     return createdStudents;
   }
 

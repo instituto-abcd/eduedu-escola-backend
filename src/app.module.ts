@@ -8,7 +8,6 @@ import { SchoolMiddleware } from './middlewares/school.middleware';
 import { PrismaService } from './prisma/prisma.service';
 import { SchoolClassController } from './school-class/school-class.controller';
 import { SchoolClassModule } from './school-class/school-class.module';
-import { SchoolClassService } from './school-class/school-class.service';
 import { SchoolYearModule } from './school-year/school-year.module';
 import { UserModule } from './user/user.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
@@ -18,6 +17,9 @@ import { join } from 'path';
 import { SettingsModule } from './settings/settings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationModule } from './notification/notification.module';
+import { DateApiService } from './common/services/date-api.service';
+import { SchoolClassService } from './school-class/school-class.service';
+import { DashboardService } from './dashboard/dashboard.service'; // Import DateApiService
 import { AuditModule } from './audit/audit.module';
 
 @Module({
@@ -47,7 +49,12 @@ import { AuditModule } from './audit/audit.module';
     NotificationModule,
     AuditModule,
   ],
-  providers: [PrismaService, SchoolClassService],
+  providers: [
+    PrismaService,
+    SchoolClassService,
+    DashboardService,
+    DateApiService,
+  ],
   controllers: [SchoolClassController],
 })
 export class AppModule implements NestModule {
