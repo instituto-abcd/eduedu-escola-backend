@@ -141,7 +141,7 @@ export class DashboardService {
         dashboard.id,
       );
     } catch (error) {
-      throw new EduException(error.message);
+      this.logger.log('Error creating school year:', error);
     }
   }
 
@@ -162,7 +162,7 @@ export class DashboardService {
         },
       });
     } catch (error) {
-      throw new EduException(error.message);
+      this.logger.log('Error creating dashboard school grade:', error);
     }
   }
 
@@ -180,7 +180,7 @@ export class DashboardService {
       });
 
       if (!dashboardGrade) {
-        throw new Error(`Dashboard School Grade not found for name: ${grade}`);
+        this.logger.log(`Dashboard School Grade not found for name: ${grade}`);
       }
 
       const data = {
@@ -194,7 +194,7 @@ export class DashboardService {
         data,
       });
     } catch (error) {
-      throw new EduException(error.message);
+      this.logger.log('Error creating school class:', error);
     }
   }
 
@@ -205,92 +205,97 @@ export class DashboardService {
         include: { dashboardPerformances: true },
       });
     } catch (error) {
-      this.logger.log(error.message);
+      this.logger.log('Error getting school classes by grade:', error);
     }
   }
 
   async updateDashboardData() {
-    const schoolYear = await this.externalApiService.getCurrentYear();
-    const dashboardId = await this.getDashboardId(schoolYear);
+    try {
+      const schoolYear = await this.externalApiService.getCurrentYear();
+      const dashboardId = await this.getDashboardId(schoolYear);
 
-    const teachersCounter = await this.prisma.userSchoolClass.count({
-      where: {
-        schoolClass: {
-          schoolYear: {
-            name: schoolYear,
-          },
-        },
-      },
-    });
-
-    const schoolClassesCounter = await this.prisma.schoolClass.count({
-      where: {
-        schoolYear: {
-          name: schoolYear,
-        },
-      },
-    });
-
-    const studentsCounter = await this.prisma.schoolClassStudent.count({
-      where: {
-        schoolClass: {
-          schoolYear: {
-            name: schoolYear,
-          },
-        },
-      },
-    });
-
-    const dashboard = await this.prisma.dashboard.upsert({
-      where: { id: dashboardId },
-      update: {
-        teachersCounter,
-        schoolClassesCounter,
-        studentsCounter,
-      },
-      create: {
-        schoolYear,
-        teachersCounter,
-        schoolClassesCounter,
-        studentsCounter,
-      },
-    });
-
-    for (const grade of Object.values(SchoolGradeEnum)) {
-      const gradeId = await this.getDashboardSchoolGradeId(grade, dashboard.id);
-
-      const teachersCounterGrade = await this.prisma.userSchoolClass.count({
+      const teachersCounter = await this.prisma.userSchoolClass.count({
         where: {
           schoolClass: {
             schoolYear: {
               name: schoolYear,
             },
-            schoolGrade: grade,
           },
         },
       });
 
-      const schoolClassesCounterGrade = await this.prisma.schoolClass.count({
+      const schoolClassesCounter = await this.prisma.schoolClass.count({
         where: {
           schoolYear: {
             name: schoolYear,
           },
-          schoolGrade: grade,
         },
       });
 
-      const studentsCounterGrade = await this.prisma.schoolClassStudent.count({
+      const studentsCounter = await this.prisma.schoolClassStudent.count({
         where: {
           schoolClass: {
             schoolYear: {
               name: schoolYear,
             },
-            schoolGrade: grade,
           },
         },
       });
 
-      const dashboardSchoolGrade =
+      const dashboard = await this.prisma.dashboard.upsert({
+        where: { id: dashboardId },
+        update: {
+          teachersCounter,
+          schoolClassesCounter,
+          studentsCounter,
+        },
+        create: {
+          schoolYear,
+          teachersCounter,
+          schoolClassesCounter,
+          studentsCounter,
+        },
+      });
+
+      for (const grade of Object.values(SchoolGradeEnum)) {
+        const gradeId = await this.getDashboardSchoolGradeId(
+          grade,
+          dashboard.id,
+        );
+
+        const teachersCounterGrade = await this.prisma.userSchoolClass.count({
+          where: {
+            schoolClass: {
+              schoolYear: {
+                name: schoolYear,
+              },
+              schoolGrade: grade,
+            },
+          },
+        });
+
+        const schoolClassesCounterGrade = await this.prisma.schoolClass.count({
+          where: {
+            schoolYear: {
+              name: schoolYear,
+            },
+            schoolGrade: grade,
+          },
+        });
+
+        const studentsCounterGrade = await this.prisma.schoolClassStudent.count(
+          {
+            where: {
+              schoolClass: {
+                schoolYear: {
+                  name: schoolYear,
+                },
+                schoolGrade: grade,
+              },
+            },
+          },
+        );
+
         await this.prisma.dashboardSchoolGrade.upsert({
           where: { id: gradeId },
           update: {
@@ -310,35 +315,36 @@ export class DashboardService {
             },
           },
         });
-    }
+      }
 
-    const schoolClasses = await this.prisma.schoolClass.findMany({
-      where: {
-        schoolYear: {
-          name: schoolYear,
-        },
-      },
-    });
-
-    for (const schoolClass of schoolClasses) {
-      const studentsCounterClass = await this.prisma.schoolClassStudent.count({
+      const schoolClasses = await this.prisma.schoolClass.findMany({
         where: {
-          schoolClass: {
-            id: schoolClass.id,
+          schoolYear: {
+            name: schoolYear,
           },
         },
       });
 
-      const dashboardSchoolGrade =
-        await this.prisma.dashboardSchoolGrade.findFirst({
-          where: {
-            name: schoolClass.schoolGrade,
-            dashboardId: dashboard.id,
+      for (const schoolClass of schoolClasses) {
+        const studentsCounterClass = await this.prisma.schoolClassStudent.count(
+          {
+            where: {
+              schoolClass: {
+                id: schoolClass.id,
+              },
+            },
           },
-        });
+        );
 
-      if (dashboardSchoolGrade) {
-        const dashboardSchoolClass =
+        const dashboardSchoolGrade =
+          await this.prisma.dashboardSchoolGrade.findFirst({
+            where: {
+              name: schoolClass.schoolGrade,
+              dashboardId: dashboard.id,
+            },
+          });
+
+        if (dashboardSchoolGrade) {
           await this.prisma.dashboardSchoolClass.upsert({
             where: { id: schoolClass.id },
             update: {
@@ -354,46 +360,57 @@ export class DashboardService {
               },
             },
           });
+        }
       }
+    } catch (error) {
+      this.logger.log('Error updating dashboard data:', error);
     }
   }
 
   async getDashboardId(schoolYear: number): Promise<string | null> {
-    const dashboard = await this.prisma.dashboard.findFirst({
-      where: {
-        schoolYear: {
-          equals: schoolYear,
+    try {
+      const dashboard = await this.prisma.dashboard.findFirst({
+        where: {
+          schoolYear: {
+            equals: schoolYear,
+          },
         },
-      },
-    });
+      });
 
-    return dashboard ? dashboard.id : null;
+      return dashboard ? dashboard.id : null;
+    } catch (error) {
+      this.logger.log('Error getting dashboard ID:', error);
+    }
   }
 
   async getDashboardSchoolGradeId(
     grade: SchoolGradeEnum,
     dashboardId: string,
   ): Promise<string | null> {
-    const dashboardSchoolGrade =
-      await this.prisma.dashboardSchoolGrade.findFirst({
-        where: {
-          AND: [
-            {
-              name: {
-                equals: grade,
-              },
-            },
-            {
-              dashboard: {
-                id: {
-                  equals: dashboardId,
+    try {
+      const dashboardSchoolGrade =
+        await this.prisma.dashboardSchoolGrade.findFirst({
+          where: {
+            AND: [
+              {
+                name: {
+                  equals: grade,
                 },
               },
-            },
-          ],
-        },
-      });
+              {
+                dashboard: {
+                  id: {
+                    equals: dashboardId,
+                  },
+                },
+              },
+            ],
+          },
+        });
 
-    return dashboardSchoolGrade ? dashboardSchoolGrade.id : null;
+      return dashboardSchoolGrade ? dashboardSchoolGrade.id : null;
+    } catch (error) {
+      this.logger.log('Error getting dashboard school grade ID:', error);
+    }
   }
 }
