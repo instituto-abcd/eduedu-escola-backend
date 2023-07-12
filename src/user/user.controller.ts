@@ -36,6 +36,8 @@ import { UserAccessCodeResponseDto } from './dto/response/user-access-code-respo
 import { UserGuard } from 'src/auth/guard/user.guard';
 import { UpdatePasswordRequestDto } from './dto/request/update-password-request.dto';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { AuditGuard } from 'src/common/guard/audit.guard';
+import { Request } from 'express';
 
 // import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
 
@@ -46,6 +48,7 @@ import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @AuditGuard()
   @Post()
   @ApiResponse({
     status: 201,
@@ -65,8 +68,13 @@ export class UserController {
   async createUser(
     @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
+    @Req() request: Request,
   ): Promise<UserResponseDto> {
-    return this.userService.create(createUserDto, schoolId);
+    return this.userService.create(
+      createUserDto,
+      schoolId,
+      request.headers.origin,
+    );
   }
 
   @Get('all')
@@ -130,6 +138,7 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
+  @AuditGuard()
   @Delete()
   @ApiResponse({
     status: 200,

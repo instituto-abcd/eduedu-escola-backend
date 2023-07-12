@@ -175,8 +175,9 @@ export class SettingsService {
   async createOwner(
     data: CreateUserRequestDto,
     schoolId: string,
+    origin: string,
   ): Promise<AuthResponseDto> {
-    const result = await this.userService.create(data, schoolId);
+    const result = await this.userService.create(data, schoolId, origin);
 
     const owner = await this.prismaService.user.update({
       where: { id: result.id },

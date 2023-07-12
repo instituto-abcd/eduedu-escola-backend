@@ -25,12 +25,14 @@ import { DeleteStudentResponseDto } from './dto/response/delete-student-response
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
+import { AuditGuard } from 'src/common/guard/audit.guard';
 
 @Controller('student')
 @ApiTags('Estudante')
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
+  @AuditGuard()
   @Post()
   @ApiResponse({
     status: 201,
@@ -113,6 +115,7 @@ export class StudentController {
     return this.studentService.update(id, updateStudentDto);
   }
 
+  @AuditGuard()
   @Delete()
   @ApiResponse({
     status: 200,

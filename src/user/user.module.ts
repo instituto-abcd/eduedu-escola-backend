@@ -7,6 +7,7 @@ import { BcryptService } from '../common/services/bcrypt.service';
 import { AuthService } from 'src/auth/auth.service';
 import { DateApiService } from 'src/common/services/date-api.service';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { EmailService } from 'src/email/email.service';
 
 @Module({
   controllers: [UserController],
@@ -18,6 +19,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
     AuthService,
     DateApiService,
     DashboardService,
+    EmailService,
   ],
 })
 export class UserModule {}

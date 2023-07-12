@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Req } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { Settings } from './dto/settings.entity';
@@ -8,6 +8,7 @@ import { UpdateSchoolNameDto } from './dto/update-school-name';
 import { StatusResponseDto } from './dto/status-response.dto';
 import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { Request } from 'express';
 
 @ApiTags('Settings')
 @Controller('system-configuration')
@@ -74,7 +75,12 @@ export class SettingsController {
   async createOwner(
     @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
+    @Req() request: Request,
   ): Promise<AuthResponseDto> {
-    return this.settingsService.createOwner(createUserDto, schoolId);
+    return this.settingsService.createOwner(
+      createUserDto,
+      schoolId,
+      request.headers.origin,
+    );
   }
 }

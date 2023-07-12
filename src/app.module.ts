@@ -20,6 +20,7 @@ import { NotificationModule } from './notification/notification.module';
 import { DateApiService } from './common/services/date-api.service';
 import { SchoolClassService } from './school-class/school-class.service';
 import { DashboardService } from './dashboard/dashboard.service'; // Import DateApiService
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { DashboardService } from './dashboard/dashboard.service'; // Import Date
     SettingsModule,
     DashboardModule,
     NotificationModule,
+    AuditModule,
   ],
   providers: [
     PrismaService,
