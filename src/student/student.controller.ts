@@ -19,10 +19,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  EduException,
-  ErrorDetails,
-} from '../common/exceptions/edu-school.exception';
+import { ErrorDetails } from '../common/exceptions/edu-school.exception';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { DeleteStudentResponseDto } from './dto/response/delete-student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';

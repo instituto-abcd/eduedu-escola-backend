@@ -7,15 +7,25 @@ import { SchoolClassResponseDto } from './dto/response/school-class-response';
 import { DeleteUserResponseDto } from '../user/dto/response/delete-user-response.dto';
 import { PaginationInfo } from '../common/pagination/pagination-info-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma, SchoolClassStudent, Status, Student } from '@prisma/client';
+import {
+  Prisma,
+  SchoolClassStudent,
+  SchoolGradeEnum,
+  Status,
+  Student,
+} from '@prisma/client';
 import * as xlsx from 'xlsx';
 import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
+import { DashboardService } from '../dashboard/dashboard.service';
 
 @Injectable()
 export class SchoolClassService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly dashboard: DashboardService,
+  ) {}
 
   async create(
     createSchoolClassDto: CreateSchoolClassDto,
@@ -33,7 +43,19 @@ export class SchoolClassService {
       },
     });
 
-    await this.associateTeachersWithSchoolClass(schoolClass.id, teacherIds);
+    this.dashboard
+      .createSchoolClass(
+        schoolClass.id,
+        schoolClass.name,
+        schoolClass.schoolGrade,
+      )
+      .then((r) => console.log(r));
+
+    await this.associateTeachersWithSchoolClass(
+      schoolClass.id,
+      teacherIds,
+      schoolClass.schoolGrade,
+    );
 
     const teachers = await this.prismaService.userSchoolClass.findMany({
       where: { schoolClassId: schoolClass.id },
@@ -232,6 +254,7 @@ export class SchoolClassService {
       });
     }
 
+    this.dashboard.updateDashboardData().then();
     return this.findOne(id);
   }
 
@@ -247,6 +270,8 @@ export class SchoolClassService {
         },
       },
     });
+
+    this.dashboard.updateDashboardData().then();
 
     await this.prismaService.schoolClass.deleteMany({
       where: {
@@ -289,6 +314,7 @@ export class SchoolClassService {
   private async associateTeachersWithSchoolClass(
     schoolClassId: string,
     teacherIds: string[],
+    schoolGrade: SchoolGradeEnum,
   ): Promise<void> {
     if (!teacherIds || teacherIds.length === 0) {
       throw new EduException('IDS_TEACHER_REQUIRED');
@@ -318,6 +344,8 @@ export class SchoolClassService {
       data: userSchoolClassData,
       skipDuplicates: true,
     });
+
+    this.dashboard.updateDashboardData().then();
   }
 
   async parseSpreadsheet(
@@ -446,6 +474,7 @@ export class SchoolClassService {
       createdStudents.push(createdStudent);
     }
 
+    this.dashboard.updateDashboardData();
     return createdStudents;
   }
 }

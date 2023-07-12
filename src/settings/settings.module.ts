@@ -4,9 +4,10 @@ import { SettingsController } from './settings.controller';
 import { PrismaService } from '../prisma/prisma.service';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { UserService } from 'src/user/user.service';
-import { ValidationUtilsService } from 'src/common/utils/validation-utils.service';
 import { AuthService } from 'src/auth/auth.service';
-import { DateApiService } from 'src/common/services/date-api.service';
+import { DashboardService } from '../dashboard/dashboard.service';
+import { ValidationUtilsService } from '../common/utils/validation-utils.service';
+import { DateApiService } from '../common/services/date-api.service';
 
 @Module({
   controllers: [SettingsController],
@@ -15,9 +16,10 @@ import { DateApiService } from 'src/common/services/date-api.service';
     PrismaService,
     BcryptService,
     UserService,
-    ValidationUtilsService,
     AuthService,
+    DashboardService,
     DateApiService,
+    ValidationUtilsService,
   ],
 })
 export class SettingsModule {}

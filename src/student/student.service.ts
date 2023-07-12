@@ -8,10 +8,14 @@ import { StudentResponseDto } from './dto/response/student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
+import { DashboardService } from '../dashboard/dashboard.service';
 
 @Injectable()
 export class StudentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dashboard: DashboardService,
+  ) {}
 
   async create(
     createStudentDto: CreateStudentRequestDto,
@@ -43,8 +47,12 @@ export class StudentService {
         },
       },
     });
+    const schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClassId },
+      include: { schoolYear: true },
+    });
 
-    const schoolClass = createdStudent.schoolClasses?.[0]?.schoolClass || null;
+    this.dashboard.updateDashboardData().then();
 
     return {
       id: createdStudent.id,
@@ -200,6 +208,7 @@ export class StudentService {
   ): Promise<StudentResponseDto> {
     const { name, registry, status, schoolClassId } = updateStudentDto;
 
+    // TODO pegar o id antigo da turma e atualizar o dashboard
     const updatedStudent = await this.prisma.student.update({
       where: { id },
       data: {
@@ -229,6 +238,8 @@ export class StudentService {
     const schoolClassName = schoolClass?.name ?? null;
     const schoolPeriod = schoolClass?.schoolPeriod ?? null;
     const schoolGrade = schoolClass?.schoolGrade ?? null;
+
+    this.dashboard.updateDashboardData().then();
 
     return {
       id: studentId,
@@ -267,6 +278,7 @@ export class StudentService {
       throw new EduException('STUDENT_NOT_FOUND');
     }
 
+    this.dashboard.updateDashboardData().then();
     return { success: true };
   }
 
