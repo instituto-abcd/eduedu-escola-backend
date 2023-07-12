@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiCreatedResponse,
   ApiOperation,
   ApiResponse,
@@ -20,6 +21,7 @@ import { ChangePasswordDto } from './dto/request/change-password-resquest.dto';
 import { ResetPasswordResponseDto } from './dto/response/reset-password-response.dto';
 import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
 import { Request } from 'express';
+import { AuthAccessKeyDto } from './dto/request/AuthAccessKey.dto';
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -77,5 +79,17 @@ export class AuthController {
       password,
       passwordConfirmation,
     );
+  }
+
+  @Post('access-key')
+  @ApiOperation({ summary: 'Autenticar via chave (código) de acesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Autenticação bem-sucedida',
+    type: AuthResponseDto,
+  })
+  @ApiBody({ type: AuthAccessKeyDto })
+  async authenticateAccessKey(@Body() body: AuthAccessKeyDto) {
+    return this.authService.authenticateAccessKey(body.accessKey);
   }
 }
