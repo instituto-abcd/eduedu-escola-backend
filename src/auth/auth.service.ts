@@ -147,4 +147,24 @@ export class AuthService {
       },
     });
   }
+
+  async authenticateAccessKey(accessKey: string): Promise<AuthResponseDto> {
+    const user = await this.prismaService.user.findFirst({
+      where: { accessKey },
+    });
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    const accessToken = this.generateAccessToken(user);
+
+    return {
+      accessToken,
+      document: user.document,
+      email: user.email,
+      id: user.id,
+      name: user.name,
+    };
+  }
 }
