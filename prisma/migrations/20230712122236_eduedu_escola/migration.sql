@@ -95,6 +95,7 @@ CREATE TABLE "SchoolClassStudent" (
     "schoolClassId" TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "reserved" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("schoolClassId")
 );
