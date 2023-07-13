@@ -14,6 +14,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
+import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
+import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 
 @Injectable()
 export class SchoolClassService {
@@ -453,6 +455,7 @@ export class SchoolClassService {
           schoolClassId: schoolClassId,
           studentId: createdStudent.id,
           active: true,
+          reserved: false,
         };
 
         try {
@@ -535,5 +538,36 @@ export class SchoolClassService {
       destinationClass: destinationClass.name,
       originClass: originClass.name,
     };
+  }
+
+  async updateStudentReserved(
+    schoolClassId: string,
+    studentId: string,
+    requestDto: ReservedStudentRequestDto,
+  ): Promise<UpdateStudentReservedResponseDto> {
+    try {
+      const updatedSchoolClassStudent =
+        await this.prismaService.schoolClassStudent.updateMany({
+          where: {
+            schoolClassId: schoolClassId,
+            studentId: studentId,
+          },
+          data: {
+            reserved: requestDto.reserved,
+          },
+        });
+
+      if (updatedSchoolClassStudent.count > 0) {
+        return { success: true };
+      } else {
+        throw new EduException('STUDENT_NOT_FOUND');
+      }
+    } catch (error) {
+      if (error instanceof EduException) {
+        throw error;
+      } else {
+        throw new EduException('DATABASE_ERROR');
+      }
+    }
   }
 }
