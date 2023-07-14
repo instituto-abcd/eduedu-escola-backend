@@ -21,9 +21,13 @@ import { DateApiService } from './common/services/date-api.service';
 import { SchoolClassService } from './school-class/school-class.service';
 import { DashboardService } from './dashboard/dashboard.service'; // Import DateApiService
 import { AuditModule } from './audit/audit.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SchoolYearSchedulerService } from "./schedules/school-year-schedule.service";
+import { SchoolClassScheduleService } from "./schedules/school-class-schedule.service";
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(process.env.MONGO_URI, {
       auth: {
@@ -54,6 +58,8 @@ import { AuditModule } from './audit/audit.module';
     SchoolClassService,
     DashboardService,
     DateApiService,
+    SchoolYearSchedulerService,
+    SchoolClassScheduleService,
   ],
   controllers: [SchoolClassController],
 })
