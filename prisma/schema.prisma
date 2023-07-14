@@ -132,7 +132,7 @@ model SchoolClassStudent {
   active        Boolean     @default(true)
   reserved      Boolean     @default(false)
 
-  @@id([schoolClassId])
+  @@id([studentId, schoolClassId])
 }
 
 // Model for AuthToken
