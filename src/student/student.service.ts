@@ -26,30 +26,30 @@ export class StudentService {
       throw new EduException('MISSING_REQUIRED_FIELDS');
     }
 
+    const schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClassId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
     const createdStudent = await this.prisma.student.create({
       data: {
         name,
         registry,
         status,
-        schoolClasses: schoolClassId
-          ? {
-              create: {
-                schoolClassId,
-              },
-            }
-          : undefined,
-      },
-      include: {
-        schoolClasses: {
-          include: {
-            schoolClass: true,
-          },
-        },
       },
     });
-    const schoolClass = await this.prisma.schoolClass.findFirst({
-      where: { id: schoolClassId },
-      include: { schoolYear: true },
+
+    await this.prisma.schoolClassStudent.create({
+      data: {
+        schoolClassId: schoolClass.id,
+        studentId: createdStudent.id,
+        active: true,
+        reserved: false,
+      },
     });
 
     this.dashboard.updateDashboardData().then();
@@ -58,10 +58,10 @@ export class StudentService {
       id: createdStudent.id,
       name: createdStudent.name,
       registry: createdStudent.registry,
-      schoolClassId: schoolClass?.id || null,
-      schoolClassName: schoolClass?.name || null,
-      schoolPeriod: schoolClass?.schoolPeriod || null,
-      schoolGrade: schoolClass?.schoolGrade || null,
+      schoolClassId: schoolClass.id,
+      schoolClassName: schoolClass.name,
+      schoolPeriod: schoolClass.schoolPeriod,
+      schoolGrade: schoolClass.schoolGrade,
       status: createdStudent.status,
     };
   }
@@ -208,7 +208,15 @@ export class StudentService {
   ): Promise<StudentResponseDto> {
     const { name, registry, status, schoolClassId } = updateStudentDto;
 
-    // TODO pegar o id antigo da turma e atualizar o dashboard
+    const schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClassId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
     const updatedStudent = await this.prisma.student.update({
       where: { id },
       data: {
@@ -216,39 +224,27 @@ export class StudentService {
         registry,
         status,
         schoolClasses: {
-          updateMany: {
-            where: { studentId: id },
-            data: { schoolClassId },
+          deleteMany: { studentId: id },
+          create: {
+            schoolClass: { connect: { id: schoolClassId } },
           },
         },
       },
       include: {
-        schoolClasses: {
-          include: {
-            schoolClass: true,
-          },
-        },
+        schoolClasses: { include: { schoolClass: true } },
       },
     });
-
-    const { id: studentId, schoolClasses } = updatedStudent;
-
-    const schoolClass = schoolClasses[0]?.schoolClass;
-
-    const schoolClassName = schoolClass?.name ?? null;
-    const schoolPeriod = schoolClass?.schoolPeriod ?? null;
-    const schoolGrade = schoolClass?.schoolGrade ?? null;
 
     this.dashboard.updateDashboardData().then();
 
     return {
-      id: studentId,
+      id: updatedStudent.id,
       name: updatedStudent.name,
       registry: updatedStudent.registry,
-      schoolClassId,
-      schoolClassName,
-      schoolPeriod,
-      schoolGrade,
+      schoolClassId: schoolClass?.id || null,
+      schoolClassName: schoolClass?.name || null,
+      schoolPeriod: schoolClass?.schoolPeriod || null,
+      schoolGrade: schoolClass?.schoolGrade || null,
       status: updatedStudent.status,
     };
   }

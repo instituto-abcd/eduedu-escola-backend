@@ -505,33 +505,25 @@ export class SchoolClassService {
       );
     }
 
-    await this.prismaService.schoolClassStudent.update({
-      where: {
-        schoolClassId: originClass.id,
-      },
-      data: {
-        active: false,
-      },
-    });
-
     const promises_moveToDestination = data.studentIds.map((studentId) =>
-      this.prismaService.schoolClassStudent.upsert({
-        where: {
-          schoolClassId: destinationClass.id,
+      this.prismaService.student.update({
+        where: { id: studentId },
+        data: {
+          schoolClasses: {
+            deleteMany: { studentId: studentId },
+            create: {
+              schoolClass: { connect: { id: destinationClass.id } },
+            },
+          },
         },
-        create: {
-          schoolClassId: destinationClass.id,
-          studentId,
-          active: true,
-        },
-        update: {
-          schoolClassId: destinationClass.id,
-          active: true,
+        include: {
+          schoolClasses: { include: { schoolClass: true } },
         },
       }),
     );
 
     await Promise.all(promises_moveToDestination);
+    this.dashboard.updateDashboardData().then();
 
     return {
       studentsMoved: promises_moveToDestination.length,
