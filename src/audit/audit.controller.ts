@@ -19,6 +19,7 @@ export class AuditController {
     @Query('userId') userId?: string,
     @Query('action') action?: string,
     @Query('entity') entity?: string,
+    @Query('createdAt') createdAt?: string,
   ) {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
@@ -29,6 +30,7 @@ export class AuditController {
       entity,
       pageNumber,
       pageSize,
+      createdAt: createdAt && new Date(createdAt),
     });
   }
 }
