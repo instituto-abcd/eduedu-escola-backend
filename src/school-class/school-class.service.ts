@@ -247,7 +247,8 @@ export class SchoolClassService {
       });
     }
 
-    this.dashboard.updateDashboardData().then();
+    const schollYear = await this.getSchoolYearNameFromClassId(id);
+    this.dashboard.updateDashboardData(schollYear).then();
     return this.findOne(id);
   }
 
@@ -343,7 +344,8 @@ export class SchoolClassService {
       skipDuplicates: true,
     });
 
-    this.dashboard.updateDashboardData().then();
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClassId);
+    this.dashboard.updateDashboardData(schollYear).then();
   }
 
   async parseSpreadsheet(
@@ -474,7 +476,8 @@ export class SchoolClassService {
       createdStudents.push(createdStudent);
     }
 
-    this.dashboard.updateDashboardData().then();
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClassId);
+    this.dashboard.updateDashboardData(schollYear).then();
     return createdStudents;
   }
 
@@ -523,7 +526,10 @@ export class SchoolClassService {
     );
 
     await Promise.all(promises_moveToDestination);
-    this.dashboard.updateDashboardData().then();
+    const schollYear = await this.getSchoolYearNameFromClassId(
+      destinationClass.id,
+    );
+    this.dashboard.updateDashboardData(schollYear).then();
 
     return {
       studentsMoved: promises_moveToDestination.length,
@@ -561,5 +567,18 @@ export class SchoolClassService {
         throw new EduException('DATABASE_ERROR');
       }
     }
+  }
+
+  async getSchoolYearNameFromClassId(classId: string): Promise<number> {
+    const schoolClass = await this.prismaService.schoolClass.findUnique({
+      where: { id: classId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new Error('SchoolClass not found.');
+    }
+
+    return schoolClass.schoolYear.name;
   }
 }
