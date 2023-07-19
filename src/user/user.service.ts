@@ -273,6 +273,11 @@ export class UserService {
       throw new EduException('CANNOT_DELETE_OWNER_USERS');
     }
 
+    const schoolClassIds = await this.getSchoolClassIdsByUserIds(ids);
+    const schoolYearNames = await this.getSchoolYearNamesBySchoolClassIds(
+      schoolClassIds,
+    );
+
     await this.prismaService.userSchoolClass.deleteMany({
       where: {
         userId: {
@@ -293,7 +298,8 @@ export class UserService {
       throw new EduException('USERS_NOT_FOUND');
     }
 
-    this.dashboard.updateDashboardData().then();
+    this.dashboard.updateDashboardDataArray(schoolYearNames).then();
+
     return { success: true };
   }
 
@@ -455,5 +461,52 @@ export class UserService {
     });
 
     return classes;
+  }
+
+  async getSchoolClassIdsByUserIds(userIds: string[]): Promise<string[]> {
+    const userSchoolClasses = await this.prismaService.userSchoolClass.findMany(
+      {
+        where: {
+          userId: {
+            in: userIds,
+          },
+        },
+        select: {
+          schoolClassId: true,
+        },
+      },
+    );
+
+    return userSchoolClasses.map((item) => item.schoolClassId);
+  }
+
+  async getSchoolYearNamesBySchoolClassIds(
+    schoolClassIds: string[],
+  ): Promise<number[]> {
+    const schoolClasses = await this.prismaService.schoolClass.findMany({
+      where: {
+        id: {
+          in: schoolClassIds,
+        },
+      },
+      select: {
+        schoolYearId: true,
+      },
+    });
+
+    const schoolYearIds = schoolClasses.map((item) => item.schoolYearId);
+
+    const schoolYears = await this.prismaService.schoolYear.findMany({
+      where: {
+        id: {
+          in: schoolYearIds,
+        },
+      },
+      select: {
+        name: true,
+      },
+    });
+
+    return schoolYears.map((item) => item.name);
   }
 }

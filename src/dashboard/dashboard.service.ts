@@ -1,16 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, SchoolGradeEnum } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { Prisma, SchoolGradeEnum } from "@prisma/client";
 import {
   DashboardDto,
   ExamPerformanceDto,
   PlanetPerformanceDto,
   SchoolClassDto,
-  SchoolGradeDto,
-} from './dto/dashboard.dto';
-import { EduException } from '../common/exceptions/edu-school.exception';
-import { PrismaService } from '../prisma/prisma.service';
-import { v4 as uuidv4 } from 'uuid';
-import { DateApiService } from '../common/services/date-api.service';
+  SchoolGradeDto
+} from "./dto/dashboard.dto";
+import { EduException } from "../common/exceptions/edu-school.exception";
+import { PrismaService } from "../prisma/prisma.service";
+import { v4 as uuidv4 } from "uuid";
+import { DateApiService } from "../common/services/date-api.service";
 
 @Injectable()
 export class DashboardService {
@@ -209,9 +209,12 @@ export class DashboardService {
     }
   }
 
-  async updateDashboardData() {
+  async updateDashboardData(schoolYear?: number) {
     try {
-      const schoolYear = await this.externalApiService.getCurrentYear();
+      if (schoolYear == null) {
+        schoolYear = await this.externalApiService.getCurrentYear();
+      }
+
       const dashboardId = await this.getDashboardId(schoolYear);
 
       const teachersCounter = await this.prisma.userSchoolClass.count({
@@ -361,6 +364,16 @@ export class DashboardService {
             },
           });
         }
+      }
+    } catch (error) {
+      this.logger.log('Error updating dashboard data:', error);
+    }
+  }
+
+  async updateDashboardDataArray(schoolYears: number[]) {
+    try {
+      for (const schoolYear of schoolYears) {
+        await this.updateDashboardData(schoolYear);
       }
     } catch (error) {
       this.logger.log('Error updating dashboard data:', error);

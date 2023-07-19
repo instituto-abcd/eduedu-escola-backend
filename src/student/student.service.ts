@@ -52,7 +52,8 @@ export class StudentService {
       },
     });
 
-    this.dashboard.updateDashboardData().then();
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClass.id);
+    this.dashboard.updateDashboardData(schollYear).then();
 
     return {
       id: createdStudent.id,
@@ -235,7 +236,8 @@ export class StudentService {
       },
     });
 
-    this.dashboard.updateDashboardData().then();
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClass.id);
+    this.dashboard.updateDashboardData(schollYear).then();
 
     return {
       id: updatedStudent.id,
@@ -253,6 +255,11 @@ export class StudentService {
     if (!ids || ids.length === 0) {
       throw new EduException('IDS_REQUIRED');
     }
+
+    const schoolClassIds = await this.getSchoolClassIdsByStudentIds(ids);
+    const schoolYearNames = await this.getSchoolYearNamesBySchoolClassIds(
+      schoolClassIds,
+    );
 
     await this.prisma.schoolClassStudent.deleteMany({
       where: {
@@ -274,7 +281,7 @@ export class StudentService {
       throw new EduException('STUDENT_NOT_FOUND');
     }
 
-    this.dashboard.updateDashboardData().then();
+    this.dashboard.updateDashboardDataArray(schoolYearNames).then();
     return { success: true };
   }
 
@@ -308,5 +315,56 @@ export class StudentService {
       }
       throw new EduException('DATABASE_ERROR');
     }
+  }
+
+  async getSchoolYearNameFromClassId(classId: string): Promise<number> {
+    const schoolClass = await this.prisma.schoolClass.findUnique({
+      where: { id: classId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new Error('SchoolClass not found.');
+    }
+
+    return schoolClass.schoolYear.name;
+  }
+
+  async getSchoolClassIdsByStudentIds(studentIds: string[]): Promise<string[]> {
+    const userSchoolClasses = await this.prisma.schoolClassStudent.findMany({
+      where: {
+        studentId: {
+          in: studentIds,
+        },
+      },
+      select: {
+        schoolClassId: true,
+      },
+    });
+
+    return userSchoolClasses.map((item) => item.schoolClassId);
+  }
+
+  async getSchoolYearNamesBySchoolClassIds(
+    schoolClassIds: string[],
+  ): Promise<number[]> {
+    const schoolClasses = await this.prisma.schoolClass.findMany({
+      where: {
+        id: {
+          in: schoolClassIds,
+        },
+      },
+      select: {
+        schoolYear: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    const schoolYearNames = schoolClasses.map((item) => item.schoolYear.name);
+
+    return [...new Set(schoolYearNames)];
   }
 }
