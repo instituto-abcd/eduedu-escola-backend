@@ -22,8 +22,8 @@ import { SchoolClassService } from './school-class/school-class.service';
 import { DashboardService } from './dashboard/dashboard.service'; // Import DateApiService
 import { AuditModule } from './audit/audit.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { SchoolYearSchedulerService } from "./schedules/school-year-schedule.service";
-import { SchoolClassScheduleService } from "./schedules/school-class-schedule.service";
+import { SchoolYearSchedulerService } from './schedules/school-year-schedule.service';
+import { SchoolClassScheduleService } from './schedules/school-class-schedule.service';
 
 @Module({
   imports: [

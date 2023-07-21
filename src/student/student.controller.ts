@@ -26,11 +26,16 @@ import { InativeStudantRequestDto } from './dto/request/inative-studant-request.
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
+import { PlanetTrackDto } from './dto/planet-track.dto';
+import { StudentExamService } from './studentExam.service';
 
 @Controller('student')
 @ApiTags('Estudante')
 export class StudentController {
-  constructor(private readonly studentService: StudentService) {}
+  constructor(
+    private readonly studentService: StudentService,
+    private readonly studentExamService: StudentExamService,
+  ) {}
 
   @AuditGuard()
   @Post()
@@ -141,5 +146,23 @@ export class StudentController {
     @Body() requestDto: InativeStudantRequestDto,
   ): Promise<InativeStudentResponseDto> {
     return this.studentService.deactivateStudants(requestDto);
+  }
+
+  @Get('/:id/planet-track')
+  @ApiResponse({
+    status: 200,
+    description: 'Rota do planeta recuperada com sucesso',
+    type: PlanetTrackDto,
+  })
+  @ApiBadRequestResponse({ description: 'Requsição inválida' })
+  @ApiResponse({
+    status: ErrorDetails.STUDENT_NOT_FOUND.status,
+    description: ErrorDetails.STUDENT_NOT_FOUND.message,
+  })
+  @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
+  async getPlanetTrack(
+    @Param('id') studentId: string,
+  ): Promise<PlanetTrackDto> {
+    return this.studentExamService.getPlanetTrack(studentId);
   }
 }
