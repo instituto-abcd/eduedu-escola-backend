@@ -6,8 +6,17 @@ import { StudentService } from './student.service';
 import { StudentController } from './student.controller';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { DateApiService } from '../common/services/date-api.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { StudentExam, StudentExamSchema } from './schemas/studentExam.schema';
+import { StudentExamService } from './studentExam.service';
+import { AwardsService } from '../awards/awards.service';
 
 @Module({
+  imports: [
+    MongooseModule.forFeature([
+      { name: StudentExam.name, schema: StudentExamSchema },
+    ]),
+  ],
   controllers: [StudentController],
   providers: [
     StudentService,
@@ -16,6 +25,8 @@ import { DateApiService } from '../common/services/date-api.service';
     BcryptService,
     DashboardService,
     DateApiService,
+    StudentExamService,
+    AwardsService,
   ],
 })
 export class StudentModule {}

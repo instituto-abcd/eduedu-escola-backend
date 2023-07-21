@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -19,18 +20,29 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ErrorDetails } from '../common/exceptions/edu-school.exception';
+import {
+  EduException,
+  ErrorDetails,
+} from '../common/exceptions/edu-school.exception';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { DeleteStudentResponseDto } from './dto/response/delete-student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
+import { PlanetTrackDto } from './dto/planet-track.dto';
+import { StudentExamService } from './studentExam.service';
+import { StudentAwardsResponseDto } from '../awards/dto/awards.dto';
+import { AwardsService } from '../awards/awards.service';
 
 @Controller('student')
 @ApiTags('Estudante')
 export class StudentController {
-  constructor(private readonly studentService: StudentService) {}
+  constructor(
+    private readonly studentService: StudentService,
+    private readonly studentExamService: StudentExamService,
+    private readonly awardsService: AwardsService,
+  ) {}
 
   @AuditGuard()
   @Post()
@@ -141,5 +153,50 @@ export class StudentController {
     @Body() requestDto: InativeStudantRequestDto,
   ): Promise<InativeStudentResponseDto> {
     return this.studentService.deactivateStudants(requestDto);
+  }
+
+  @Get('/:id/planet-track')
+  @ApiResponse({
+    status: 200,
+    description: 'Rota do planeta recuperada com sucesso',
+    type: PlanetTrackDto,
+  })
+  @ApiBadRequestResponse({ description: 'Requsição inválida' })
+  @ApiResponse({
+    status: ErrorDetails.STUDENT_NOT_FOUND.status,
+    description: ErrorDetails.STUDENT_NOT_FOUND.message,
+  })
+  @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
+  async getPlanetTrack(
+    @Param('id') studentId: string,
+  ): Promise<PlanetTrackDto> {
+    return this.studentExamService.getPlanetTrack(studentId);
+  }
+
+  @Get('/:id/awards')
+  @ApiOperation({ summary: 'Obter os prêmios do estudante pelo ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de prêmios do estudante',
+    type: StudentAwardsResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Requisição inválida' })
+  @ApiResponse({
+    status: ErrorDetails.STUDENT_NOT_FOUND.status,
+    description: ErrorDetails.STUDENT_NOT_FOUND.message,
+  })
+  async getStudentAwards(
+    @Param('id') studentId: string,
+  ): Promise<StudentAwardsResponseDto> {
+    try {
+      const awards = await this.awardsService.getStudentAwards(studentId);
+      return { awards };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new EduException('STUDENT_NOT_FOUND');
+      } else {
+        throw new EduException('UNKNOWN_ERROR');
+      }
+    }
   }
 }

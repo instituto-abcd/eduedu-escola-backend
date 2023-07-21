@@ -1,16 +1,16 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Prisma, SchoolGradeEnum } from "@prisma/client";
+import { Injectable, Logger } from '@nestjs/common';
+import { Prisma, SchoolGradeEnum } from '@prisma/client';
 import {
   DashboardDto,
   ExamPerformanceDto,
   PlanetPerformanceDto,
   SchoolClassDto,
-  SchoolGradeDto
-} from "./dto/dashboard.dto";
-import { EduException } from "../common/exceptions/edu-school.exception";
-import { PrismaService } from "../prisma/prisma.service";
-import { v4 as uuidv4 } from "uuid";
-import { DateApiService } from "../common/services/date-api.service";
+  SchoolGradeDto,
+} from './dto/dashboard.dto';
+import { EduException } from '../common/exceptions/edu-school.exception';
+import { PrismaService } from '../prisma/prisma.service';
+import { v4 as uuidv4 } from 'uuid';
+import { DateApiService } from '../common/services/date-api.service';
 
 @Injectable()
 export class DashboardService {
@@ -46,7 +46,7 @@ export class DashboardService {
 
       const schoolGrades: SchoolGradeDto[] = await Promise.all(
         dashboard.dashboardSchoolGrades.map(async (grade) => {
-          const schoolClasses = await this.getSchoolClassesByGrade(grade.name);
+          const schoolClasses = await this.getSchoolClassesByGrade(grade.id);
           const mappedSchoolClasses = await Promise.all(
             schoolClasses.map(async (schoolClass) =>
               this.mapSchoolClassDto(schoolClass),
@@ -198,11 +198,15 @@ export class DashboardService {
     }
   }
 
-  async getSchoolClassesByGrade(grade: SchoolGradeEnum): Promise<any[]> {
+  async getSchoolClassesByGrade(dashboardGradeId: string): Promise<any[]> {
     try {
       return this.prisma.dashboardSchoolClass.findMany({
-        where: { dashboardGrade: { name: grade } },
-        include: { dashboardPerformances: true },
+        where: {
+          dashboardGradeId,
+        },
+        include: {
+          dashboardPerformances: true,
+        },
       });
     } catch (error) {
       this.logger.log('Error getting school classes by grade:', error);
