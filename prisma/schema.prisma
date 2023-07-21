@@ -83,13 +83,15 @@ model SchoolYear {
 
 // Model for Student
 model Student {
-  id            String               @id @default(uuid())
-  name          String
-  registry      String               @default("")
-  status        Status               @default(ACTIVE)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  registry  String   @default("")
+  status    Status   @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   schoolClasses SchoolClassStudent[]
+  studentAwards StudentAward[]
 }
 
 // Model for User
@@ -133,6 +135,25 @@ model SchoolClassStudent {
   reserved      Boolean     @default(false)
 
   @@id([studentId, schoolClassId])
+}
+
+// Model for SchoolClassStudent
+model Award {
+  id            String         @id @default(uuid())
+  name          String
+  studentAwards StudentAward[]
+}
+
+// Model for SchoolClassStudent
+model StudentAward {
+  id        String  @id @default(uuid())
+  award     Award   @relation(fields: [awardId], references: [id])
+  awardId   String
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId String
+
+  @@index([awardId])
+  @@index([studentId])
 }
 
 // Model for AuthToken
