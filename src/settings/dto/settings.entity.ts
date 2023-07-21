@@ -19,6 +19,9 @@ export class Settings {
   @ApiProperty({ example: 'password' })
   smtpPassword: string;
 
+  @ApiProperty({ example: '1234' })
+  smtpPort: number;
+
   @ApiProperty({ example: true })
   sslIsActive: boolean;
 

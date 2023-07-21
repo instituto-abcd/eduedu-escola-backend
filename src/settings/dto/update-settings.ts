@@ -16,6 +16,9 @@ export class UpdateSettingsDto {
   @ApiProperty({ example: 'password', required: false })
   smtpPassword?: string;
 
+  @ApiProperty({ example: '1234', required: false })
+  smtpPort?: number;
+
   @ApiProperty({ example: true, required: false })
   sslIsActive?: boolean;
 }

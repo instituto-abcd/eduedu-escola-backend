@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PaginationResponse } from 'src/common/pagination/pagination-response.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { endOfDay, startOfDay } from 'date-fns';
 
 type ListParams = {
   userId?: string;
@@ -9,6 +10,7 @@ type ListParams = {
   entity?: string;
   pageNumber: number;
   pageSize: number;
+  createdAt?: Date;
 };
 
 @Injectable()
@@ -18,8 +20,12 @@ export class AuditService {
   async list(params: ListParams) {
     const whereFilter: Prisma.AuditWhereInput = {
       userId: params.userId,
-      action: params.action,
-      entity: params.entity,
+      action: params.action && { contains: params.action, mode: 'insensitive' },
+      entity: params.entity && { contains: params.entity, mode: 'insensitive' },
+      createdAt: params.createdAt && {
+        lte: endOfDay(params.createdAt),
+        gte: startOfDay(params.createdAt),
+      },
     };
 
     const totalCount = await this.prismaService.audit.count({

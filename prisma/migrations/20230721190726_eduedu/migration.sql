@@ -136,6 +136,7 @@ CREATE TABLE "Settings" (
     "smtpHostName" TEXT NOT NULL,
     "smtpUserName" TEXT NOT NULL,
     "smtpPassword" TEXT NOT NULL,
+    "smtpPort" INTEGER NOT NULL,
     "sslIsActive" BOOLEAN NOT NULL,
     "schoolId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

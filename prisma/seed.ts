@@ -20,6 +20,7 @@ async function main() {
       smtpHostName: 'smtp.office365.com',
       smtpUserName: 'suporte@eduedu.com.br',
       smtpPassword: 'U2FsdGVkX1+EbIw/A/eKm214FZsLg0Afb3E2/rEfJrU=', //123456
+      smtpPort: 465,
       sslIsActive: true,
       schoolId: schoolId,
     },
