@@ -47,6 +47,7 @@ export class SettingsService {
       smtpHostName: settings.smtpHostName,
       smtpUserName: settings.smtpUserName,
       smtpPassword: password,
+      smtpPort: settings.smtpPort,
       sslIsActive: settings.sslIsActive,
       schoolId: settings.schoolId,
       createdAt: settings.createdAt,
@@ -88,6 +89,10 @@ export class SettingsService {
       updateData.sslIsActive = updateSettingsDto.sslIsActive;
     }
 
+    if (updateSettingsDto.smtpPort !== undefined) {
+      updateData.smtpPort = updateSettingsDto.smtpPort;
+    }
+
     if (updateSettingsDto.schoolName !== undefined) {
       settings.schoolName = updateSettingsDto.schoolName;
       updateData.school = { update: { name: updateSettingsDto.schoolName } };
@@ -104,6 +109,7 @@ export class SettingsService {
       synchronizationPlanets: updatedSettings.synchronizationPlanets,
       smtpHostName: updatedSettings.smtpHostName,
       smtpUserName: updatedSettings.smtpUserName,
+      smtpPort: updatedSettings.smtpPort,
       smtpPassword: updateSettingsDto.smtpPassword,
       sslIsActive: updatedSettings.sslIsActive,
       schoolId: updatedSettings.schoolId,
@@ -141,6 +147,7 @@ export class SettingsService {
       synchronizationPlanets: updatedSettings.synchronizationPlanets,
       smtpHostName: updatedSettings.smtpHostName,
       smtpUserName: updatedSettings.smtpUserName,
+      smtpPort: updatedSettings.smtpPort,
       smtpPassword: password,
       sslIsActive: updatedSettings.sslIsActive,
       schoolId: updatedSettings.schoolId,

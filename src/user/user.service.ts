@@ -4,7 +4,7 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma, Profile, Status, User } from '@prisma/client';
+import { Prisma, Profile, Status, User, UserSchoolClass } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
@@ -15,6 +15,7 @@ import { UserAccessCodeResponseDto } from './dto/response/user-access-code-respo
 import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { DashboardService } from '../dashboard/dashboard.service';
 import { EmailService } from 'src/email/email.service';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class UserService {
     private readonly bcryptService: BcryptService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
+    private readonly dashboard: DashboardService,
   ) {}
 
   async create(
@@ -271,6 +273,11 @@ export class UserService {
       throw new EduException('CANNOT_DELETE_OWNER_USERS');
     }
 
+    const schoolClassIds = await this.getSchoolClassIdsByUserIds(ids);
+    const schoolYearNames = await this.getSchoolYearNamesBySchoolClassIds(
+      schoolClassIds,
+    );
+
     await this.prismaService.userSchoolClass.deleteMany({
       where: {
         userId: {
@@ -290,6 +297,8 @@ export class UserService {
     if (deleteResult.count === 0) {
       throw new EduException('USERS_NOT_FOUND');
     }
+
+    this.dashboard.updateDashboardDataArray(schoolYearNames).then();
 
     return { success: true };
   }
@@ -425,5 +434,79 @@ export class UserService {
       email: user.email,
       password: newPassword,
     });
+  }
+
+  async userClasses(
+    userId: string,
+    userProfile: Profile,
+  ): Promise<{ name: string; id: string }[]> {
+    let classesByUser: UserSchoolClass[];
+
+    if (userProfile === Profile.TEACHER) {
+      classesByUser = await this.prismaService.userSchoolClass.findMany({
+        where: { userId },
+      });
+    }
+
+    if (userProfile === Profile.DIRECTOR) {
+      classesByUser = await this.prismaService.userSchoolClass.findMany();
+    }
+
+    const classes = await this.prismaService.schoolClass.findMany({
+      where: { id: { in: classesByUser.map((c) => c.schoolClassId) } },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    return classes;
+  }
+
+  async getSchoolClassIdsByUserIds(userIds: string[]): Promise<string[]> {
+    const userSchoolClasses = await this.prismaService.userSchoolClass.findMany(
+      {
+        where: {
+          userId: {
+            in: userIds,
+          },
+        },
+        select: {
+          schoolClassId: true,
+        },
+      },
+    );
+
+    return userSchoolClasses.map((item) => item.schoolClassId);
+  }
+
+  async getSchoolYearNamesBySchoolClassIds(
+    schoolClassIds: string[],
+  ): Promise<number[]> {
+    const schoolClasses = await this.prismaService.schoolClass.findMany({
+      where: {
+        id: {
+          in: schoolClassIds,
+        },
+      },
+      select: {
+        schoolYearId: true,
+      },
+    });
+
+    const schoolYearIds = schoolClasses.map((item) => item.schoolYearId);
+
+    const schoolYears = await this.prismaService.schoolYear.findMany({
+      where: {
+        id: {
+          in: schoolYearIds,
+        },
+      },
+      select: {
+        name: true,
+      },
+    });
+
+    return schoolYears.map((item) => item.name);
   }
 }

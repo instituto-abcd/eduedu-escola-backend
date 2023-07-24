@@ -42,13 +42,15 @@ export class _AuditGuard implements CanActivate {
     }
 
     const entityDict = {
-      '/school-year': 'Ano letivo',
-      '/schoolclass': 'Turma',
-      '/student': 'Aluno',
-      '/user': 'Usuário',
+      'school-year': 'Ano letivo',
+      schoolClass: 'Turma',
+      student: 'Aluno',
+      user: 'Usuário',
     };
 
-    if (!Object.keys(entityDict).includes(request.url)) {
+    const matchers = Object.keys(entityDict);
+
+    if (!matchers.includes(request.url.replace(/\//g, ''))) {
       throw new HttpException('AUDIT__ENTITY_NOT_ALLOWED', 400);
     }
 
@@ -60,7 +62,7 @@ export class _AuditGuard implements CanActivate {
           },
         },
         action: methodDict[request.method],
-        entity: entityDict[request.url],
+        entity: entityDict[request.url.replace(/\//g, '')],
       },
     });
 

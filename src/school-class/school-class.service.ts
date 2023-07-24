@@ -12,11 +12,17 @@ import * as xlsx from 'xlsx';
 import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
+import { DashboardService } from '../dashboard/dashboard.service';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
+import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
+import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 
 @Injectable()
 export class SchoolClassService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly dashboard: DashboardService,
+  ) {}
 
   async create(
     createSchoolClassDto: CreateSchoolClassDto,
@@ -33,6 +39,14 @@ export class SchoolClassService {
         schoolId,
       },
     });
+
+    this.dashboard
+      .createSchoolClass(
+        schoolClass.id,
+        schoolClass.name,
+        schoolClass.schoolGrade,
+      )
+      .then((r) => console.log(r));
 
     await this.associateTeachersWithSchoolClass(schoolClass.id, teacherIds);
 
@@ -233,6 +247,8 @@ export class SchoolClassService {
       });
     }
 
+    const schollYear = await this.getSchoolYearNameFromClassId(id);
+    this.dashboard.updateDashboardData(schollYear).then();
     return this.findOne(id);
   }
 
@@ -248,6 +264,8 @@ export class SchoolClassService {
         },
       },
     });
+
+    this.dashboard.updateDashboardData().then();
 
     await this.prismaService.schoolClass.deleteMany({
       where: {
@@ -325,6 +343,9 @@ export class SchoolClassService {
       data: userSchoolClassData,
       skipDuplicates: true,
     });
+
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClassId);
+    this.dashboard.updateDashboardData(schollYear).then();
   }
 
   async parseSpreadsheet(
@@ -436,6 +457,7 @@ export class SchoolClassService {
           schoolClassId: schoolClassId,
           studentId: createdStudent.id,
           active: true,
+          reserved: false,
         };
 
         try {
@@ -454,6 +476,8 @@ export class SchoolClassService {
       createdStudents.push(createdStudent);
     }
 
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClassId);
+    this.dashboard.updateDashboardData(schollYear).then();
     return createdStudents;
   }
 
@@ -484,38 +508,77 @@ export class SchoolClassService {
       );
     }
 
-    await this.prismaService.schoolClassStudent.update({
-      where: {
-        schoolClassId: originClass.id,
-      },
-      data: {
-        active: false,
-      },
-    });
-
     const promises_moveToDestination = data.studentIds.map((studentId) =>
-      this.prismaService.schoolClassStudent.upsert({
-        where: {
-          schoolClassId: destinationClass.id,
+      this.prismaService.student.update({
+        where: { id: studentId },
+        data: {
+          schoolClasses: {
+            deleteMany: { studentId: studentId },
+            create: {
+              schoolClass: { connect: { id: destinationClass.id } },
+            },
+          },
         },
-        create: {
-          schoolClassId: destinationClass.id,
-          studentId,
-          active: true,
-        },
-        update: {
-          schoolClassId: destinationClass.id,
-          active: true,
+        include: {
+          schoolClasses: { include: { schoolClass: true } },
         },
       }),
     );
 
     await Promise.all(promises_moveToDestination);
+    const schollYear = await this.getSchoolYearNameFromClassId(
+      destinationClass.id,
+    );
+    this.dashboard.updateDashboardData(schollYear).then();
 
     return {
       studentsMoved: promises_moveToDestination.length,
       destinationClass: destinationClass.name,
       originClass: originClass.name,
     };
+  }
+
+  async updateStudentReserved(
+    schoolClassId: string,
+    studentId: string,
+    requestDto: ReservedStudentRequestDto,
+  ): Promise<UpdateStudentReservedResponseDto> {
+    try {
+      const updatedSchoolClassStudent =
+        await this.prismaService.schoolClassStudent.updateMany({
+          where: {
+            schoolClassId: schoolClassId,
+            studentId: studentId,
+          },
+          data: {
+            reserved: requestDto.reserved,
+          },
+        });
+
+      if (updatedSchoolClassStudent.count > 0) {
+        return { success: true };
+      } else {
+        throw new EduException('STUDENT_NOT_FOUND');
+      }
+    } catch (error) {
+      if (error instanceof EduException) {
+        throw error;
+      } else {
+        throw new EduException('DATABASE_ERROR');
+      }
+    }
+  }
+
+  async getSchoolYearNameFromClassId(classId: string): Promise<number> {
+    const schoolClass = await this.prismaService.schoolClass.findUnique({
+      where: { id: classId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new Error('SchoolClass not found.');
+    }
+
+    return schoolClass.schoolYear.name;
   }
 }

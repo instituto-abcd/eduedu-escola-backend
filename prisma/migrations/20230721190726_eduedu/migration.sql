@@ -95,8 +95,26 @@ CREATE TABLE "SchoolClassStudent" (
     "schoolClassId" TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "reserved" BOOLEAN NOT NULL DEFAULT false,
 
-    CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("schoolClassId")
+    CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("studentId","schoolClassId")
+);
+
+-- CreateTable
+CREATE TABLE "Award" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Award_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StudentAward" (
+    "id" TEXT NOT NULL,
+    "awardId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+
+    CONSTRAINT "StudentAward_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -118,6 +136,7 @@ CREATE TABLE "Settings" (
     "smtpHostName" TEXT NOT NULL,
     "smtpUserName" TEXT NOT NULL,
     "smtpPassword" TEXT NOT NULL,
+    "smtpPort" INTEGER NOT NULL,
     "sslIsActive" BOOLEAN NOT NULL,
     "schoolId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -221,6 +240,12 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_document_key" ON "User"("document");
 
 -- CreateIndex
+CREATE INDEX "StudentAward_awardId_idx" ON "StudentAward"("awardId");
+
+-- CreateIndex
+CREATE INDEX "StudentAward_studentId_idx" ON "StudentAward"("studentId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "AuthToken_token_key" ON "AuthToken"("token");
 
 -- CreateIndex
@@ -249,6 +274,12 @@ ALTER TABLE "SchoolClassStudent" ADD CONSTRAINT "SchoolClassStudent_schoolClassI
 
 -- AddForeignKey
 ALTER TABLE "SchoolClassStudent" ADD CONSTRAINT "SchoolClassStudent_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentAward" ADD CONSTRAINT "StudentAward_awardId_fkey" FOREIGN KEY ("awardId") REFERENCES "Award"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentAward" ADD CONSTRAINT "StudentAward_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AuthToken" ADD CONSTRAINT "AuthToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

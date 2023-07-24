@@ -35,12 +35,17 @@ import { Response } from 'express';
 import { join } from 'path';
 import { StudentResponseDto } from 'src/student/dto/response/student-response.dto';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
+import { AuditGuard } from 'src/common/guard/audit.guard';
+import { StudentsByClassResponseDto } from './dto/response/students-by-class-reserved-response';
+import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
+import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
 export class SchoolClassController {
   constructor(private readonly schoolClassService: SchoolClassService) {}
 
+  @AuditGuard()
   @Post()
   @ApiOperation({ summary: 'Criar uma nova turma' })
   @ApiCreatedResponse({
@@ -120,6 +125,7 @@ export class SchoolClassController {
     return this.schoolClassService.remove(ids);
   }
 
+  @AuditGuard()
   @Post('/:id/students/spreadsheet')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Adicionar alunos por meio de uma planilha' })
@@ -192,5 +198,26 @@ export class SchoolClassController {
     @Body() data: AddStudentsToClassDto,
   ) {
     return this.schoolClassService.moveStudentsToClass(destinationId, data);
+  }
+
+  @Patch(':id/students/:studentId/reserved')
+  @ApiResponse({
+    status: 200,
+    description: 'Valor do campo reserved atualizado com sucesso',
+  })
+  @ApiNotFoundResponse({ description: 'Turma ou aluno não encontrado' })
+  @ApiOperation({
+    summary: 'Atualizar campo reserved de um aluno em uma turma',
+  })
+  async updateStudentReserved(
+    @Param('id') schoolClassId: string,
+    @Param('studentId') studentId: string,
+    @Body() reserved: ReservedStudentRequestDto,
+  ): Promise<UpdateStudentReservedResponseDto> {
+    return await this.schoolClassService.updateStudentReserved(
+      schoolClassId,
+      studentId,
+      reserved,
+    );
   }
 }

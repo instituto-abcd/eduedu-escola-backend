@@ -8,10 +8,14 @@ import { StudentResponseDto } from './dto/response/student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
+import { DashboardService } from '../dashboard/dashboard.service';
 
 @Injectable()
 export class StudentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dashboard: DashboardService,
+  ) {}
 
   async create(
     createStudentDto: CreateStudentRequestDto,
@@ -22,38 +26,43 @@ export class StudentService {
       throw new EduException('MISSING_REQUIRED_FIELDS');
     }
 
+    const schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClassId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
     const createdStudent = await this.prisma.student.create({
       data: {
         name,
         registry,
         status,
-        schoolClasses: schoolClassId
-          ? {
-              create: {
-                schoolClassId,
-              },
-            }
-          : undefined,
-      },
-      include: {
-        schoolClasses: {
-          include: {
-            schoolClass: true,
-          },
-        },
       },
     });
 
-    const schoolClass = createdStudent.schoolClasses?.[0]?.schoolClass || null;
+    await this.prisma.schoolClassStudent.create({
+      data: {
+        schoolClassId: schoolClass.id,
+        studentId: createdStudent.id,
+        active: true,
+        reserved: false,
+      },
+    });
+
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClass.id);
+    this.dashboard.updateDashboardData(schollYear).then();
 
     return {
       id: createdStudent.id,
       name: createdStudent.name,
       registry: createdStudent.registry,
-      schoolClassId: schoolClass?.id || null,
-      schoolClassName: schoolClass?.name || null,
-      schoolPeriod: schoolClass?.schoolPeriod || null,
-      schoolGrade: schoolClass?.schoolGrade || null,
+      schoolClassId: schoolClass.id,
+      schoolClassName: schoolClass.name,
+      schoolPeriod: schoolClass.schoolPeriod,
+      schoolGrade: schoolClass.schoolGrade,
       status: createdStudent.status,
     };
   }
@@ -200,6 +209,15 @@ export class StudentService {
   ): Promise<StudentResponseDto> {
     const { name, registry, status, schoolClassId } = updateStudentDto;
 
+    const schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClassId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
     const updatedStudent = await this.prisma.student.update({
       where: { id },
       data: {
@@ -207,37 +225,28 @@ export class StudentService {
         registry,
         status,
         schoolClasses: {
-          updateMany: {
-            where: { studentId: id },
-            data: { schoolClassId },
+          deleteMany: { studentId: id },
+          create: {
+            schoolClass: { connect: { id: schoolClassId } },
           },
         },
       },
       include: {
-        schoolClasses: {
-          include: {
-            schoolClass: true,
-          },
-        },
+        schoolClasses: { include: { schoolClass: true } },
       },
     });
 
-    const { id: studentId, schoolClasses } = updatedStudent;
-
-    const schoolClass = schoolClasses[0]?.schoolClass;
-
-    const schoolClassName = schoolClass?.name ?? null;
-    const schoolPeriod = schoolClass?.schoolPeriod ?? null;
-    const schoolGrade = schoolClass?.schoolGrade ?? null;
+    const schollYear = await this.getSchoolYearNameFromClassId(schoolClass.id);
+    this.dashboard.updateDashboardData(schollYear).then();
 
     return {
-      id: studentId,
+      id: updatedStudent.id,
       name: updatedStudent.name,
       registry: updatedStudent.registry,
-      schoolClassId,
-      schoolClassName,
-      schoolPeriod,
-      schoolGrade,
+      schoolClassId: schoolClass?.id || null,
+      schoolClassName: schoolClass?.name || null,
+      schoolPeriod: schoolClass?.schoolPeriod || null,
+      schoolGrade: schoolClass?.schoolGrade || null,
       status: updatedStudent.status,
     };
   }
@@ -246,6 +255,11 @@ export class StudentService {
     if (!ids || ids.length === 0) {
       throw new EduException('IDS_REQUIRED');
     }
+
+    const schoolClassIds = await this.getSchoolClassIdsByStudentIds(ids);
+    const schoolYearNames = await this.getSchoolYearNamesBySchoolClassIds(
+      schoolClassIds,
+    );
 
     await this.prisma.schoolClassStudent.deleteMany({
       where: {
@@ -267,6 +281,7 @@ export class StudentService {
       throw new EduException('STUDENT_NOT_FOUND');
     }
 
+    this.dashboard.updateDashboardDataArray(schoolYearNames).then();
     return { success: true };
   }
 
@@ -300,5 +315,56 @@ export class StudentService {
       }
       throw new EduException('DATABASE_ERROR');
     }
+  }
+
+  async getSchoolYearNameFromClassId(classId: string): Promise<number> {
+    const schoolClass = await this.prisma.schoolClass.findUnique({
+      where: { id: classId },
+      include: { schoolYear: true },
+    });
+
+    if (!schoolClass) {
+      throw new Error('SchoolClass not found.');
+    }
+
+    return schoolClass.schoolYear.name;
+  }
+
+  async getSchoolClassIdsByStudentIds(studentIds: string[]): Promise<string[]> {
+    const userSchoolClasses = await this.prisma.schoolClassStudent.findMany({
+      where: {
+        studentId: {
+          in: studentIds,
+        },
+      },
+      select: {
+        schoolClassId: true,
+      },
+    });
+
+    return userSchoolClasses.map((item) => item.schoolClassId);
+  }
+
+  async getSchoolYearNamesBySchoolClassIds(
+    schoolClassIds: string[],
+  ): Promise<number[]> {
+    const schoolClasses = await this.prisma.schoolClass.findMany({
+      where: {
+        id: {
+          in: schoolClassIds,
+        },
+      },
+      select: {
+        schoolYear: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    const schoolYearNames = schoolClasses.map((item) => item.schoolYear.name);
+
+    return [...new Set(schoolYearNames)];
   }
 }

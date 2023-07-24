@@ -1,34 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as nodemailer from 'nodemailer';
 import { passwordTemplate } from 'src/templates/password-reset-template';
 import { emailConfirmTemplate } from 'src/templates/email-confirm-template';
+import { BcryptService } from 'src/common/services/bcrypt.service';
 
 @Injectable()
 export class EmailService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly bcryptService: BcryptService,
+  ) {}
 
   private async getClient() {
     const credentials = await this.prismaService.settings.findFirst();
 
-    try {
-      const transport = nodemailer.createTransport({
-        host: credentials.smtpHostName,
-        port: 465,
-        secure:
-          process.env.NODE_ENV === 'production'
-            ? credentials.sslIsActive
-            : false,
-        auth: {
-          user: credentials.smtpUserName,
-          pass: credentials.smtpPassword,
-        },
-      });
+    const transport = nodemailer.createTransport({
+      host: credentials.smtpHostName,
+      port: credentials.smtpPort,
+      secure: credentials.sslIsActive,
+      auth: {
+        user: credentials.smtpUserName,
+        pass: this.bcryptService.decrypt(credentials.smtpPassword),
+      },
+      tls: {
+        ciphers: 'SSLv3',
+      },
+    });
 
-      return transport;
-    } catch (error) {
-      console.error(error);
-    }
+    transport.on('error', (error) => {
+      throw new HttpException(`Erro SMTP: ${error}`, 500);
+    });
+
+    return transport;
   }
 
   async resetPassword({
@@ -42,22 +46,30 @@ export class EmailService {
   }) {
     const client = await this.getClient();
 
-    client.sendMail({
-      from: 'EduEdu Escola <edueduescola@institutoabcd.org>',
-      to: email,
-      subject: 'Redefinição de senha',
-      html: passwordTemplate(url, name),
-    });
+    client
+      .sendMail({
+        from: 'EduEdu Escola <edueduescola@institutoabcd.org>',
+        to: email,
+        subject: 'Redefinição de senha',
+        html: passwordTemplate(url, name),
+      })
+      .catch((error) => {
+        console.error('Erro ao enviar email:', error);
+      });
   }
 
   async confirmEmail({ url, email }: { url: string; email: string }) {
     const client = await this.getClient();
 
-    client.sendMail({
-      from: 'EduEdu Escola <edueduescola@institutoabcd.org>',
-      to: email,
-      subject: 'Confirmação de email',
-      html: emailConfirmTemplate(url, email),
-    });
+    client
+      .sendMail({
+        from: 'EduEdu Escola <edueduescola@institutoabcd.org>',
+        to: email,
+        subject: 'Confirmação de email',
+        html: emailConfirmTemplate(url, email),
+      })
+      .catch((error) => {
+        console.error('Erro ao enviar email:', error);
+      });
   }
 }
