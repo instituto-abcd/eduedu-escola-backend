@@ -16,6 +16,8 @@ import { DashboardService } from '../dashboard/dashboard.service';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
+import { StudentResponseDto } from '../student/dto/response/student-response.dto';
+import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
 
 @Injectable()
 export class SchoolClassService {
@@ -279,10 +281,64 @@ export class SchoolClassService {
     return { success: true };
   }
 
-  studentsByClass(schoolClassId: string) {
-    return this.prismaService.student.findMany({
-      where: { schoolClasses: { some: { schoolClassId } } },
-    });
+  async getStudentsByClass(
+    schoolClassId: string,
+    pageNumber: number,
+    pageSize: number,
+  ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
+    const skip = (pageNumber - 1) * pageSize;
+
+    const where: Prisma.StudentWhereInput = {
+      schoolClasses: { some: { schoolClassId } },
+    };
+
+    try {
+      const students = await this.prismaService.student.findMany({
+        where,
+        skip,
+        take: pageSize,
+        include: {
+          schoolClasses: {
+            include: {
+              schoolClass: true,
+            },
+          },
+        },
+      });
+
+      const totalCount = await this.prismaService.student.count({
+        where,
+      });
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      const pagination = {
+        totalItems: totalCount,
+        pageSize: pageSize,
+        pageNumber: pageNumber,
+        totalPages: totalPages,
+        previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
+        nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
+        lastPage: totalPages,
+        hasPreviousPage: pageNumber > 1,
+        hasNextPage: pageNumber < totalPages,
+      };
+
+      const responseStudents: StudentSimplifiedResponseDto[] = students.map(
+        (student) => {
+          return {
+            id: student.id,
+            name: student.name,
+            registry: student.registry,
+            status: student.status,
+          };
+        },
+      );
+
+      return new PaginationResponse(responseStudents, pagination);
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 
   private validateCreateSchoolClassDto(
