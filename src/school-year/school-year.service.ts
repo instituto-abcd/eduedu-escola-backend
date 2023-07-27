@@ -75,7 +75,10 @@ export class SchoolYearService {
         const buttonEnabled =
           createdSchoolYear.status === 'DRAFT' &&
           currentYear == createdSchoolYear.name;
-        await this.dashboardService.createSchoolYear(createdSchoolYear.name);
+        await this.dashboardService.createSchoolYear(
+          createdSchoolYear.id,
+          createdSchoolYear.name,
+        );
         return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
       } else {
         throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
@@ -88,7 +91,10 @@ export class SchoolYearService {
       const buttonEnabled =
         createdSchoolYear.status === 'DRAFT' &&
         currentYear == createdSchoolYear.name;
-      await this.dashboardService.createSchoolYear(createdSchoolYear.name);
+      await this.dashboardService.createSchoolYear(
+        createdSchoolYear.id,
+        createdSchoolYear.name,
+      );
       return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
     }
 

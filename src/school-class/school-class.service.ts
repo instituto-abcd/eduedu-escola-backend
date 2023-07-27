@@ -42,6 +42,7 @@ export class SchoolClassService {
 
     this.dashboard
       .createSchoolClass(
+        schoolClass.schoolYearId,
         schoolClass.id,
         schoolClass.name,
         schoolClass.schoolGrade,
