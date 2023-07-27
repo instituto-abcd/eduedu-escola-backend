@@ -25,6 +25,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { SchoolYearSchedulerService } from './schedules/school-year-schedule.service';
 import { SchoolClassScheduleService } from './schedules/school-class-schedule.service';
 import { AwardsModule } from './awards/awards.module';
+import { ExamModule } from './exam/exam.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AwardsModule } from './awards/awards.module';
     NotificationModule,
     AuditModule,
     AwardsModule,
+    ExamModule,
   ],
   providers: [
     PrismaService,

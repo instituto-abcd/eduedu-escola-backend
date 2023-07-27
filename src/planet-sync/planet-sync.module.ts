@@ -16,6 +16,6 @@ import { PlanetSync, PlanetSyncSchema } from './schemas/sync-list.schema';
   ],
   controllers: [PlanetSyncController],
   providers: [PlanetSyncService, PrismaService, FirestoreService],
-  exports: [PlanetSyncModule],
+  exports: [PlanetSyncModule, FirestoreService],
 })
 export class PlanetSyncModule {}
