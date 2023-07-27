@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { firebaseApp } from './firebase.service';
 import { Planet } from './schemas/planet.schema';
+import { IExam } from 'src/exam/schemas/exam.schema';
 
 @Injectable()
 export class FirestoreService {
@@ -27,5 +28,14 @@ export class FirestoreService {
     const doc = docSnapshot.data() as Planet;
 
     return doc;
+  }
+
+  async getExams(): Promise<IExam[]> {
+    const docRef = await this.db.collection('exams').listDocuments();
+    const documents = await Promise.all(docRef.map((doc) => doc.get()));
+
+    const exams = documents.map((doc) => doc.data()) as IExam[];
+
+    return exams;
   }
 }
