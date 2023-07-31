@@ -107,7 +107,7 @@ export class SchoolClassController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateSchoolClassRequestDto,
-  ): Promise<SchoolClassResponseDto> {
+  ): Promise<CreateSchoolClassResponseDto> {
     return this.schoolClassService.updateSchoolClass(id, updateUserDto);
   }
 

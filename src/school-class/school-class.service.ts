@@ -218,29 +218,57 @@ export class SchoolClassService {
 
   async updateSchoolClass(
     id: string,
-    data: UpdateSchoolClassRequestDto,
-  ): Promise<SchoolClassResponseDto> {
-    const { name, schoolGrade, schoolPeriod, teachers } = data;
+    updateSchoolClassDto: UpdateSchoolClassRequestDto,
+  ): Promise<CreateSchoolClassResponseDto> {
+    const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
-    await this.prismaService.schoolClass.update({
+    const existingSchoolClass = await this.validateSchoolClassExists(id);
+    await this.updateClassData(id, schoolClassData);
+    if (teacherIds != null) {
+      await this.handleUserSchoolClassUpdates(id, teacherIds);
+    }
+
+    await this.updateDashboardData(id);
+
+    return await this.createResponseDto(id);
+  }
+
+  private async validateSchoolClassExists(id: string) {
+    const existingSchoolClass = await this.prismaService.schoolClass.findUnique(
+      { where: { id } },
+    );
+    if (!existingSchoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+    return existingSchoolClass;
+  }
+
+  private async updateClassData(id: string, schoolClassData: any) {
+    return this.prismaService.schoolClass.update({
       where: { id },
-      data: { name, schoolGrade, schoolPeriod },
+      data: schoolClassData,
     });
+  }
 
+  private async getExistingUserIdsForClass(id: string): Promise<string[]> {
     const existingUserSchoolClasses =
       await this.prismaService.userSchoolClass.findMany({
         where: { schoolClassId: id },
         select: { userId: true },
       });
 
-    const existingUserIds = existingUserSchoolClasses.map(
+    return existingUserSchoolClasses.map(
       (userSchoolClass) => userSchoolClass.userId,
     );
+  }
 
-    const newUserSchoolClasses = teachers
-      .filter((teacher) => !existingUserIds.includes(teacher.id))
-      .map((teacher) => ({
-        userId: teacher.id,
+  private async handleUserSchoolClassUpdates(id: string, teacherIds: string[]) {
+    const existingUserIds = await this.getExistingUserIdsForClass(id);
+
+    const newUserSchoolClasses = teacherIds
+      .filter((teacherId) => !existingUserIds.includes(teacherId))
+      .map((teacherId) => ({
+        userId: teacherId,
         schoolClassId: id,
       }));
 
@@ -249,10 +277,30 @@ export class SchoolClassService {
         data: newUserSchoolClasses,
       });
     }
+  }
 
-    const schollYear = await this.getSchoolYearNameFromClassId(id);
-    this.dashboard.updateDashboardData(schollYear).then();
-    return this.findOne(id);
+  private async updateDashboardData(id: string) {
+    const schoolYear = await this.getSchoolYearNameFromClassId(id);
+    await this.dashboard.updateDashboardData(schoolYear);
+  }
+
+  private async createResponseDto(
+    id: string,
+  ): Promise<CreateSchoolClassResponseDto> {
+    const schoolClass = await this.prismaService.schoolClass.findUnique({
+      where: { id },
+    });
+    const teacherIdsAssociated = await this.getExistingUserIdsForClass(id);
+
+    return {
+      id: schoolClass.id,
+      name: schoolClass.name,
+      schoolGrade: schoolClass.schoolGrade,
+      schoolPeriod: schoolClass.schoolPeriod,
+      createdAt: schoolClass.createdAt,
+      updatedAt: schoolClass.updatedAt,
+      teachers: teacherIdsAssociated,
+    };
   }
 
   async remove(ids: string[]): Promise<DeleteUserResponseDto> {
