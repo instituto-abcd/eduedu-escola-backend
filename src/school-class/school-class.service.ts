@@ -288,26 +288,11 @@ export class SchoolClassService {
   ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
     const skip = (pageNumber - 1) * pageSize;
 
-    const where: Prisma.StudentWhereInput = {
-      schoolClasses: { some: { schoolClassId } },
-    };
-
     try {
-      const students = await this.prismaService.student.findMany({
-        where,
-        skip,
-        take: pageSize,
-        include: {
-          schoolClasses: {
-            include: {
-              schoolClass: true,
-            },
-          },
+      const totalCount = await this.prismaService.schoolClassStudent.count({
+        where: {
+          schoolClassId: schoolClassId,
         },
-      });
-
-      const totalCount = await this.prismaService.student.count({
-        where,
       });
 
       const totalPages = Math.ceil(totalCount / pageSize);
@@ -324,16 +309,29 @@ export class SchoolClassService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      const responseStudents: StudentSimplifiedResponseDto[] = students.map(
-        (student) => {
+      const schoolClassStudents =
+        await this.prismaService.schoolClassStudent.findMany({
+          where: {
+            schoolClassId: schoolClassId,
+          },
+          skip,
+          take: pageSize,
+          include: {
+            student: true,
+          },
+        });
+
+      const responseStudents: StudentSimplifiedResponseDto[] =
+        schoolClassStudents.map((scs) => {
+          const student = scs.student;
           return {
             id: student.id,
             name: student.name,
             registry: student.registry,
             status: student.status,
+            reserved: scs.reserved,
           };
-        },
-      );
+        });
 
       return new PaginationResponse(responseStudents, pagination);
     } catch (error) {
