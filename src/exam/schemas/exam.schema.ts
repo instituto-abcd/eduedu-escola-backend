@@ -73,17 +73,11 @@ export class Exam {
   @Prop()
   id: string;
 
-  @Prop({ type: Axis })
-  axis: Axis;
+  @Prop()
+  domain_code: string;
 
   @Prop()
-  description: string;
-
-  @Prop()
-  schoolYear: string;
-
-  @Prop()
-  level: number;
+  status: string;
 
   @Prop()
   questions: Question[];
