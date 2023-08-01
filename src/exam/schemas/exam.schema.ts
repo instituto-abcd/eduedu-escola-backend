@@ -11,25 +11,37 @@ type IAxis = {
 };
 
 type Question = {
-  order: number;
+  axis_code: string;
+  category: string;
   description: string;
-  fileUrl?: string;
-  modelId: string;
+  id: number;
+  level: number;
+  model_id: string;
   options: {
-    order: number;
     description: string;
+    image_name?: string;
+    image_url?: string;
     isCorrect: boolean;
-    imageUrl?: string;
-    soundUrl?: string;
+    position: number;
+    sound_name?: string;
+    sound_url?: string;
   }[];
+  order: number;
+  school_year: number;
+  titles: {
+    description: string;
+    file_name: string;
+    file_url: string;
+    placeholder: string;
+    position: number;
+    type: string;
+  }[]
 };
 
 export type IExam = {
   id: string;
-  axis: IAxis;
-  level: number;
-  name: string;
-  schoolYear: string;
+  domain_code: string;
+  status: string;
   questions: Question[];
   version: number;
 };
