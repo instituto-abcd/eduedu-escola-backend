@@ -26,6 +26,8 @@ import { SchoolYearSchedulerService } from './schedules/school-year-schedule.ser
 import { SchoolClassScheduleService } from './schedules/school-class-schedule.service';
 import { AwardsModule } from './awards/awards.module';
 import { ExamModule } from './exam/exam.module';
+import { StudentExamService } from "./student/studentExam.service";
+import { StudentExam, StudentExamSchema } from "./student/schemas/studentExam.schema";
 
 @Module({
   imports: [
@@ -42,6 +44,9 @@ import { ExamModule } from './exam/exam.module';
       rootPath: join(__dirname, '..', 'dist', 'templates'),
       serveRoot: '/static',
     }),
+    MongooseModule.forFeature([
+      { name: StudentExam.name, schema: StudentExamSchema },
+    ]),
     UserModule,
     SchoolYearModule,
     AuthModule,
@@ -64,6 +69,7 @@ import { ExamModule } from './exam/exam.module';
     DateApiService,
     SchoolYearSchedulerService,
     SchoolClassScheduleService,
+    StudentExamService,
   ],
   controllers: [SchoolClassController],
 })
