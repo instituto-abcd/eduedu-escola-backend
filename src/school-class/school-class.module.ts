@@ -5,8 +5,19 @@ import { SchoolClassService } from './school-class.service';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { DateApiService } from '../common/services/date-api.service';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import {
+  StudentExam,
+  StudentExamSchema,
+} from '../student/schemas/studentExam.schema';
+import { StudentExamService } from '../student/studentExam.service';
 
 @Module({
+  imports: [
+    MongooseModule.forFeature([
+      { name: StudentExam.name, schema: StudentExamSchema },
+    ]),
+  ],
   controllers: [SchoolClassController],
   providers: [
     SchoolClassService,
@@ -14,6 +25,7 @@ import { ValidationUtilsService } from '../common/utils/validation-utils.service
     DashboardService,
     DateApiService,
     ValidationUtilsService,
+    StudentExamService,
   ],
 })
 export class SchoolClassModule {}

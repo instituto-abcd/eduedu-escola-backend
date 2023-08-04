@@ -7,7 +7,10 @@ export class PlanetDto {
   @ApiProperty({ description: 'Nome do planeta', example: 'Saturno' })
   planetName: string;
 
-  @ApiProperty({ description: 'URL do avatar do planeta', example: 'https://example.com/planet_avatar.jpg' })
+  @ApiProperty({
+    description: 'URL do avatar do planeta',
+    example: 'https://example.com/planet_avatar.jpg',
+  })
   planetAvatar: string;
 
   @ApiProperty({ description: 'Pontuação no planeta', example: 100.0 })

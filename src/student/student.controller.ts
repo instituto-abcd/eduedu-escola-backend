@@ -199,4 +199,18 @@ export class StudentController {
       }
     }
   }
+
+  @Get(':id/exam-questions/first')
+  @ApiResponse({
+    status: 200,
+    description: 'Recuperar próxima questão para o estudante',
+    type: StudentResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
+  @ApiOperation({ summary: 'Obter estudante por ID' })
+  getFirstQuestionForStudent(
+    @Param('id') id: string,
+  ): Promise<any> {
+    return this.studentService.getFirstQuestionForStudent(id);
+  }
 }

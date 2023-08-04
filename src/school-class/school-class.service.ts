@@ -16,14 +16,15 @@ import { DashboardService } from '../dashboard/dashboard.service';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
-import { StudentResponseDto } from '../student/dto/response/student-response.dto';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
+import { StudentExamService } from '../student/studentExam.service';
 
 @Injectable()
 export class SchoolClassService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly dashboard: DashboardService,
+    private readonly studentExamService: StudentExamService,
   ) {}
 
   async create(
@@ -370,16 +371,23 @@ export class SchoolClassService {
         });
 
       const responseStudents: StudentSimplifiedResponseDto[] =
-        schoolClassStudents.map((scs) => {
-          const student = scs.student;
-          return {
-            id: student.id,
-            name: student.name,
-            registry: student.registry,
-            status: student.status,
-            reserved: scs.reserved,
-          };
-        });
+        await Promise.all(
+          schoolClassStudents.map(async (scs) => {
+            const student = scs.student;
+            const examPerformed =
+              await this.studentExamService.getExamPerformedStatusByStudentId(
+                student.id,
+              );
+            return {
+              id: student.id,
+              name: student.name,
+              registry: student.registry,
+              status: student.status,
+              reserved: scs.reserved,
+              examPerformed: examPerformed,
+            };
+          }),
+        );
 
       return new PaginationResponse(responseStudents, pagination);
     } catch (error) {
