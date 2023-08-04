@@ -3,18 +3,24 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentRequestDto } from './dto/request/create-student-request.dto';
 import { UpdateStudentRequestDto } from './dto/request/update-student-request.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
-import { Prisma, Status } from '@prisma/client';
+import { Prisma, SchoolGradeEnum, Status } from '@prisma/client';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
+import { QuestionDto } from '../exam/dto/question.dto';
 
 @Injectable()
 export class StudentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dashboard: DashboardService,
+    @InjectModel(Exam.name)
+    private examModel: Model<ExamDocument>,
   ) {}
 
   async create(
@@ -203,6 +209,29 @@ export class StudentService {
     };
   }
 
+  async getSchoolGradeByStudentId(id: string): Promise<SchoolGradeEnum> {
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+      include: {
+        schoolClasses: {
+          include: {
+            schoolClass: true,
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw new EduException('STUDENT_NOT_FOUND');
+    }
+
+    const { schoolClasses } = student;
+
+    const schoolClass = schoolClasses[0]?.schoolClass;
+
+    return schoolClass?.schoolGrade ?? null;
+  }
+
   async update(
     id: string,
     updateStudentDto: UpdateStudentRequestDto,
@@ -366,5 +395,60 @@ export class StudentService {
     const schoolYearNames = schoolClasses.map((item) => item.schoolYear.name);
 
     return [...new Set(schoolYearNames)];
+  }
+
+  async getFirstQuestionForStudent(studentId: string): Promise<QuestionDto> {
+    const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
+    const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
+    const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode);
+
+    if (questionsByAxisCode == null) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+
+    return questionsByAxisCode;
+  }
+
+  async getQuestionsByAxisCode(axisCode: string): Promise<QuestionDto> {
+    try {
+      const exam = await this.examModel.findOne({
+        'questions.axis_code': axisCode,
+        'questions.category': 'A',
+      });
+
+      if (!exam) {
+        throw new EduException('QUESTION_NOT_FOUND');
+      }
+
+      // Filtra as questões pelo axis_code e pela category 'A'
+      const filteredQuestions = exam.questions.filter(
+        (question) =>
+          question.axis_code === axisCode && question.category === 'A',
+      );
+
+      // Ordena as questões pelo atributo 'order' em ordem crescente
+      const sortedQuestions = filteredQuestions.sort(
+        (a, b) => a.order - b.order,
+      );
+
+      // Obtém apenas o primeiro elemento do array de questões
+      const firstQuestion = sortedQuestions[0];
+
+      // Mapeia o primeiro elemento para o formato do QuestionDto
+      return {
+        id: firstQuestion.id,
+        axis_code: firstQuestion.axis_code,
+        order: firstQuestion.order,
+        category: firstQuestion.category,
+        school_year: firstQuestion.school_year,
+        level: firstQuestion.level,
+        description: firstQuestion.description,
+        model_id: firstQuestion.model_id,
+        titles: firstQuestion.titles,
+        options: firstQuestion.options,
+      };
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 }
