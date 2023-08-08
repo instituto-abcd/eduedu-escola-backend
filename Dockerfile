@@ -13,6 +13,6 @@ COPY . .
 
 RUN yarn prisma generate
 
-RUN yarn build
+RUN FIRESTORE_READ_SERVICEACCOUNT=$FIRESTORE_READ_SERVICEACCOUNT yarn build
 
 CMD [ "node", "dist/src/main.js" ]
