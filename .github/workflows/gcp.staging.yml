@@ -41,7 +41,7 @@ jobs:
 
     - name: Push Docker Image to Setup
       run: |-
-        docker tag $IMAGE_NAME:latest eduedu-escola-setup/eduedu-escola-backend:staging
+        docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:staging
         docker push $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:staging
 
     outputs:
