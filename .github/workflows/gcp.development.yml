@@ -38,6 +38,11 @@ jobs:
       run: |-
         docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
         docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
+    
+    - name: Push Docker Image to Setup
+      run: |-
+        docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:main
+        docker push $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:main
 
     - name: Send Build Error Message
       if: failure()
