@@ -41,8 +41,8 @@ jobs:
     
     - name: Push Docker Image to Setup
       run: |-
-        docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:main
-        docker push $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:main
+        docker tag $IMAGE_NAME:latest southamerica-east1-docker.pkg.dev/edueduescola-teste/eduedu-escola-setup/eduedu-escola-backend:main
+        docker push southamerica-east1-docker.pkg.dev/edueduescola-teste/eduedu-escola-setup/eduedu-escola-backend:main
 
     - name: Send Build Error Message
       if: failure()
