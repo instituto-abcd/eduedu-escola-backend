@@ -30,8 +30,11 @@ jobs:
 
     - name: Build Docker Image
       run: |-
+        echo "Conteudo Secrets: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}"
+        echo "Conteudo Env: ${ARG_FIRESTORE_READ_SERVICEACCOUNT}"
+        
         docker build \
-        --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=${{ env.ARG_FIRESTORE_READ_SERVICEACCOUNT }} \
+        --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }} \
         -t $IMAGE_NAME:latest .
 
     - name: Configure Docker Client
