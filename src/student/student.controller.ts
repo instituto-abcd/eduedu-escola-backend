@@ -34,6 +34,9 @@ import { PlanetTrackDto } from './dto/planet-track.dto';
 import { StudentExamService } from './studentExam.service';
 import { StudentAwardsResponseDto } from '../awards/dto/awards.dto';
 import { AwardsService } from '../awards/awards.service';
+import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
+import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
+import { QuestionDto } from '../exam/dto/question.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -208,9 +211,22 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiOperation({ summary: 'Obter estudante por ID' })
-  getFirstQuestionForStudent(
-    @Param('id') id: string,
-  ): Promise<any> {
+  getFirstQuestionForStudent(@Param('id') id: string): Promise<any> {
     return this.studentService.getFirstQuestionForStudent(id);
+  }
+
+  @Post('/:id/exam-questions/:examId/answe')
+  @ApiOperation({ summary: 'Responder questão da prova' })
+  @ApiResponse({
+    status: 201,
+    description: 'Resposta do estudante enviada com sucesso',
+    type: StudentResponseDto,
+  })
+  async answer(
+    @Param('id') studentId: string,
+    @Param('examId') examId: string,
+    @Body() answerRequestDto: AnswerRequestDto,
+  ): Promise<QuestionDto | AnswersResponseDto> {
+    return this.studentService.answer(studentId, examId, answerRequestDto);
   }
 }

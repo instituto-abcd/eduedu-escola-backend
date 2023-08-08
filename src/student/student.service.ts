@@ -13,6 +13,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
 import { QuestionDto } from '../exam/dto/question.dto';
+import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
+import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
+import { StudentExam, StudentExamDocument } from './schemas/studentExam.schema';
 
 @Injectable()
 export class StudentService {
@@ -21,6 +24,8 @@ export class StudentService {
     private readonly dashboard: DashboardService,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
+    @InjectModel(StudentExam.name)
+    private studentExamModel: Model<StudentExamDocument>,
   ) {}
 
   async create(
@@ -450,5 +455,353 @@ export class StudentService {
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
     }
+  }
+
+  async answer(
+    studentId: string,
+    examId: string,
+    answerRequestDto: AnswerRequestDto,
+  ): Promise<QuestionDto | AnswersResponseDto> {
+    try {
+      const aggregationResult: any[] = await this.examModel
+        .aggregate([
+          {
+            $match: { 'questions.id': answerRequestDto.questionId },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  cond: { $eq: ['$$question.id', answerRequestDto.questionId] },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+      const question: QuestionDto = aggregationResult[0].questions[0];
+
+      if (question == null) {
+        throw new EduException('QUESTION_NOT_FOUND');
+      }
+
+      const isCorrect = await this.verifyAnswer(
+        question,
+        answerRequestDto.answeredValue,
+      );
+
+      await this.saveAnswer(
+        studentId,
+        examId,
+        answerRequestDto.questionId,
+        answerRequestDto.answeredValue,
+        isCorrect,
+      );
+
+      if (isCorrect) {
+        const checkAxisRemainingQuestions =
+          await this.checkAxisRemainingQuestions(
+            question.order + 1,
+            question.axis_code,
+          );
+
+        if (checkAxisRemainingQuestions) {
+          return await this.getNextAxisQuestion(
+            question.order + 1,
+            question.axis_code,
+            'A',
+          );
+        } else {
+          return await this.getNextQuestionFromAxis(question.axis_code);
+        }
+      } else {
+        let checkQuestionBSecondAttempt = false;
+        if (question.category === 'A') {
+          checkQuestionBSecondAttempt = await this.checkAxisRemainingQuestions(
+            question.order,
+            question.axis_code,
+          );
+        }
+        if (checkQuestionBSecondAttempt) {
+          return await this.getNextAxisQuestion(
+            question.order,
+            question.axis_code,
+            'B',
+          );
+        } else {
+          await this.assignWrongAnswersToRemainingAxisQuestions(
+            studentId,
+            examId,
+            question.order,
+            question.axis_code,
+          );
+          return await this.getNextQuestionFromAxis(question.axis_code);
+        }
+      }
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  // Salva a resposta no banco de dados studentexams.answer
+  async saveAnswer(
+    studentId: string,
+    examId: string,
+    questionId: number,
+    answeredValue: number,
+    rightAnswer: boolean,
+  ): Promise<boolean> {
+    try {
+      let studentExam = await this.studentExamModel.findOne({
+        studentId,
+        examId,
+      });
+
+      if (!studentExam) {
+        studentExam = new this.studentExamModel({
+          studentId,
+          examId,
+          answers: [],
+        });
+      }
+
+      if (!studentExam.answers) {
+        studentExam.answers = [];
+      }
+
+      // Check if an answer with the same questionId already exists
+      const existingAnswer = studentExam.answers.find(
+        (answer) => answer.questionId === questionId,
+      );
+
+      if (existingAnswer) {
+        // Update the existing answer
+        existingAnswer.answeredValue = answeredValue;
+        existingAnswer.rightAnswer = rightAnswer;
+      } else {
+        // Create a new answer entry
+        studentExam.answers.push({
+          questionId,
+          answeredValue,
+          rightAnswer,
+        });
+      }
+
+      await studentExam.save();
+
+      return true;
+    } catch (error) {
+      console.error('saveAnswer: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  // Verificar se questão esta correta questions.position == answerRequestDto.answeredValue retonar questions.isCorrect
+  // Inside the verifyAnswer function:
+  async verifyAnswer(
+    question: QuestionDto,
+    answeredValue: number,
+  ): Promise<boolean> {
+    if (question && question.options && Array.isArray(question.options)) {
+      const selectedOption = question.options.find(
+        (option) => option.position === answeredValue,
+      );
+
+      return selectedOption.isCorrect;
+    }
+
+    return false;
+  }
+
+  //Verificar se o eixo possui mais questões a serem respondidas
+  async checkAxisRemainingQuestions(
+    order: number,
+    axisCode: string,
+  ): Promise<boolean> {
+    const aggregationResult: any[] = await this.examModel
+      .aggregate([
+        {
+          $match: {
+            'questions.order': order,
+            'questions.axis_code': axisCode,
+          },
+        },
+        {
+          $project: {
+            questions: {
+              $filter: {
+                input: '$questions',
+                as: 'question',
+                cond: {
+                  $and: [
+                    { $eq: ['$$question.order', order] },
+                    { $eq: ['$$question.axis_code', axisCode] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return aggregationResult.length !== 0;
+  }
+
+  // Obter a próxima questão do eixo
+  async getNextAxisQuestion(
+    order: number,
+    axisCode: string,
+    category: string,
+  ): Promise<QuestionDto | null> {
+    const aggregationResult: any[] = await this.examModel
+      .aggregate([
+        {
+          $match: {
+            'questions.order': order,
+            'questions.axis_code': axisCode,
+            'questions.category': category,
+          },
+        },
+        {
+          $project: {
+            questions: {
+              $filter: {
+                input: '$questions',
+                as: 'question',
+                cond: {
+                  $and: [
+                    { $eq: ['$$question.order', order] },
+                    { $eq: ['$$question.axis_code', axisCode] },
+                    { $eq: ['$$question.category', category] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
+
+    if (!aggregationResult || aggregationResult.length === 0) {
+      return null;
+    }
+
+    return aggregationResult[0].questions[0];
+  }
+
+  // Obter a próxima questão do eixo seguinte (se houver questão do eixo finaliza a prova)
+  async getNextQuestionFromAxis(
+    axisCode: string,
+  ): Promise<QuestionDto | AnswersResponseDto> {
+    const nextAxisCode = await this.getNextAxisCode(axisCode);
+
+    if (nextAxisCode != null) {
+      const aggregationResult: any[] = await this.examModel
+        .aggregate([
+          {
+            $match: {
+              'questions.category': 'A',
+              'questions.axis_code': nextAxisCode,
+            },
+          },
+          {
+            $sort: {
+              'questions.order': 1,
+            },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$question.category', 'A'] },
+                      { $eq: ['$$question.axis_code', nextAxisCode] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+      if (!aggregationResult || aggregationResult.length === 0) {
+        return null;
+      }
+
+      return aggregationResult[0].questions[0];
+    } else {
+      return { examCompleted: true };
+    }
+  }
+
+  //Atrbuir respostas erradas para as questões restantes do eixo atual
+  async assignWrongAnswersToRemainingAxisQuestions(
+    studentId: string,
+    examId: string,
+    order: number,
+    axisCode: string,
+  ): Promise<boolean> {
+    try {
+      const aggregationResult: any[] = await this.examModel
+        .aggregate([
+          {
+            $match: {
+              'questions.axis_code': axisCode,
+            },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$question.axis_code', axisCode] },
+                      { $gt: ['$$question.order', order] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+      if (aggregationResult.length > 0) {
+        const filteredOrderValues = aggregationResult[0].questions.map(
+          (question: any) => question.id,
+        );
+
+        for (const questionId of filteredOrderValues) {
+          await this.saveAnswer(studentId, examId, questionId, 0, false);
+        }
+
+        console.log(filteredOrderValues);
+      }
+
+      return true;
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  //Obter o próximo eixo
+  private async getNextAxisCode(axisCode: string): Promise<string | null> {
+    const axisMappings: { [key: string]: string | null } = {
+      ES: 'EA',
+      EA: 'LC',
+      LC: null,
+    };
+
+    return axisMappings[axisCode] || null;
   }
 }
