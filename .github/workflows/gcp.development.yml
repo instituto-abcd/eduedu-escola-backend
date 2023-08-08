@@ -14,6 +14,7 @@ jobs:
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       REGISTRY_NAME: eduedu-escola-backend-development
       FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.FIRESTORE_READ_SERVICEACCOUNT }}
+      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
     steps:
     - name: Checkout
@@ -41,6 +42,11 @@ jobs:
       run: |-
         docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
         docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
+    
+    - name: Push Docker Image to Setup
+      run: |-
+        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:main
+        docker push $REGISTRY_SETUP_REPOSITORY:main
 
     - name: Send Build Error Message
       if: failure()
