@@ -13,6 +13,8 @@ jobs:
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       REGISTRY_NAME: eduedu-escola-backend-development
+      ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.FIRESTORE_READ_SERVICEACCOUNT }}
+      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
     steps:
     - name: Checkout
@@ -27,7 +29,10 @@ jobs:
         project_id: ${{ env.PROJECT_ID }}
 
     - name: Build Docker Image
-      run: docker build -t $IMAGE_NAME:latest .
+      run: |-
+        docker build \
+        --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=$ARG_FIRESTORE_READ_SERVICEACCOUNT \
+        -t $IMAGE_NAME:latest .
 
     - name: Configure Docker Client
       run: |-
@@ -38,6 +43,11 @@ jobs:
       run: |-
         docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
         docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
+    
+    - name: Push Docker Image to Setup
+      run: |-
+        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:main
+        docker push $REGISTRY_SETUP_REPOSITORY:main
 
     - name: Send Build Error Message
       if: failure()
