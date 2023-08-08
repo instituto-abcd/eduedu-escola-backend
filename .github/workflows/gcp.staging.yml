@@ -39,6 +39,11 @@ jobs:
         docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
         docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
 
+    - name: Push Docker Image to Setup
+      run: |-
+        docker tag eduedu-escola-backend:staging
+        docker push $REGISTRY_PREFIX/$PROJECT_ID/eduedu-escola-setup/eduedu-escola-backend:staging
+
     outputs:
       git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
 
