@@ -13,6 +13,7 @@ jobs:
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       REGISTRY_NAME: eduedu-escola-backend
+      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
     steps:
     - name: Checkout
@@ -41,8 +42,8 @@ jobs:
 
     - name: Push Docker Image to Setup
       run: |-
-        docker tag $IMAGE_NAME:latest southamerica-east1-docker.pkg.dev/edueduescola-teste/eduedu-escola-setup/eduedu-escola-backend:staging
-        docker push southamerica-east1-docker.pkg.dev/edueduescola-teste/eduedu-escola-setup/eduedu-escola-backend:staging
+        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:staging
+        docker push $REGISTRY_SETUP_REPOSITORY:staging
 
     outputs:
       git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
