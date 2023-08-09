@@ -31,7 +31,7 @@ jobs:
     - name: Build Docker Image
       run: |-
         docker build \
-        --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=$ARG_FIRESTORE_READ_SERVICEACCOUNT \
+        --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }} \
         -t $IMAGE_NAME:latest .
 
     - name: Configure Docker Client
