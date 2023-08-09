@@ -62,6 +62,25 @@ export class SchoolYearController {
     }
   }
 
+  @Get('current')
+  @ApiOperation({ summary: 'Recupera o ano letivo do ano atual' })
+  @ApiResponse({
+    status: 200,
+    description: 'Recupera o ano letivo do ano atual',
+    type: [SchoolYearSummary],
+  })
+  @ApiResponse({
+    status: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.status,
+    description: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.message,
+  })
+  async current(): Promise<SchoolYearSummary> {
+    try {
+      return await this.schoolYearService.current();
+    } catch (error) {
+      throw new EduException('UNKNOWN_ERROR');
+    }
+  }
+
   @Put('activate')
   @ApiOperation({ summary: 'Ativar um ano letivo' })
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
