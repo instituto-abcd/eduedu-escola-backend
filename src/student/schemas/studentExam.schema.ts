@@ -25,6 +25,9 @@ export class StudentExam {
 
   createdAt?: Date;
   updatedAt?: Date;
+
+  @Prop()
+  answers?: Answers[];
 }
 
 @Schema()
@@ -43,6 +46,17 @@ export class Planet {
 
   @Prop()
   stars: number;
+}
+
+@Schema()
+export class Answers {
+  @Prop()
+  questionId: number;
+  @Prop()
+  answeredValue: number;
+
+  @Prop()
+  rightAnswer: boolean;
 }
 
 export const StudentExamSchema = SchemaFactory.createForClass(StudentExam);

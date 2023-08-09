@@ -41,6 +41,7 @@ export class StudentExamService implements OnModuleInit {
                 stars: 4.5,
               },
             ],
+            answers: [],
           },
         ];
         await this.studentExamModel.create(mockData);
@@ -103,6 +104,4 @@ export class StudentExamService implements OnModuleInit {
       return false;
     }
   }
-
-
 }
