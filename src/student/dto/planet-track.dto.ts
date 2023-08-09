@@ -19,4 +19,7 @@ export class PlanetTrackDto {
 
   @ApiProperty({ description: 'Detalhes da trilha dos planetas' })
   planetTrack: PlanetDto[];
+
+  @ApiProperty({ description: 'Prova realizada', example: true })
+  examPerformed: boolean;
 }

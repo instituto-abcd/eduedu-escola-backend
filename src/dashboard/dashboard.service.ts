@@ -108,11 +108,11 @@ export class DashboardService {
     };
   }
 
-  async createSchoolYear(schoolYear: number): Promise<void> {
+  async createSchoolYear(id: string, schoolYear: number): Promise<void> {
     try {
       const dashboard = await this.prisma.dashboard.create({
         data: {
-          id: uuidv4(),
+          id: id,
           schoolYear: schoolYear,
           teachersCounter: 0,
           schoolClassesCounter: 0,
@@ -167,6 +167,7 @@ export class DashboardService {
   }
 
   async createSchoolClass(
+    schoolYearId: string,
     schoolClassId: string,
     nameSchoolClass: string,
     grade: SchoolGradeEnum,
@@ -175,7 +176,10 @@ export class DashboardService {
 
     try {
       const dashboardGrade = await this.prisma.dashboardSchoolGrade.findFirst({
-        where: { name: grade },
+        where: {
+          dashboardId: schoolYearId,
+          name: grade,
+        },
         include: { dashboardSchoolClass: true },
       });
 

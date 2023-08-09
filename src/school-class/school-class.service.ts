@@ -16,12 +16,15 @@ import { DashboardService } from '../dashboard/dashboard.service';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
+import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
+import { StudentExamService } from '../student/studentExam.service';
 
 @Injectable()
 export class SchoolClassService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly dashboard: DashboardService,
+    private readonly studentExamService: StudentExamService,
   ) {}
 
   async create(
@@ -42,6 +45,7 @@ export class SchoolClassService {
 
     this.dashboard
       .createSchoolClass(
+        schoolClass.schoolYearId,
         schoolClass.id,
         schoolClass.name,
         schoolClass.schoolGrade,
@@ -215,29 +219,57 @@ export class SchoolClassService {
 
   async updateSchoolClass(
     id: string,
-    data: UpdateSchoolClassRequestDto,
-  ): Promise<SchoolClassResponseDto> {
-    const { name, schoolGrade, schoolPeriod, teachers } = data;
+    updateSchoolClassDto: UpdateSchoolClassRequestDto,
+  ): Promise<CreateSchoolClassResponseDto> {
+    const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
-    await this.prismaService.schoolClass.update({
+    const existingSchoolClass = await this.validateSchoolClassExists(id);
+    await this.updateClassData(id, schoolClassData);
+    if (teacherIds != null) {
+      await this.handleUserSchoolClassUpdates(id, teacherIds);
+    }
+
+    await this.updateDashboardData(id);
+
+    return await this.createResponseDto(id);
+  }
+
+  private async validateSchoolClassExists(id: string) {
+    const existingSchoolClass = await this.prismaService.schoolClass.findUnique(
+      { where: { id } },
+    );
+    if (!existingSchoolClass) {
+      throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+    return existingSchoolClass;
+  }
+
+  private async updateClassData(id: string, schoolClassData: any) {
+    return this.prismaService.schoolClass.update({
       where: { id },
-      data: { name, schoolGrade, schoolPeriod },
+      data: schoolClassData,
     });
+  }
 
+  private async getExistingUserIdsForClass(id: string): Promise<string[]> {
     const existingUserSchoolClasses =
       await this.prismaService.userSchoolClass.findMany({
         where: { schoolClassId: id },
         select: { userId: true },
       });
 
-    const existingUserIds = existingUserSchoolClasses.map(
+    return existingUserSchoolClasses.map(
       (userSchoolClass) => userSchoolClass.userId,
     );
+  }
 
-    const newUserSchoolClasses = teachers
-      .filter((teacher) => !existingUserIds.includes(teacher.id))
-      .map((teacher) => ({
-        userId: teacher.id,
+  private async handleUserSchoolClassUpdates(id: string, teacherIds: string[]) {
+    const existingUserIds = await this.getExistingUserIdsForClass(id);
+
+    const newUserSchoolClasses = teacherIds
+      .filter((teacherId) => !existingUserIds.includes(teacherId))
+      .map((teacherId) => ({
+        userId: teacherId,
         schoolClassId: id,
       }));
 
@@ -246,10 +278,30 @@ export class SchoolClassService {
         data: newUserSchoolClasses,
       });
     }
+  }
 
-    const schollYear = await this.getSchoolYearNameFromClassId(id);
-    this.dashboard.updateDashboardData(schollYear).then();
-    return this.findOne(id);
+  private async updateDashboardData(id: string) {
+    const schoolYear = await this.getSchoolYearNameFromClassId(id);
+    await this.dashboard.updateDashboardData(schoolYear);
+  }
+
+  private async createResponseDto(
+    id: string,
+  ): Promise<CreateSchoolClassResponseDto> {
+    const schoolClass = await this.prismaService.schoolClass.findUnique({
+      where: { id },
+    });
+    const teacherIdsAssociated = await this.getExistingUserIdsForClass(id);
+
+    return {
+      id: schoolClass.id,
+      name: schoolClass.name,
+      schoolGrade: schoolClass.schoolGrade,
+      schoolPeriod: schoolClass.schoolPeriod,
+      createdAt: schoolClass.createdAt,
+      updatedAt: schoolClass.updatedAt,
+      teachers: teacherIdsAssociated,
+    };
   }
 
   async remove(ids: string[]): Promise<DeleteUserResponseDto> {
@@ -278,10 +330,69 @@ export class SchoolClassService {
     return { success: true };
   }
 
-  studentsByClass(schoolClassId: string) {
-    return this.prismaService.student.findMany({
-      where: { schoolClasses: { some: { schoolClassId } } },
-    });
+  async getStudentsByClass(
+    schoolClassId: string,
+    pageNumber: number,
+    pageSize: number,
+  ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
+    const skip = (pageNumber - 1) * pageSize;
+
+    try {
+      const totalCount = await this.prismaService.schoolClassStudent.count({
+        where: {
+          schoolClassId: schoolClassId,
+        },
+      });
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      const pagination = {
+        totalItems: totalCount,
+        pageSize: pageSize,
+        pageNumber: pageNumber,
+        totalPages: totalPages,
+        previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
+        nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
+        lastPage: totalPages,
+        hasPreviousPage: pageNumber > 1,
+        hasNextPage: pageNumber < totalPages,
+      };
+
+      const schoolClassStudents =
+        await this.prismaService.schoolClassStudent.findMany({
+          where: {
+            schoolClassId: schoolClassId,
+          },
+          skip,
+          take: pageSize,
+          include: {
+            student: true,
+          },
+        });
+
+      const responseStudents: StudentSimplifiedResponseDto[] =
+        await Promise.all(
+          schoolClassStudents.map(async (scs) => {
+            const student = scs.student;
+            const examPerformed =
+              await this.studentExamService.getExamPerformedStatusByStudentId(
+                student.id,
+              );
+            return {
+              id: student.id,
+              name: student.name,
+              registry: student.registry,
+              status: student.status,
+              reserved: scs.reserved,
+              examPerformed: examPerformed,
+            };
+          }),
+        );
+
+      return new PaginationResponse(responseStudents, pagination);
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 
   private validateCreateSchoolClassDto(

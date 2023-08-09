@@ -201,6 +201,10 @@ export const ErrorDetails = {
     message: 'Dados inválidos.',
     status: HttpStatus.BAD_REQUEST,
   },
+  QUESTION_NOT_FOUND: {
+    message: 'Questão não encontrada.',
+    status: HttpStatus.BAD_REQUEST,
+  },
 };
 
 export class EduException extends HttpException {

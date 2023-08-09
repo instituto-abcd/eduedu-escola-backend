@@ -15,6 +15,7 @@ import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -33,12 +34,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { Response } from 'express';
 import { join } from 'path';
-import { StudentResponseDto } from 'src/student/dto/response/student-response.dto';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
-import { StudentsByClassResponseDto } from './dto/response/students-by-class-reserved-response';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
+import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -107,7 +107,7 @@ export class SchoolClassController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateSchoolClassRequestDto,
-  ): Promise<SchoolClassResponseDto> {
+  ): Promise<CreateSchoolClassResponseDto> {
     return this.schoolClassService.updateSchoolClass(id, updateUserDto);
   }
 
@@ -177,15 +177,20 @@ export class SchoolClassController {
   }
 
   @ApiOperation({
-    summary: 'Listar alunos percetences a uma turma',
+    summary: 'Listar alunos pertencentes a uma turma',
   })
-  @ApiResponse({
-    status: 200,
-    type: [StudentResponseDto],
+  @ApiOkResponse({
+    type: PaginationResponse,
   })
   @Get(':id/students')
-  studentsByClass(@Param('id') id: string) {
-    return this.schoolClassService.studentsByClass(id);
+  studentsByClass(
+    @Param('id') id: string,
+    @Query('page-number') page?: string,
+    @Query('page-size') limit?: string,
+  ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
+    const pageNumber = parseInt(page || '1');
+    const pageSize = parseInt(limit || '10');
+    return this.schoolClassService.getStudentsByClass(id, pageNumber, pageSize);
   }
 
   @ApiResponse({

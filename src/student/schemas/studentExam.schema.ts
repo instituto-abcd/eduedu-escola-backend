@@ -18,6 +18,9 @@ export class StudentExam {
   current: boolean;
 
   @Prop()
+  examPerformed: boolean;
+
+  @Prop()
   planetTrack: Planet[];
 
   createdAt?: Date;

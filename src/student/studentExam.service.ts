@@ -24,6 +24,7 @@ export class StudentExamService implements OnModuleInit {
             examId: uuidv4(),
             examDate: new Date(),
             current: true,
+            examPerformed: true,
             planetTrack: [
               {
                 planetId: uuidv4(),
@@ -53,7 +54,7 @@ export class StudentExamService implements OnModuleInit {
     try {
       const studentExam = await this.studentExamModel
         .findOne({ studentId, current: true })
-        .select('studentId examId examDate current planetTrack')
+        .select('studentId examId examDate current planetTrack examPerformed')
         .exec();
 
       if (studentExam) {
@@ -68,6 +69,7 @@ export class StudentExamService implements OnModuleInit {
         );
 
         return {
+          examPerformed: studentExam.examPerformed,
           studentId: studentExam.studentId,
           examId: studentExam.examId,
           examDate: studentExam.examDate,
@@ -81,4 +83,26 @@ export class StudentExamService implements OnModuleInit {
       throw error;
     }
   }
+
+  async getExamPerformedStatusByStudentId(studentId: string): Promise<boolean> {
+    try {
+      const result = await this.studentExamModel
+        .findOne({ studentId, current: true })
+        .select('examPerformed')
+        .exec();
+
+      console.log('Result:', result);
+
+      if (result && result.examPerformed !== null) {
+        return Boolean(result.examPerformed);
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error fetching exam performed status:', error.message);
+      return false;
+    }
+  }
+
+
 }

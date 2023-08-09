@@ -3,10 +3,7 @@ import { TeacherDto } from '../teacher.dto';
 import { SchoolYearDto } from '../school-year';
 
 export class UpdateSchoolClassRequestDto {
-  @ApiProperty({ description: 'ID da classe escolar' })
-  id: string;
-
-  @ApiProperty({ description: 'Nome da classe escolar' })
+  @ApiProperty({ description: 'Nome da classe escolar', example: '1º A' })
   name: string;
 
   @ApiProperty({
@@ -22,14 +19,19 @@ export class UpdateSchoolClassRequestDto {
   schoolPeriod: 'MORNING' | 'AFTERNOON' | 'FULL';
 
   @ApiProperty({
-    description: 'Lista de professores associados à classe escolar',
-    type: () => [TeacherDto],
+    description: 'ID do ano letivo',
+    example: '3a224fb1-ec95-456c-bf6f-ef877928b9b6',
   })
-  teachers: { id: string; name: string }[];
+  schoolYearId: string;
 
   @ApiProperty({
-    description: 'Ano escolar',
-    type: SchoolYearDto,
+    description: 'IDs dos professores',
+    example: [
+      '4d63086b-5b83-418b-bb28-761e5accb978',
+      'e57136f7-9df1-4644-b9a7-bfddfd799c77',
+      '274f258c-cf3b-4bbc-b0cf-48a12f95657f',
+    ],
+    type: [String],
   })
-  schoolYear: SchoolYearDto;
+  teacherIds: string[];
 }

@@ -50,7 +50,11 @@ export class _AuditGuard implements CanActivate {
 
     const matchers = Object.keys(entityDict);
 
-    if (!matchers.includes(request.url.replace(/\//g, ''))) {
+    const allowed = matchers.filter((match) =>
+      request.url.split('/').includes(match),
+    );
+
+    if (allowed.length === 0) {
       throw new HttpException('AUDIT__ENTITY_NOT_ALLOWED', 400);
     }
 
@@ -62,7 +66,7 @@ export class _AuditGuard implements CanActivate {
           },
         },
         action: methodDict[request.method],
-        entity: entityDict[request.url.replace(/\//g, '')],
+        entity: entityDict[allowed[0]],
       },
     });
 
