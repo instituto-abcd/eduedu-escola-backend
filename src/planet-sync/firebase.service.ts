@@ -1,7 +1,6 @@
 import * as admin from 'firebase-admin';
 
-var serviceAccountString = process.env.FIRESTORE_READ_SERVICEACCOUNT;
-console.log(serviceAccountString);
+var serviceAccountString = Buffer.from(process.env.FIRESTORE_READ_SERVICEACCOUNT, 'base64').toString();
 
 export const firebaseApp = admin.initializeApp({
   projectId: 'eduedu-escola-hub---stg',
