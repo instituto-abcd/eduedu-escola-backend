@@ -288,4 +288,15 @@ export class SchoolYearService {
 
     return { success: true };
   }
+
+  async current(): Promise<SchoolYearSummary> {
+    const currentYear = await this.externalApiService.getCurrentYear();
+    const schoolYears = await this.prismaService.schoolYear.findFirst({
+      where: {
+        name: currentYear,
+      },
+    });
+
+    return this.mapToSchoolYearSummary(schoolYears, false);
+  }
 }
