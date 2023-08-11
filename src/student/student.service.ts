@@ -13,9 +13,16 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
 import { QuestionDto } from '../exam/dto/question.dto';
-import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
+import {
+  AnswerRequestDto,
+  OptionAnswer,
+} from '../exam/dto/request/answers-request.dto';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
-import { StudentExam, StudentExamDocument } from './schemas/studentExam.schema';
+import {
+  OptionsAnswers,
+  StudentExam,
+  StudentExamDocument,
+} from './schemas/studentExam.schema';
 
 @Injectable()
 export class StudentService {
@@ -403,6 +410,15 @@ export class StudentService {
   }
 
   async getFirstQuestionForStudent(studentId: string): Promise<QuestionDto> {
+    await this.prisma.schoolClassStudent.updateMany({
+      where: {
+        studentId: studentId,
+      },
+      data: {
+        firstAccess: false,
+      },
+    });
+
     const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
     const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
     const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode);
@@ -451,6 +467,7 @@ export class StudentService {
         model_id: firstQuestion.model_id,
         titles: firstQuestion.titles,
         options: firstQuestion.options,
+        orderedAnswer: firstQuestion.orderedAnswer,
       };
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
@@ -490,14 +507,14 @@ export class StudentService {
 
       const isCorrect = await this.verifyAnswer(
         question,
-        answerRequestDto.answeredValue,
+        answerRequestDto.optionsAnswered,
       );
 
       await this.saveAnswer(
         studentId,
         examId,
         answerRequestDto.questionId,
-        answerRequestDto.answeredValue,
+        answerRequestDto.optionsAnswered,
         isCorrect,
       );
 
@@ -551,8 +568,8 @@ export class StudentService {
     studentId: string,
     examId: string,
     questionId: number,
-    answeredValue: number,
-    rightAnswer: boolean,
+    answeredOptions: OptionsAnswers[],
+    isCorrect: boolean,
   ): Promise<boolean> {
     try {
       let studentExam = await this.studentExamModel.findOne({
@@ -565,6 +582,7 @@ export class StudentService {
           studentId,
           examId,
           answers: [],
+          isCorrect,
         });
       }
 
@@ -573,20 +591,20 @@ export class StudentService {
       }
 
       // Check if an answer with the same questionId already exists
-      const existingAnswer = studentExam.answers.find(
+      const existingAnswerIndex = studentExam.answers.findIndex(
         (answer) => answer.questionId === questionId,
       );
 
-      if (existingAnswer) {
+      if (existingAnswerIndex !== -1) {
         // Update the existing answer
-        existingAnswer.answeredValue = answeredValue;
-        existingAnswer.rightAnswer = rightAnswer;
+        studentExam.answers[existingAnswerIndex].optionsAnswered =
+          answeredOptions;
       } else {
         // Create a new answer entry
         studentExam.answers.push({
           questionId,
-          answeredValue,
-          rightAnswer,
+          isCorrect,
+          optionsAnswered: answeredOptions,
         });
       }
 
@@ -599,21 +617,53 @@ export class StudentService {
     }
   }
 
-  // Verificar se questão esta correta questions.position == answerRequestDto.answeredValue retonar questions.isCorrect
-  // Inside the verifyAnswer function:
+  // Verificar se questão esta correta
   async verifyAnswer(
     question: QuestionDto,
-    answeredValue: number,
+    answeredValue: OptionAnswer[],
   ): Promise<boolean> {
-    if (question && question.options && Array.isArray(question.options)) {
-      const selectedOption = question.options.find(
-        (option) => option.position === answeredValue,
+    try {
+      const correctOptions = question.options.filter(
+        (option) => option.isCorrect,
       );
 
-      return selectedOption.isCorrect;
-    }
+      if (correctOptions.length !== answeredValue.length) {
+        return false;
+      }
 
-    return false;
+      if (!question.orderedAnswer) {
+        for (const answeredOption of answeredValue) {
+          const matchingOption = correctOptions.find(
+            (option) => option.position === answeredOption.position,
+          );
+
+          if (
+            !matchingOption ||
+            matchingOption.position !== answeredOption.position
+          ) {
+            return false;
+          }
+        }
+      } else {
+        for (const answeredOption of answeredValue) {
+          const matchingOption = correctOptions.find(
+            (option) => option.position === answeredOption.positionAnswer,
+          );
+
+          if (
+            !matchingOption ||
+            matchingOption.position !== answeredOption.position
+          ) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('verifyAnswer: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 
   //Verificar se o eixo possui mais questões a serem respondidas
@@ -782,7 +832,7 @@ export class StudentService {
         );
 
         for (const questionId of filteredOrderValues) {
-          await this.saveAnswer(studentId, examId, questionId, 0, false);
+          await this.saveAnswer(studentId, examId, questionId, null, false);
         }
 
         console.log(filteredOrderValues);
