@@ -10,7 +10,7 @@ async function main() {
   await prismaClient.school.create({
     data: {
       id: schoolId,
-      name: '',
+      name: 'EduEdu',
     },
   });
 
@@ -27,8 +27,7 @@ async function main() {
     },
   });
 
-  if (env === "main") {
-
+  if (env === 'main') {
     await prismaClient.user.createMany({
       data: [
         {
@@ -393,7 +392,6 @@ async function main() {
         },
       ],
     });
-
   }
 }
 

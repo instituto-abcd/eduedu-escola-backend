@@ -11,31 +11,32 @@ type IAxis = {
 };
 
 type Question = {
+  orderedAnswer: boolean;
+  level: number;
   axis_code: string;
+  id: number;
+  model_id: string;
   category: string;
   description: string;
-  id: number;
-  level: number;
-  model_id: string;
-  options: {
-    description: string;
-    image_name?: string;
-    image_url?: string;
-    isCorrect: boolean;
-    position: number;
-    sound_name?: string;
-    sound_url?: string;
-  }[];
-  order: number;
   school_year: number;
-  titles: {
+  order: number;
+  options: {
+    image_name?: string;
+    sound_url?: string;
+    image_url?: string;
+    sound_name?: string;
     description: string;
-    file_name: string;
-    file_url: string;
-    placeholder: string;
     position: number;
+    isCorrect: boolean;
+  }[];
+  titles: {
+    file_url: string;
+    file_name: string;
+    description: string;
+    position: number;
+    placeholder: string;
     type: string;
-  }[]
+  }[];
 };
 
 export type IExam = {

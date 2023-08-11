@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { OptionAnswer } from '../../exam/dto/request/answers-request.dto';
 
 export type StudentExamDocument = StudentExam & Document;
 
@@ -52,11 +53,20 @@ export class Planet {
 export class Answers {
   @Prop()
   questionId: number;
-  @Prop()
-  answeredValue: number;
 
   @Prop()
-  rightAnswer: boolean;
+  optionsAnswered?: OptionsAnswers[];
+
+  @Prop()
+  isCorrect: boolean;
+}
+
+@Schema()
+export class OptionsAnswers {
+  @Prop()
+  position: number;
+  @Prop()
+  positionAnswer: number;
 }
 
 export const StudentExamSchema = SchemaFactory.createForClass(StudentExam);

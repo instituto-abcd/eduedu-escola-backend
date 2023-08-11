@@ -1,22 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { OptionsAnswers } from '../../../student/schemas/studentExam.schema';
+import { Prop } from '@nestjs/mongoose';
+
+export class OptionAnswer {
+  @ApiProperty({ description: 'Position of the answered option', example: 0 })
+  position: number;
+
+  @ApiProperty({ description: 'Position of the answered option', example: 0 })
+  positionAnswer: number;
+}
 
 export class AnswerRequestDto {
   @ApiProperty({ description: 'ID da pergunta', example: 1 })
   questionId: number;
 
-  @ApiProperty({ description: 'Código do eixo', example: 'EA' })
-  axis_code: string;
-
   @ApiProperty({
-    description: 'Resposta para a pergunta (posição em options)',
-    example: 1,
+    description: 'Options answered by their position',
+    type: [OptionAnswer],
   })
-  answeredValue: number;
+  @Prop()
+  isCorrect: boolean;
 
-  @ApiProperty({ description: 'Nível da pergunta', example: 3 })
-  level: number;
-
-  @ApiProperty({ description: 'Ano escolar', example: 2 })
-  school_year: number;
-  model_id: string;
+  optionsAnswered: OptionsAnswers[];
 }
