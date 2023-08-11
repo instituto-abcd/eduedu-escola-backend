@@ -133,6 +133,7 @@ model SchoolClassStudent {
   student       Student     @relation(fields: [studentId], references: [id])
   active        Boolean     @default(true)
   reserved      Boolean     @default(false)
+  firstAccess   Boolean     @default(true)
 
   @@id([studentId, schoolClassId])
 }
