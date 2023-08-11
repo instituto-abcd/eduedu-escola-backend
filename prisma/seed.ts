@@ -10,7 +10,7 @@ async function main() {
   await prismaClient.school.create({
     data: {
       id: schoolId,
-      name: 'EduEdu',
+      name: 'EduEdu Escola',
     },
   });
 
