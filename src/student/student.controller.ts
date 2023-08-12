@@ -215,7 +215,7 @@ export class StudentController {
     return this.studentService.getFirstQuestionForStudent(id);
   }
 
-  @Post('/:id/exam-questions/:examId/answe')
+  @Post('/:id/exam-questions/:examId/answer')
   @ApiOperation({ summary: 'Responder questão da prova' })
   @ApiResponse({
     status: 201,

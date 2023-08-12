@@ -19,7 +19,7 @@ export class AnswerRequestDto {
     type: [OptionAnswer],
   })
   @Prop()
-  isCorrect: boolean;
-
   optionsAnswered: OptionsAnswers[];
+
+  isCorrect: boolean;
 }
