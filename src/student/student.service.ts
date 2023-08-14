@@ -698,7 +698,10 @@ export class StudentService {
       ])
       .exec();
 
-    return aggregationResult.length !== 0;
+    if (aggregationResult.length === 0) {
+      return false;
+    }
+    return aggregationResult[0].questions.length !== 0;
   }
 
   // Obter a próxima questão do eixo
@@ -709,13 +712,6 @@ export class StudentService {
   ): Promise<QuestionDto | null> {
     const aggregationResult: any[] = await this.examModel
       .aggregate([
-        {
-          $match: {
-            'questions.order': order,
-            'questions.axis_code': axisCode,
-            'questions.category': category,
-          },
-        },
         {
           $project: {
             questions: {
@@ -753,17 +749,6 @@ export class StudentService {
       const aggregationResult: any[] = await this.examModel
         .aggregate([
           {
-            $match: {
-              'questions.category': 'A',
-              'questions.axis_code': nextAxisCode,
-            },
-          },
-          {
-            $sort: {
-              'questions.order': 1,
-            },
-          },
-          {
             $project: {
               questions: {
                 $filter: {
@@ -771,6 +756,7 @@ export class StudentService {
                   as: 'question',
                   cond: {
                     $and: [
+                      { $eq: ['$$question.order', 1] },
                       { $eq: ['$$question.category', 'A'] },
                       { $eq: ['$$question.axis_code', nextAxisCode] },
                     ],
