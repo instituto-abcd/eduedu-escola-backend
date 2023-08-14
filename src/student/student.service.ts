@@ -23,6 +23,7 @@ import {
   StudentExam,
   StudentExamDocument,
 } from './schemas/studentExam.schema';
+import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 
 @Injectable()
 export class StudentService {
@@ -476,6 +477,20 @@ export class StudentService {
     }
   }
 
+  async handleExamEvaluation(studentId: string): Promise<ExamEvaluationResponseDto> {
+    // TODO: Calcular porcentagem
+
+    // TODO: Encontrar nível do aluno
+
+    // TODO: Persistir registro student_examResult
+
+    // TODO: Criar trilha de planetas para o aluno
+
+    return new Promise<ExamEvaluationResponseDto>(() => {
+      
+    });
+  }
+
   async answer(
     studentId: string,
     examId: string,
@@ -920,4 +935,5 @@ export class StudentService {
       throw new EduException('STUDENT_CREATION_FAILED');
     }
   }
+
 }

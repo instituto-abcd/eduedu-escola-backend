@@ -37,6 +37,7 @@ import { AwardsService } from '../awards/awards.service';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
 import { QuestionDto } from '../exam/dto/question.dto';
+import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -228,5 +229,17 @@ export class StudentController {
     @Body() answerRequestDto: AnswerRequestDto,
   ): Promise<QuestionDto | AnswersResponseDto> {
     return this.studentService.answer(studentId, examId, answerRequestDto);
+  }
+
+  @Post(':id/exam-evaluation')
+  @ApiResponse({
+    status: 201,
+    description: 'Submete a avaliação da prova do aluno',
+    type: ExamEvaluationResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
+  @ApiOperation({ summary: 'Submete a avaliação da prova do aluno' })
+  evaluation(@Param('id') id: string): Promise<any> {
+    return this.studentService.handleExamEvaluation(id);
   }
 }
