@@ -59,6 +59,15 @@ export class Answers {
 
   @Prop()
   isCorrect: boolean;
+
+  @Prop()
+  axis_code: string;
+
+  @Prop()
+  level: number;
+
+  @Prop()
+  lastQuestion: boolean;
 }
 
 @Schema()
