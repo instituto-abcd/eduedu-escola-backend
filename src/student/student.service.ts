@@ -23,6 +23,7 @@ import {
   StudentExam,
   StudentExamDocument,
 } from './schemas/studentExam.schema';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class StudentService {
@@ -60,6 +61,8 @@ export class StudentService {
         status,
       },
     });
+
+    await this.createExamStudant(createdStudent.id);
 
     await this.prisma.schoolClassStudent.create({
       data: {
@@ -875,5 +878,33 @@ export class StudentService {
     };
 
     return axisMappings[axisCode] || null;
+  }
+
+  private async createExamStudant(studentId: string): Promise<boolean> {
+    try {
+      const exam = await this.studentExamModel.findOne().sort({ field: 'asc' });
+
+      if (!exam) {
+        console.error('Nenhum exame encontrado');
+        throw new EduException('EXAM_NOT_FOUND');
+      }
+
+      const studentExam = new this.studentExamModel({
+        studentId: studentId,
+        examId: exam.examId,
+        examDate: new Date(),
+        current: true,
+        examPerformed: false,
+        planetTrack: [],
+        answers: [],
+      });
+
+      await studentExam.save();
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao finalizar o exame:', error);
+      throw new EduException('STUDENT_CREATION_FAILED');
+    }
   }
 }
