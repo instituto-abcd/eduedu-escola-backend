@@ -23,7 +23,6 @@ import {
   StudentExam,
   StudentExamDocument,
 } from './schemas/studentExam.schema';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class StudentService {
@@ -513,22 +512,22 @@ export class StudentService {
         answerRequestDto.optionsAnswered,
       );
 
+      const checkAxisRemainingQuestions =
+        await this.checkAxisRemainingQuestions(
+          question.order + 1,
+          question.axis_code,
+        );
+
       await this.saveAnswer(
         studentId,
         examId,
-        answerRequestDto.questionId,
-        question.axis_code,
+        question,
         answerRequestDto.optionsAnswered,
         isCorrect,
+        !checkAxisRemainingQuestions,
       );
 
       if (isCorrect) {
-        const checkAxisRemainingQuestions =
-          await this.checkAxisRemainingQuestions(
-            question.order + 1,
-            question.axis_code,
-          );
-
         if (checkAxisRemainingQuestions) {
           return await this.getNextAxisQuestion(
             question.order + 1,
@@ -579,10 +578,10 @@ export class StudentService {
   async saveAnswer(
     studentId: string,
     examId: string,
-    questionId: number,
-    axisCode: string,
+    question: QuestionDto,
     answeredOptions: OptionsAnswers[],
     isCorrect: boolean,
+    lastQuestion: boolean,
   ): Promise<boolean> {
     try {
       let studentExam = await this.studentExamModel.findOne({
@@ -596,7 +595,8 @@ export class StudentService {
           examId,
           answers: [],
           isCorrect,
-          axis_code: axisCode,
+          axis_code: question.axis_code,
+          lastQuestion,
         });
       }
 
@@ -606,7 +606,7 @@ export class StudentService {
 
       // Check if an answer with the same questionId already exists
       const existingAnswerIndex = studentExam.answers.findIndex(
-        (answer) => answer.questionId === questionId,
+        (answer) => answer.questionId === question.id,
       );
 
       if (existingAnswerIndex !== -1) {
@@ -616,10 +616,12 @@ export class StudentService {
       } else {
         // Create a new answer entry
         studentExam.answers.push({
-          questionId,
+          questionId: question.id,
           isCorrect,
           optionsAnswered: answeredOptions,
-          axis_code: axisCode,
+          axis_code: question.axis_code,
+          level: question.level,
+          lastQuestion,
         });
       }
 
@@ -857,16 +859,16 @@ export class StudentService {
 
       if (aggregationResult.length > 0) {
         const filteredOrderValues = aggregationResult[0].questions.map(
-          (question: any) => question.id,
+          (question: any) => question,
         );
 
-        for (const questionId of filteredOrderValues) {
+        for (const question of filteredOrderValues) {
           await this.saveAnswer(
             studentId,
             examId,
-            questionId,
-            axisCode,
+            question,
             null,
+            false,
             false,
           );
         }

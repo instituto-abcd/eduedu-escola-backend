@@ -62,6 +62,12 @@ export class Answers {
 
   @Prop()
   axis_code: string;
+
+  @Prop()
+  level: number;
+
+  @Prop()
+  lastQuestion: boolean;
 }
 
 @Schema()
