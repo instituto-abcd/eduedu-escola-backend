@@ -517,6 +517,7 @@ export class StudentService {
         studentId,
         examId,
         answerRequestDto.questionId,
+        question.axis_code,
         answerRequestDto.optionsAnswered,
         isCorrect,
       );
@@ -579,6 +580,7 @@ export class StudentService {
     studentId: string,
     examId: string,
     questionId: number,
+    axisCode: string,
     answeredOptions: OptionsAnswers[],
     isCorrect: boolean,
   ): Promise<boolean> {
@@ -594,6 +596,7 @@ export class StudentService {
           examId,
           answers: [],
           isCorrect,
+          axis_code: axisCode,
         });
       }
 
@@ -616,6 +619,7 @@ export class StudentService {
           questionId,
           isCorrect,
           optionsAnswered: answeredOptions,
+          axis_code: axisCode,
         });
       }
 
@@ -857,7 +861,14 @@ export class StudentService {
         );
 
         for (const questionId of filteredOrderValues) {
-          await this.saveAnswer(studentId, examId, questionId, null, false);
+          await this.saveAnswer(
+            studentId,
+            examId,
+            questionId,
+            axisCode,
+            null,
+            false,
+          );
         }
 
         console.log(filteredOrderValues);
