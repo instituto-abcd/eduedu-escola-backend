@@ -532,7 +532,11 @@ export class StudentService {
             'A',
           );
         } else {
-          return await this.getNextQuestionFromAxis(question.axis_code);
+          return await this.getNextQuestionFromAxis(
+            question.axis_code,
+            studentId,
+            examId,
+          );
         }
       } else {
         let checkQuestionBSecondAttempt = false;
@@ -555,7 +559,11 @@ export class StudentService {
             question.order,
             question.axis_code,
           );
-          return await this.getNextQuestionFromAxis(question.axis_code);
+          return await this.getNextQuestionFromAxis(
+            question.axis_code,
+            studentId,
+            examId,
+          );
         }
       }
     } catch (error) {
@@ -742,6 +750,8 @@ export class StudentService {
   // Obter a próxima questão do eixo seguinte (se houver questão do eixo finaliza a prova)
   async getNextQuestionFromAxis(
     axisCode: string,
+    studentId: string,
+    examId: string,
   ): Promise<QuestionDto | AnswersResponseDto> {
     const nextAxisCode = await this.getNextAxisCode(axisCode);
 
@@ -774,7 +784,33 @@ export class StudentService {
 
       return aggregationResult[0].questions[0];
     } else {
+      return await this.finishExam(studentId, examId);
+    }
+  }
+
+  private async finishExam(
+    studentId: string,
+    examId: string,
+  ): Promise<AnswersResponseDto> {
+    try {
+      const studentExam = await this.studentExamModel.findOne({
+        studentId,
+        examId,
+      });
+
+      if (studentExam) {
+        studentExam.examDate = new Date();
+        studentExam.examPerformed = true;
+      } else {
+        throw new EduException('STUDENT_NOT_FOUND');
+      }
+
+      await studentExam.save();
+
       return { examCompleted: true };
+    } catch (error) {
+      console.error('Erro ao finalizar o exame:', error);
+      throw new EduException('FINALIZE_EXAM');
     }
   }
 
