@@ -205,6 +205,14 @@ export const ErrorDetails = {
     message: 'Questão não encontrada.',
     status: HttpStatus.BAD_REQUEST,
   },
+  FINALIZE_EXAM: {
+    message: 'Erro ao finalizar a prova',
+    status: HttpStatus.BAD_REQUEST,
+  },
+  EXAM_NOT_FOUND: {
+    message: 'Prova não encontrada.',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
 
 export class EduException extends HttpException {
