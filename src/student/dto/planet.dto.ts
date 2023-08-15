@@ -18,4 +18,7 @@ export class PlanetDto {
 
   @ApiProperty({ description: 'Número de estrelas no planeta', example: 4.5 })
   stars: number;
+
+  @ApiProperty({ description: 'Indicador se o planeta pode ser executado', example: true })
+  canExecutePlanet: boolean;
 }

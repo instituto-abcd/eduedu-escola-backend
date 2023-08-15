@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { OptionAnswer } from '../../exam/dto/request/answers-request.dto';
 
 export type StudentExamDocument = StudentExam & Document;
 
@@ -43,10 +42,10 @@ export class Planet {
   planetAvatar: string;
 
   @Prop()
-  score: number;
+  score: string;
 
   @Prop()
-  stars: number;
+  stars: string;
 
   @Prop()
   axis_code: string;

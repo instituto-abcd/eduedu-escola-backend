@@ -580,8 +580,8 @@ export class StudentService {
         planetId: planet.id,
         planetName: planet.title,
         planetAvatar: planet.avatar_url,
-        score: 0,
-        stars: 0,
+        score: '0',
+        stars: '0',
         axis_code: axis_code,
         order: planetTrackToSave.length,
       } as Planet);
@@ -610,8 +610,8 @@ export class StudentService {
           planetId: nextPlanetToSave.id,
           planetName: nextPlanetToSave.title,
           planetAvatar: nextPlanetToSave.avatar_url,
-          score: 0,
-          stars: 0,
+          score: '0',
+          stars: '0',
           axis_code: nextPlanetToSave.axis_code,
           order: planetTrackToSave.length,
         } as Planet);
