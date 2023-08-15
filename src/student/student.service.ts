@@ -25,7 +25,10 @@ import {
   StudentExamDocument,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
-import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
+import {
+  PlanetDocument,
+  Question,
+} from 'src/planet-sync/schemas/planet.schema';
 
 @Injectable()
 export class StudentService {
@@ -490,11 +493,18 @@ export class StudentService {
     for (const axis_code of axisCodes) {
       const studentExamResult = {
         percentage: await this.calculatePercentage(studentId, axis_code),
-        level: await this.findStudentLevel(),
+        level: await this.findStudentLevel(studentId, axis_code),
       };
       await this.saveStudentExamResult(studentExamResult);
 
-      planets = [ ...planets, ...(await this.getPlanetsByAxisAndLevel(studentId, axis_code, studentExamResult.level))];
+      planets = [
+        ...planets,
+        ...(await this.getPlanetsByAxisAndLevel(
+          studentId,
+          axis_code,
+          studentExamResult.level,
+        )),
+      ];
     }
 
     await this.generateAndSavePlanetTrack(studentId, planets);
@@ -502,16 +512,26 @@ export class StudentService {
     return null;
   }
 
-  private async getPlanetsByAxisAndLevel(studentId: string, axis_code: string, level: string): Promise<PlanetDocument[]> {
+  private async getPlanetsByAxisAndLevel(
+    studentId: string,
+    axis_code: string,
+    level: string,
+  ): Promise<PlanetDocument[]> {
     // Obtendo planetas para o aluno através do level
-    const planets = await this.planetModel.find({ axis_code: axis_code, level: level });
+    const planets = await this.planetModel.find({
+      axis_code: axis_code,
+      level: level,
+    });
     return planets;
   }
 
   // Criar trilha de planetas para o aluno
-  private async generateAndSavePlanetTrack(studentId: string, planets: PlanetDocument[]): Promise<any> {
+  private async generateAndSavePlanetTrack(
+    studentId: string,
+    planets: PlanetDocument[],
+  ): Promise<any> {
     // Recuperando studentexam do aluno
-    let studentExam = await this.studentExamModel.findOne({ studentId });
+    const studentExam = await this.studentExamModel.findOne({ studentId });
 
     if (!studentExam) {
       throw new EduException('USER_NOT_FOUND');
@@ -523,19 +543,17 @@ export class StudentService {
         return 1;
       }
       if (b.next_planet_id === null) {
-        return -1
+        return -1;
       }
     });
 
     // Aplicando lógica de ordenação da trilha de planetas
-    let planetTrackToSave: Planet[] = [];
-    const axisCodes = [ 'ES', 'EA', 'LC' ];
+    const planetTrackToSave: Planet[] = [];
+    const axisCodes = ['ES', 'EA', 'LC'];
     for (let index = 0; index < planets.length; index++) {
-
       axisCodes.forEach((axis_code) => {
         this.addByAxisCode(axis_code, planets, planetTrackToSave);
       });
-
     }
 
     // Persistindo planetTrack ordenada
@@ -543,9 +561,19 @@ export class StudentService {
     await studentExam.save();
   }
 
-  private addByAxisCode(axis_code: string, planets: PlanetDocument[], planetTrackToSave: Planet[]) {
-    const planetIdsAlreadyProcessed = planetTrackToSave.map((item) => item.planetId);
-    const planet = planets.find((item) => item.axis_code == axis_code && !planetIdsAlreadyProcessed.includes(item.id));
+  private addByAxisCode(
+    axis_code: string,
+    planets: PlanetDocument[],
+    planetTrackToSave: Planet[],
+  ) {
+    const planetIdsAlreadyProcessed = planetTrackToSave.map(
+      (item) => item.planetId,
+    );
+    const planet = planets.find(
+      (item) =>
+        item.axis_code == axis_code &&
+        !planetIdsAlreadyProcessed.includes(item.id),
+    );
 
     if (planet) {
       planetTrackToSave.push({
@@ -555,18 +583,27 @@ export class StudentService {
         score: 0,
         stars: 0,
         axis_code: axis_code,
-        order: planetTrackToSave.length
+        order: planetTrackToSave.length,
       } as Planet);
 
       this.checkForNextPlanet(planet, planets, planetTrackToSave);
     }
   }
 
-  private checkForNextPlanet(planet: PlanetDocument, planets: PlanetDocument[], planetTrackToSave: Planet[]) {
+  private checkForNextPlanet(
+    planet: PlanetDocument,
+    planets: PlanetDocument[],
+    planetTrackToSave: Planet[],
+  ) {
     if (planet.next_planet_id !== null) {
-
-      const planetIdsAlreadyProcessed = planetTrackToSave.map((item) => item.planetId);
-      let nextPlanetToSave = planets.find((item) => item.id === planet.next_planet_id && !planetIdsAlreadyProcessed.includes(item.next_planet_id));
+      const planetIdsAlreadyProcessed = planetTrackToSave.map(
+        (item) => item.planetId,
+      );
+      const nextPlanetToSave = planets.find(
+        (item) =>
+          item.id === planet.next_planet_id &&
+          !planetIdsAlreadyProcessed.includes(item.next_planet_id),
+      );
 
       if (nextPlanetToSave) {
         planetTrackToSave.push({
@@ -576,12 +613,11 @@ export class StudentService {
           score: 0,
           stars: 0,
           axis_code: nextPlanetToSave.axis_code,
-          order: planetTrackToSave.length
+          order: planetTrackToSave.length,
         } as Planet);
 
         this.checkForNextPlanet(nextPlanetToSave, planets, planetTrackToSave);
       }
-
     }
   }
 
@@ -645,8 +681,50 @@ export class StudentService {
     }
   }
 
-  private async findStudentLevel(): Promise<any> {
-    return "2";
+  private async findStudentLevel(
+    studentId: string,
+    axisCode: string,
+  ): Promise<string> {
+    try {
+      const [lastAnswer] = await this.studentExamModel.aggregate([
+        {
+          $match: {
+            studentId: studentId,
+          },
+        },
+        {
+          $unwind: '$answers',
+        },
+        {
+          $match: {
+            'answers.isCorrect': true,
+            'answers.axis_code': axisCode,
+          },
+        },
+        {
+          $sort: { order: -1 },
+        },
+        {
+          $replaceRoot: { newRoot: '$answers' },
+        },
+        {
+          $limit: 1,
+        },
+      ]);
+
+      if (lastAnswer == null) {
+        return '0';
+      }
+
+      if (lastAnswer.lastQuestion) {
+        return 'IDEAL';
+      }
+
+      return lastAnswer.level.toString();
+    } catch (error) {
+      console.error('Error in findStudentLevel:', error);
+      throw new Error('An error occurred while finding student level.');
+    }
   }
 
   // Persistir registro student_examResult
@@ -803,6 +881,7 @@ export class StudentService {
           axis_code: question.axis_code,
           level: question.level,
           lastQuestion,
+          order: question.order,
         });
       }
 
