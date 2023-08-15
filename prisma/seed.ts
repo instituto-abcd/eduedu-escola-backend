@@ -78,9 +78,9 @@ async function main() {
           status: 'ACTIVE',
           password:
             '$2b$10$eMCiyozJb3ChrOm55B4lt.3bIpx5GjXEQFtCeWT0166INp/PsdDT6',
-          name: 'Andria Bluschke',
+          name: 'Diretor da Escola',
           document: '8917404804',
-          email: 'abluschke0@hc360.com',
+          email: 'diretor@email.com',
           profile: Profile.DIRECTOR,
           schoolId: schoolId,
           accessKey: 'EDUEDU001',
@@ -91,12 +91,12 @@ async function main() {
           status: 'ACTIVE',
           password:
             '$2b$10$eMCiyozJb3ChrOm55B4lt.3bIpx5GjXEQFtCeWT0166INp/PsdDT6',
-          name: 'Kirbie Stockley',
+          name: 'Professor',
           document: '1470800969',
-          email: 'kstockleyc@forbes.com',
+          email: 'professor@email.com',
           profile: Profile.TEACHER,
           schoolId: schoolId,
-          accessKey: 'EDUEDU023',
+          accessKey: 'EDUEDU002',
         }
       ],
     });
