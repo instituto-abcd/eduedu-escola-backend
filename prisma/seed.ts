@@ -126,6 +126,8 @@ async function main() {
       data: {
         id: studentId,
         name: 'Dênis o Pimentinha',
+        status: 'ACTIVE',
+        registry: '0001'
       }
     });
     // Vínculo Turma e Aluno
