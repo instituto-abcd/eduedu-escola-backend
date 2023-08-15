@@ -92,6 +92,18 @@ model Student {
 
   schoolClasses SchoolClassStudent[]
   studentAwards StudentAward[]
+  examResults   StudentExamResult[]
+}
+
+model StudentExamResult {
+  id            String  @id @default(uuid())
+  studentExamId String
+  axisCode      String
+  percent       Decimal
+  level         String
+  result        String
+  student       Student @relation(fields: [studentId], references: [id])
+  studentId     String
 }
 
 // Model for User
