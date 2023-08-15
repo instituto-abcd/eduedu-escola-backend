@@ -497,11 +497,11 @@ export class StudentService {
           include: {
             schoolClass: {
               include: {
-                schoolYear: true
-              }
+                schoolYear: true,
+              },
             },
           },
-          where: { active: true }
+          where: { active: true },
         },
       },
     });
@@ -509,14 +509,19 @@ export class StudentService {
 
     const axisCodes = ['ES', 'EA', 'LC'];
     for (const axis_code of axisCodes) {
-      let studentExamResult = {
+      const studentExamResult = {
         percentage: await this.calculatePercentage(studentId, axis_code),
         level: await this.findStudentLevel(studentId, axis_code),
         axisCode: axis_code,
         studentId: studentId,
         resume: '',
       };
-      studentExamResult.resume = this.getStudentAxisResume(studentExamResult.level, axis_code, schoolGradeYear, student.name);
+      studentExamResult.resume = this.getStudentAxisResume(
+        studentExamResult.level,
+        axis_code,
+        schoolGradeYear,
+        student.name,
+      );
       await this.saveStudentExamResult(studentExamResult);
 
       planets = [
@@ -747,15 +752,22 @@ export class StudentService {
     }
   }
 
-  private getStudentAxisResume(level: string, axis_code: string, school_year: SchoolGradeEnum, studentName: string) {
+  private getStudentAxisResume(
+    level: string,
+    axis_code: string,
+    school_year: SchoolGradeEnum,
+    studentName: string,
+  ) {
     const examResumes = new ExamResumes();
 
-    level = level == "0" ? "1" : level;
+    level = level == '0' ? '1' : level;
 
-    let resume = examResumes.Templates.find((item) => 
-      item.level == level &&
-      item.axis_code == axis_code &&
-      item.school_year == school_year);
+    const resume = examResumes.Templates.find(
+      (item) =>
+        item.level == level &&
+        item.axis_code == axis_code &&
+        item.school_year == school_year,
+    );
 
     return resume.text.replace(examResumes.ReplaceTerm, studentName);
   }
@@ -817,6 +829,8 @@ export class StudentService {
         ])
         .exec();
 
+      let response;
+
       const question: QuestionDto = aggregationResult[0].questions[0];
 
       if (question == null) {
@@ -845,13 +859,13 @@ export class StudentService {
 
       if (isCorrect) {
         if (checkAxisRemainingQuestions) {
-          return await this.getNextAxisQuestion(
+          response = await this.getNextAxisQuestion(
             question.order + 1,
             question.axis_code,
             'A',
           );
         } else {
-          return await this.getNextQuestionFromAxis(
+          response = await this.getNextQuestionFromAxis(
             question.axis_code,
             studentId,
             examId,
@@ -866,7 +880,7 @@ export class StudentService {
           );
         }
         if (checkQuestionBSecondAttempt) {
-          return await this.getNextAxisQuestion(
+          response = await this.getNextAxisQuestion(
             question.order,
             question.axis_code,
             'B',
@@ -878,15 +892,86 @@ export class StudentService {
             question.order,
             question.axis_code,
           );
-          return await this.getNextQuestionFromAxis(
+          response = await this.getNextQuestionFromAxis(
             question.axis_code,
             studentId,
             examId,
           );
         }
       }
+
+      response.progress = await this.recoverProgress(
+        question.axis_code,
+        studentId,
+      );
+      return response;
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
+    }
+  }
+  async recoverProgress(axisCode: string, studentId: string): Promise<number> {
+    try {
+      const axisCodes = axisCode === 'ES' ? ['ES'] : ['EA', 'LC'];
+
+      const totalQuestionPerAxisAggregate = await this.examModel
+        .aggregate([
+          {
+            $project: {
+              questionCount: {
+                $size: {
+                  $filter: {
+                    input: '$questions',
+                    as: 'question',
+                    cond: {
+                      $in: ['$$question.axis_code', axisCodes],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+      const totalQuestionPerAxis =
+        totalQuestionPerAxisAggregate[0]?.questionCount || 0;
+
+      const totalQuestionsAnsweredAxisAggregate =
+        await this.studentExamModel.aggregate([
+          {
+            $match: {
+              studentId: studentId,
+              'answers.axis_code': { $in: axisCodes },
+            },
+          },
+          {
+            $project: {
+              correctAnswersCount: {
+                $size: {
+                  $filter: {
+                    input: '$answers',
+                    as: 'answer',
+                    cond: {
+                      $in: ['$$answer.axis_code', axisCodes],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ]);
+
+      const totalQuestionsAnsweredAxis =
+        totalQuestionsAnsweredAxisAggregate[0]?.correctAnswersCount || 0;
+
+      if (totalQuestionPerAxis === 0) {
+        return 0;
+      }
+
+      return (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+    } catch (error) {
+      console.error('Error in recoverProgress:', error);
+      return -1; // Or return any suitable error code
     }
   }
 
