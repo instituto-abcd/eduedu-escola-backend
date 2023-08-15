@@ -494,6 +494,8 @@ export class StudentService {
       const studentExamResult = {
         percentage: await this.calculatePercentage(studentId, axis_code),
         level: await this.findStudentLevel(studentId, axis_code),
+        axisCode: axis_code,
+        studentId: studentId,
       };
       await this.saveStudentExamResult(studentExamResult);
 
@@ -729,10 +731,32 @@ export class StudentService {
 
   // Persistir registro student_examResult
   private async saveStudentExamResult(studentExamResult: {
-    level: any;
+    axisCode: string;
     percentage: number;
+    level: string;
+    studentId: string;
   }): Promise<any> {
-    return null;
+    const studentExam = await this.studentExamModel.findOne({
+      studentId: studentExamResult.studentId,
+    });
+
+    try {
+      const createdStudentExamResult =
+        await this.prisma.studentExamResult.create({
+          data: {
+            studentExamId: studentExam.id,
+            axisCode: studentExamResult.axisCode,
+            percent: studentExamResult.percentage,
+            level: studentExamResult.level,
+            resume: 'teste',
+            student: {
+              connect: { id: studentExamResult.studentId },
+            },
+          },
+        });
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async answer(
