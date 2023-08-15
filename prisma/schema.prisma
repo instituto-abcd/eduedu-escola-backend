@@ -101,7 +101,7 @@ model StudentExamResult {
   axisCode      String
   percent       Decimal
   level         String
-  result        String
+  resume        String
   student       Student @relation(fields: [studentId], references: [id])
   studentId     String
 }

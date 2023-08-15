@@ -748,7 +748,7 @@ export class StudentService {
             axisCode: studentExamResult.axisCode,
             percent: studentExamResult.percentage,
             level: studentExamResult.level,
-            result: '',
+            resume: 'teste',
             student: {
               connect: { id: studentExamResult.studentId },
             },

@@ -71,7 +71,7 @@ CREATE TABLE "StudentExamResult" (
     "axisCode" TEXT NOT NULL,
     "percent" DECIMAL(65,30) NOT NULL,
     "level" TEXT NOT NULL,
-    "result" TEXT NOT NULL,
+    "resume" TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
 
     CONSTRAINT "StudentExamResult_pkey" PRIMARY KEY ("id")
