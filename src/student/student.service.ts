@@ -480,22 +480,15 @@ export class StudentService {
   async handleExamEvaluation(
     studentId: string,
   ): Promise<ExamEvaluationResponseDto> {
-    // Calcular porcentagem
-    const percentageES = await this.calculatePercentage(studentId, 'ES');
-    const percentageEA = await this.calculatePercentage(studentId, 'EA');
-    const percentageLS = await this.calculatePercentage(studentId, 'LC');
+    const axisCodes = ['ES', 'EA', 'LC'];
+    for (const axis_code of axisCodes) {
+      const studentExamResult = {
+        percentage: await this.calculatePercentage(studentId, axis_code),
+        level: await this.findStudentLevel(),
+      };
+      await this.saveStudentExamResult(studentExamResult);
+    }
 
-    console.log(percentageES);
-    console.log(percentageEA);
-    console.log(percentageLS);
-
-    // TODO: Encontrar nível do aluno
-    await this.findStudentLevel();
-
-    // TODO: Persistir registro student_examResult
-    await this.saveStudentExamResult();
-
-    // TODO: Criar trilha de planetas para o aluno
     await this.createPlanetTrailForStudent();
 
     return null;
@@ -561,15 +554,20 @@ export class StudentService {
     }
   }
 
-  private async findStudentLevel(): any {
+  private async findStudentLevel(): Promise<any> {
     return null;
   }
 
-  private async saveStudentExamResult(): any {
+  // Persistir registro student_examResult
+  private async saveStudentExamResult(studentExamResult: {
+    level: any;
+    percentage: number;
+  }): Promise<any> {
     return null;
   }
 
-  private async createPlanetTrailForStudent(): any {
+  // Criar trilha de planetas para o aluno
+  private async createPlanetTrailForStudent(): Promise<any> {
     return null;
   }
 
