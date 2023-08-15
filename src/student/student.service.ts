@@ -477,18 +477,98 @@ export class StudentService {
     }
   }
 
-  async handleExamEvaluation(studentId: string): Promise<ExamEvaluationResponseDto> {
-    // TODO: Calcular porcentagem
+  async handleExamEvaluation(
+    studentId: string,
+  ): Promise<ExamEvaluationResponseDto> {
+    const axisCodes = ['ES', 'EA', 'LC'];
+    for (const axis_code of axisCodes) {
+      const studentExamResult = {
+        percentage: await this.calculatePercentage(studentId, axis_code),
+        level: await this.findStudentLevel(),
+      };
+      await this.saveStudentExamResult(studentExamResult);
+    }
 
-    // TODO: Encontrar nível do aluno
+    await this.createPlanetTrailForStudent();
 
-    // TODO: Persistir registro student_examResult
+    return null;
+  }
 
-    // TODO: Criar trilha de planetas para o aluno
+  private async calculatePercentage(
+    studentId: string,
+    axisCode: string,
+  ): Promise<number> {
+    try {
+      const student = await this.studentExamModel.findOne({
+        studentId: studentId,
+      });
 
-    return new Promise<ExamEvaluationResponseDto>(() => {
-      
-    });
+      const exam = await this.examModel.findOne({
+        id: student?.examId,
+      });
+
+      if (!student || !exam || !exam.questions || exam.questions.length === 0) {
+        return 0;
+      }
+
+      const correctQuestionsCount = await this.studentExamModel.aggregate([
+        {
+          $match: {
+            studentId: studentId,
+            'answers.isCorrect': true,
+            'answers.axis_code': axisCode,
+          },
+        },
+        {
+          $project: {
+            correctAnswersCount: {
+              $size: {
+                $filter: {
+                  input: '$answers',
+                  as: 'answer',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$answer.isCorrect', true] },
+                      { $eq: ['$$answer.axis_code', axisCode] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      ]);
+
+      const totalCorrectAnswers =
+        correctQuestionsCount.length > 0
+          ? correctQuestionsCount[0].correctAnswersCount
+          : 0;
+
+      const totalQuestions = exam.questions.length;
+      const percentage = (totalCorrectAnswers / totalQuestions) * 100;
+
+      return parseFloat(percentage.toFixed(2));
+    } catch (error) {
+      console.error('Error in calculatePercentage:', error);
+      throw new Error('An error occurred while calculating percentage.');
+    }
+  }
+
+  private async findStudentLevel(): Promise<any> {
+    return null;
+  }
+
+  // Persistir registro student_examResult
+  private async saveStudentExamResult(studentExamResult: {
+    level: any;
+    percentage: number;
+  }): Promise<any> {
+    return null;
+  }
+
+  // Criar trilha de planetas para o aluno
+  private async createPlanetTrailForStudent(): Promise<any> {
+    return null;
   }
 
   async answer(
@@ -935,5 +1015,4 @@ export class StudentService {
       throw new EduException('STUDENT_CREATION_FAILED');
     }
   }
-
 }
