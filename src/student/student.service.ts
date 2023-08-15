@@ -502,7 +502,7 @@ export class StudentService {
         ...(await this.getPlanetsByAxisAndLevel(
           studentId,
           axis_code,
-          studentExamResult.level.toString(),
+          studentExamResult.level,
         )),
       ];
     }
@@ -684,9 +684,9 @@ export class StudentService {
   private async findStudentLevel(
     studentId: string,
     axisCode: string,
-  ): Promise<number> {
+  ): Promise<string> {
     try {
-      const [lastQuestionAnswer] = await this.studentExamModel.aggregate([
+      const [lastAnswer] = await this.studentExamModel.aggregate([
         {
           $match: {
             studentId: studentId,
@@ -698,9 +698,11 @@ export class StudentService {
         {
           $match: {
             'answers.isCorrect': true,
-            'answers.lastQuestion': true,
             'answers.axis_code': axisCode,
           },
+        },
+        {
+          $sort: { order: -1 },
         },
         {
           $replaceRoot: { newRoot: '$answers' },
@@ -710,11 +712,15 @@ export class StudentService {
         },
       ]);
 
-      if (lastQuestionAnswer == null) {
-        return 0;
+      if (lastAnswer == null) {
+        return '0';
       }
 
-      return lastQuestionAnswer.level;
+      if (lastAnswer.lastQuestion) {
+        return 'IDEAL';
+      }
+
+      return lastAnswer.level.toString();
     } catch (error) {
       console.error('Error in findStudentLevel:', error);
       throw new Error('An error occurred while finding student level.');
@@ -875,6 +881,7 @@ export class StudentService {
           axis_code: question.axis_code,
           level: question.level,
           lastQuestion,
+          order: question.order,
         });
       }
 

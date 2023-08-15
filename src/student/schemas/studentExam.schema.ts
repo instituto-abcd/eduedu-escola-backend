@@ -73,6 +73,9 @@ export class Answers {
   level: number;
 
   @Prop()
+  order: number;
+
+  @Prop()
   lastQuestion: boolean;
 }
 
