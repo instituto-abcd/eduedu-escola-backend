@@ -29,6 +29,7 @@ import {
   PlanetDocument,
   Question,
 } from 'src/planet-sync/schemas/planet.schema';
+import { ExamResumes } from 'src/templates/exam-resume-templates';
 
 @Injectable()
 export class StudentService {
@@ -489,20 +490,38 @@ export class StudentService {
   ): Promise<ExamEvaluationResponseDto> {
     let planets: PlanetDocument[] = [];
 
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        schoolClasses: {
+          include: {
+            schoolClass: {
+              include: {
+                schoolYear: true
+              }
+            },
+          },
+          where: { active: true }
+        },
+      },
+    });
+    const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
+
     const axisCodes = ['ES', 'EA', 'LC'];
     for (const axis_code of axisCodes) {
-      const studentExamResult = {
+      let studentExamResult = {
         percentage: await this.calculatePercentage(studentId, axis_code),
         level: await this.findStudentLevel(studentId, axis_code),
         axisCode: axis_code,
         studentId: studentId,
+        resume: '',
       };
+      studentExamResult.resume = this.getStudentAxisResume(studentExamResult.level, axis_code, schoolGradeYear, student.name);
       await this.saveStudentExamResult(studentExamResult);
 
       planets = [
         ...planets,
         ...(await this.getPlanetsByAxisAndLevel(
-          studentId,
           axis_code,
           studentExamResult.level,
         )),
@@ -515,7 +534,6 @@ export class StudentService {
   }
 
   private async getPlanetsByAxisAndLevel(
-    studentId: string,
     axis_code: string,
     level: string,
   ): Promise<PlanetDocument[]> {
@@ -729,15 +747,30 @@ export class StudentService {
     }
   }
 
+  private getStudentAxisResume(level: string, axis_code: string, school_year: SchoolGradeEnum, studentName: string) {
+    const examResumes = new ExamResumes();
+
+    level = level == "0" ? "1" : level;
+
+    let resume = examResumes.Templates.find((item) => 
+      item.level == level &&
+      item.axis_code == axis_code &&
+      item.school_year == school_year);
+
+    return resume.text.replace(examResumes.ReplaceTerm, studentName);
+  }
+
   // Persistir registro student_examResult
   private async saveStudentExamResult(studentExamResult: {
     axisCode: string;
     percentage: number;
     level: string;
     studentId: string;
+    resume: string;
   }): Promise<any> {
     const studentExam = await this.studentExamModel.findOne({
       studentId: studentExamResult.studentId,
+      current: true,
     });
 
     try {
@@ -748,7 +781,7 @@ export class StudentService {
             axisCode: studentExamResult.axisCode,
             percent: studentExamResult.percentage,
             level: studentExamResult.level,
-            resume: 'teste',
+            resume: studentExamResult.resume,
             student: {
               connect: { id: studentExamResult.studentId },
             },
