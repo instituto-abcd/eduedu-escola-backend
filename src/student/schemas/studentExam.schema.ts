@@ -47,6 +47,12 @@ export class Planet {
 
   @Prop()
   stars: number;
+
+  @Prop()
+  axis_code: string;
+
+  @Prop()
+  order: number;
 }
 
 @Schema()

@@ -20,10 +20,12 @@ import {
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import {
   OptionsAnswers,
+  Planet,
   StudentExam,
   StudentExamDocument,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
+import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
 
 @Injectable()
 export class StudentService {
@@ -34,6 +36,8 @@ export class StudentService {
     private examModel: Model<ExamDocument>,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
+    @InjectModel(Planet.name)
+    private planetModel: Model<PlanetDocument>,
   ) {}
 
   async create(
@@ -480,6 +484,8 @@ export class StudentService {
   async handleExamEvaluation(
     studentId: string,
   ): Promise<ExamEvaluationResponseDto> {
+    let planets: PlanetDocument[] = [];
+
     const axisCodes = ['ES', 'EA', 'LC'];
     for (const axis_code of axisCodes) {
       const studentExamResult = {
@@ -487,11 +493,96 @@ export class StudentService {
         level: await this.findStudentLevel(),
       };
       await this.saveStudentExamResult(studentExamResult);
+
+      planets = [ ...planets, ...(await this.getPlanetsByAxisAndLevel(studentId, axis_code, studentExamResult.level))];
     }
 
-    await this.createPlanetTrailForStudent();
+    await this.generateAndSavePlanetTrack(studentId, planets);
 
     return null;
+  }
+
+  private async getPlanetsByAxisAndLevel(studentId: string, axis_code: string, level: string): Promise<PlanetDocument[]> {
+    // Obtendo planetas para o aluno através do level
+    const planets = await this.planetModel.find({ axis_code: axis_code, level: level });
+    return planets;
+  }
+
+  // Criar trilha de planetas para o aluno
+  private async generateAndSavePlanetTrack(studentId: string, planets: PlanetDocument[]): Promise<any> {
+    // Recuperando studentexam do aluno
+    let studentExam = await this.studentExamModel.findOne({ studentId });
+
+    if (!studentExam) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    // Ordenando planetas que possuem planeta agregado primeiro
+    planets = planets.sort((a: any, b: any) => {
+      if (a.next_planet_id === null) {
+        return 1;
+      }
+      if (b.next_planet_id === null) {
+        return -1
+      }
+    });
+
+    // Aplicando lógica de ordenação da trilha de planetas
+    let planetTrackToSave: Planet[] = [];
+    const axisCodes = [ 'ES', 'EA', 'LC' ];
+    for (let index = 0; index < planets.length; index++) {
+
+      axisCodes.forEach((axis_code) => {
+        this.addByAxisCode(axis_code, planets, planetTrackToSave);
+      });
+
+    }
+
+    // Persistindo planetTrack ordenada
+    studentExam.planetTrack = planetTrackToSave;
+    await studentExam.save();
+  }
+
+  private addByAxisCode(axis_code: string, planets: PlanetDocument[], planetTrackToSave: Planet[]) {
+    const planetIdsAlreadyProcessed = planetTrackToSave.map((item) => item.planetId);
+    const planet = planets.find((item) => item.axis_code == axis_code && !planetIdsAlreadyProcessed.includes(item.id));
+
+    if (planet) {
+      planetTrackToSave.push({
+        planetId: planet.id,
+        planetName: planet.title,
+        planetAvatar: planet.avatar_url,
+        score: 0,
+        stars: 0,
+        axis_code: axis_code,
+        order: planetTrackToSave.length
+      } as Planet);
+
+      this.checkForNextPlanet(planet, planets, planetTrackToSave);
+    }
+  }
+
+  private checkForNextPlanet(planet: PlanetDocument, planets: PlanetDocument[], planetTrackToSave: Planet[]) {
+    if (planet.next_planet_id !== null) {
+
+      const planetIdsAlreadyProcessed = planetTrackToSave.map((item) => item.planetId);
+      let nextPlanetToSave = planets.find((item) => item.id === planet.next_planet_id && !planetIdsAlreadyProcessed.includes(item.next_planet_id));
+
+      if (nextPlanetToSave) {
+        planetTrackToSave.push({
+          planetId: nextPlanetToSave.id,
+          planetName: nextPlanetToSave.title,
+          planetAvatar: nextPlanetToSave.avatar_url,
+          score: 0,
+          stars: 0,
+          axis_code: nextPlanetToSave.axis_code,
+          order: planetTrackToSave.length
+        } as Planet);
+
+        this.checkForNextPlanet(nextPlanetToSave, planets, planetTrackToSave);
+      }
+
+    }
   }
 
   private async calculatePercentage(
@@ -555,7 +646,7 @@ export class StudentService {
   }
 
   private async findStudentLevel(): Promise<any> {
-    return null;
+    return "2";
   }
 
   // Persistir registro student_examResult
@@ -563,11 +654,6 @@ export class StudentService {
     level: any;
     percentage: number;
   }): Promise<any> {
-    return null;
-  }
-
-  // Criar trilha de planetas para o aluno
-  private async createPlanetTrailForStudent(): Promise<any> {
     return null;
   }
 

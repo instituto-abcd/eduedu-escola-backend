@@ -32,6 +32,8 @@ export class StudentExamService implements OnModuleInit {
                 planetAvatar: 'url-to-image',
                 score: 80,
                 stars: 3.1,
+                axis_code: 'LC',
+                order: 1
               },
               {
                 planetId: uuidv4(),
@@ -39,6 +41,8 @@ export class StudentExamService implements OnModuleInit {
                 planetAvatar: 'url-to-image',
                 score: 100.0,
                 stars: 4.5,
+                axis_code: 'ES',
+                order: 2
               },
             ],
             answers: [],

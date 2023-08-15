@@ -11,12 +11,14 @@ import { StudentExam, StudentExamSchema } from './schemas/studentExam.schema';
 import { StudentExamService } from './studentExam.service';
 import { AwardsService } from '../awards/awards.service';
 import { Exam, ExamSchema } from '../exam/schemas/exam.schema';
+import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
       { name: Exam.name, schema: ExamSchema },
+      { name: Planet.name, schema: PlanetSchema },
     ]),
   ],
   controllers: [StudentController],
