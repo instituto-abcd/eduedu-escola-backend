@@ -9,6 +9,7 @@ export class QuestionDto {
   model_id: string;
 
   orderedAnswer: boolean;
+  progress?: number = 0;
   titles: {
     file_name: string;
     file_url: string;
