@@ -118,6 +118,8 @@ CREATE TABLE "SchoolClassStudent" (
 CREATE TABLE "Award" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
 
     CONSTRAINT "Award_pkey" PRIMARY KEY ("id")
 );

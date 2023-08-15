@@ -6,4 +6,6 @@ export class CreateAwardDto {
     example: 'Prêmio de Excelência',
   })
   name: string;
+  title: string
+  description: string
 }
