@@ -52,6 +52,11 @@ export class EmailService {
         to: email,
         subject: 'Redefinição de senha',
         html: passwordTemplate(url, name),
+        attachments: [{
+          filename: 'eduedu-preta.png',
+          path: `${__dirname}/../../templates/eduedu-preta.png`,
+          cid: 'logoeduedu'
+        }]
       })
       .catch((error) => {
         console.error('Erro ao enviar email:', error);
@@ -67,6 +72,11 @@ export class EmailService {
         to: email,
         subject: 'Confirmação de email',
         html: emailConfirmTemplate(url, email),
+        attachments: [{
+          filename: 'eduedu-preta.png',
+          path: `${__dirname}/../../templates/eduedu-preta.png`,
+          cid: 'logoeduedu'
+        }]
       })
       .catch((error) => {
         console.error('Erro ao enviar email:', error);
