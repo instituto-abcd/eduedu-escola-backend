@@ -59,7 +59,7 @@ export const emailConfirmTemplate = (url: string, email: string) => `
                                     <td style="padding: 10px; text-align: center;">
                                         <a href="">
                                             <img style="height: 150px;"
-                                                src="https://storage.googleapis.com/eduedu-escola/eduedu-preta.svg"
+                                                src="cid:logoeduedu"
                                                 alt="EduEdu Escola Logo">
                                         </a>
                                     </td>
