@@ -7,6 +7,9 @@ export class QuestionDto {
   level: number;
   description: string;
   model_id: string;
+
+  orderedAnswer: boolean;
+  progress?: number = 0;
   titles: {
     file_name: string;
     file_url: string;

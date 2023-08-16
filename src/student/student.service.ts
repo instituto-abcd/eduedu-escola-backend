@@ -13,9 +13,23 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
 import { QuestionDto } from '../exam/dto/question.dto';
-import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
+import {
+  AnswerRequestDto,
+  OptionAnswer,
+} from '../exam/dto/request/answers-request.dto';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
-import { StudentExam, StudentExamDocument } from './schemas/studentExam.schema';
+import {
+  OptionsAnswers,
+  Planet,
+  StudentExam,
+  StudentExamDocument,
+} from './schemas/studentExam.schema';
+import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
+import {
+  PlanetDocument,
+  Question,
+} from 'src/planet-sync/schemas/planet.schema';
+import { ExamResumes } from 'src/templates/exam-resume-templates';
 
 @Injectable()
 export class StudentService {
@@ -26,6 +40,8 @@ export class StudentService {
     private examModel: Model<ExamDocument>,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
+    @InjectModel(Planet.name)
+    private planetModel: Model<PlanetDocument>,
   ) {}
 
   async create(
@@ -53,6 +69,8 @@ export class StudentService {
         status,
       },
     });
+
+    await this.createExamStudant(createdStudent.id);
 
     await this.prisma.schoolClassStudent.create({
       data: {
@@ -403,6 +421,15 @@ export class StudentService {
   }
 
   async getFirstQuestionForStudent(studentId: string): Promise<QuestionDto> {
+    await this.prisma.schoolClassStudent.updateMany({
+      where: {
+        studentId: studentId,
+      },
+      data: {
+        firstAccess: false,
+      },
+    });
+
     const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
     const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
     const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode);
@@ -451,9 +478,329 @@ export class StudentService {
         model_id: firstQuestion.model_id,
         titles: firstQuestion.titles,
         options: firstQuestion.options,
+        orderedAnswer: firstQuestion.orderedAnswer,
       };
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  async handleExamEvaluation(
+    studentId: string,
+  ): Promise<ExamEvaluationResponseDto> {
+    let planets: PlanetDocument[] = [];
+
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        schoolClasses: {
+          include: {
+            schoolClass: {
+              include: {
+                schoolYear: true,
+              },
+            },
+          },
+          where: { active: true },
+        },
+      },
+    });
+    const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
+
+    const axisCodes = ['ES', 'EA', 'LC'];
+    for (const axis_code of axisCodes) {
+      const studentExamResult = {
+        percentage: await this.calculatePercentage(studentId, axis_code),
+        level: await this.findStudentLevel(studentId, axis_code),
+        axisCode: axis_code,
+        studentId: studentId,
+        resume: '',
+      };
+      studentExamResult.resume = this.getStudentAxisResume(
+        studentExamResult.level,
+        axis_code,
+        schoolGradeYear,
+        student.name,
+      );
+      await this.saveStudentExamResult(studentExamResult);
+
+      planets = [
+        ...planets,
+        ...(await this.getPlanetsByAxisAndLevel(
+          axis_code,
+          studentExamResult.level,
+        )),
+      ];
+    }
+
+    await this.generateAndSavePlanetTrack(studentId, planets);
+
+    return null;
+  }
+
+  private async getPlanetsByAxisAndLevel(
+    axis_code: string,
+    level: string,
+  ): Promise<PlanetDocument[]> {
+    // Obtendo planetas para o aluno através do level
+    const planets = await this.planetModel.find({
+      axis_code: axis_code,
+      level: level,
+    });
+    return planets;
+  }
+
+  // Criar trilha de planetas para o aluno
+  private async generateAndSavePlanetTrack(
+    studentId: string,
+    planets: PlanetDocument[],
+  ): Promise<any> {
+    // Recuperando studentexam do aluno
+    const studentExam = await this.studentExamModel.findOne({ studentId });
+
+    if (!studentExam) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    // Ordenando planetas que possuem planeta agregado primeiro
+    planets = planets.sort((a: any, b: any) => {
+      if (a.next_planet_id === null) {
+        return 1;
+      }
+      if (b.next_planet_id === null) {
+        return -1;
+      }
+    });
+
+    // Aplicando lógica de ordenação da trilha de planetas
+    const planetTrackToSave: Planet[] = [];
+    const axisCodes = ['ES', 'EA', 'LC'];
+    for (let index = 0; index < planets.length; index++) {
+      axisCodes.forEach((axis_code) => {
+        this.addByAxisCode(axis_code, planets, planetTrackToSave);
+      });
+    }
+
+    // Persistindo planetTrack ordenada
+    studentExam.planetTrack = planetTrackToSave;
+    await studentExam.save();
+  }
+
+  private addByAxisCode(
+    axis_code: string,
+    planets: PlanetDocument[],
+    planetTrackToSave: Planet[],
+  ) {
+    const planetIdsAlreadyProcessed = planetTrackToSave.map(
+      (item) => item.planetId,
+    );
+    const planet = planets.find(
+      (item) =>
+        item.axis_code == axis_code &&
+        !planetIdsAlreadyProcessed.includes(item.id),
+    );
+
+    if (planet) {
+      planetTrackToSave.push({
+        planetId: planet.id,
+        planetName: planet.title,
+        planetAvatar: planet.avatar_url,
+        score: '0',
+        stars: '0',
+        axis_code: axis_code,
+        order: planetTrackToSave.length,
+      } as Planet);
+
+      this.checkForNextPlanet(planet, planets, planetTrackToSave);
+    }
+  }
+
+  private checkForNextPlanet(
+    planet: PlanetDocument,
+    planets: PlanetDocument[],
+    planetTrackToSave: Planet[],
+  ) {
+    if (planet.next_planet_id !== null) {
+      const planetIdsAlreadyProcessed = planetTrackToSave.map(
+        (item) => item.planetId,
+      );
+      const nextPlanetToSave = planets.find(
+        (item) =>
+          item.id === planet.next_planet_id &&
+          !planetIdsAlreadyProcessed.includes(item.next_planet_id),
+      );
+
+      if (nextPlanetToSave) {
+        planetTrackToSave.push({
+          planetId: nextPlanetToSave.id,
+          planetName: nextPlanetToSave.title,
+          planetAvatar: nextPlanetToSave.avatar_url,
+          score: '0',
+          stars: '0',
+          axis_code: nextPlanetToSave.axis_code,
+          order: planetTrackToSave.length,
+        } as Planet);
+
+        this.checkForNextPlanet(nextPlanetToSave, planets, planetTrackToSave);
+      }
+    }
+  }
+
+  private async calculatePercentage(
+    studentId: string,
+    axisCode: string,
+  ): Promise<number> {
+    try {
+      const student = await this.studentExamModel.findOne({
+        studentId: studentId,
+      });
+
+      const exam = await this.examModel.findOne({
+        id: student?.examId,
+      });
+
+      if (!student || !exam || !exam.questions || exam.questions.length === 0) {
+        return 0;
+      }
+
+      const correctQuestionsCount = await this.studentExamModel.aggregate([
+        {
+          $match: {
+            studentId: studentId,
+            'answers.isCorrect': true,
+            'answers.axis_code': axisCode,
+          },
+        },
+        {
+          $project: {
+            correctAnswersCount: {
+              $size: {
+                $filter: {
+                  input: '$answers',
+                  as: 'answer',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$answer.isCorrect', true] },
+                      { $eq: ['$$answer.axis_code', axisCode] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      ]);
+
+      const totalCorrectAnswers =
+        correctQuestionsCount.length > 0
+          ? correctQuestionsCount[0].correctAnswersCount
+          : 0;
+
+      const totalQuestions = exam.questions.length;
+      const percentage = (totalCorrectAnswers / totalQuestions) * 100;
+
+      return parseFloat(percentage.toFixed(2));
+    } catch (error) {
+      console.error('Error in calculatePercentage:', error);
+      throw new Error('An error occurred while calculating percentage.');
+    }
+  }
+
+  private async findStudentLevel(
+    studentId: string,
+    axisCode: string,
+  ): Promise<string> {
+    try {
+      const [lastAnswer] = await this.studentExamModel.aggregate([
+        {
+          $match: {
+            studentId: studentId,
+          },
+        },
+        {
+          $unwind: '$answers',
+        },
+        {
+          $match: {
+            'answers.isCorrect': true,
+            'answers.axis_code': axisCode,
+          },
+        },
+        {
+          $sort: { order: -1 },
+        },
+        {
+          $replaceRoot: { newRoot: '$answers' },
+        },
+        {
+          $limit: 1,
+        },
+      ]);
+
+      if (lastAnswer == null) {
+        return '0';
+      }
+
+      if (lastAnswer.lastQuestion) {
+        return 'IDEAL';
+      }
+
+      return lastAnswer.level.toString();
+    } catch (error) {
+      console.error('Error in findStudentLevel:', error);
+      throw new Error('An error occurred while finding student level.');
+    }
+  }
+
+  private getStudentAxisResume(
+    level: string,
+    axis_code: string,
+    school_year: SchoolGradeEnum,
+    studentName: string,
+  ) {
+    const examResumes = new ExamResumes();
+
+    level = level == '0' ? '1' : level;
+
+    const resume = examResumes.Templates.find(
+      (item) =>
+        item.level == level &&
+        item.axis_code == axis_code &&
+        item.school_year == school_year,
+    );
+
+    return resume.text.replace(examResumes.ReplaceTerm, studentName);
+  }
+
+  // Persistir registro student_examResult
+  private async saveStudentExamResult(studentExamResult: {
+    axisCode: string;
+    percentage: number;
+    level: string;
+    studentId: string;
+    resume: string;
+  }): Promise<any> {
+    const studentExam = await this.studentExamModel.findOne({
+      studentId: studentExamResult.studentId,
+      current: true,
+    });
+
+    try {
+      const createdStudentExamResult =
+        await this.prisma.studentExamResult.create({
+          data: {
+            studentExamId: studentExam.id,
+            axisCode: studentExamResult.axisCode,
+            percent: studentExamResult.percentage,
+            level: studentExamResult.level,
+            resume: studentExamResult.resume,
+            student: {
+              connect: { id: studentExamResult.studentId },
+            },
+          },
+        });
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -482,6 +829,8 @@ export class StudentService {
         ])
         .exec();
 
+      let response;
+
       const question: QuestionDto = aggregationResult[0].questions[0];
 
       if (question == null) {
@@ -490,32 +839,37 @@ export class StudentService {
 
       const isCorrect = await this.verifyAnswer(
         question,
-        answerRequestDto.answeredValue,
+        answerRequestDto.optionsAnswered,
       );
+
+      const checkAxisRemainingQuestions =
+        await this.checkAxisRemainingQuestions(
+          question.order + 1,
+          question.axis_code,
+        );
 
       await this.saveAnswer(
         studentId,
         examId,
-        answerRequestDto.questionId,
-        answerRequestDto.answeredValue,
+        question,
+        answerRequestDto.optionsAnswered,
         isCorrect,
+        !checkAxisRemainingQuestions,
       );
 
       if (isCorrect) {
-        const checkAxisRemainingQuestions =
-          await this.checkAxisRemainingQuestions(
-            question.order + 1,
-            question.axis_code,
-          );
-
         if (checkAxisRemainingQuestions) {
-          return await this.getNextAxisQuestion(
+          response = await this.getNextAxisQuestion(
             question.order + 1,
             question.axis_code,
             'A',
           );
         } else {
-          return await this.getNextQuestionFromAxis(question.axis_code);
+          response = await this.getNextQuestionFromAxis(
+            question.axis_code,
+            studentId,
+            examId,
+          );
         }
       } else {
         let checkQuestionBSecondAttempt = false;
@@ -526,7 +880,7 @@ export class StudentService {
           );
         }
         if (checkQuestionBSecondAttempt) {
-          return await this.getNextAxisQuestion(
+          response = await this.getNextAxisQuestion(
             question.order,
             question.axis_code,
             'B',
@@ -538,11 +892,86 @@ export class StudentService {
             question.order,
             question.axis_code,
           );
-          return await this.getNextQuestionFromAxis(question.axis_code);
+          response = await this.getNextQuestionFromAxis(
+            question.axis_code,
+            studentId,
+            examId,
+          );
         }
       }
+
+      response.progress = await this.recoverProgress(
+        question.axis_code,
+        studentId,
+      );
+      return response;
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
+    }
+  }
+  async recoverProgress(axisCode: string, studentId: string): Promise<number> {
+    try {
+      const axisCodes = axisCode === 'ES' ? ['ES'] : ['EA', 'LC'];
+
+      const totalQuestionPerAxisAggregate = await this.examModel
+        .aggregate([
+          {
+            $project: {
+              questionCount: {
+                $size: {
+                  $filter: {
+                    input: '$questions',
+                    as: 'question',
+                    cond: {
+                      $in: ['$$question.axis_code', axisCodes],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+      const totalQuestionPerAxis =
+        totalQuestionPerAxisAggregate[0]?.questionCount || 0;
+
+      const totalQuestionsAnsweredAxisAggregate =
+        await this.studentExamModel.aggregate([
+          {
+            $match: {
+              studentId: studentId,
+              'answers.axis_code': { $in: axisCodes },
+            },
+          },
+          {
+            $project: {
+              correctAnswersCount: {
+                $size: {
+                  $filter: {
+                    input: '$answers',
+                    as: 'answer',
+                    cond: {
+                      $in: ['$$answer.axis_code', axisCodes],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ]);
+
+      const totalQuestionsAnsweredAxis =
+        totalQuestionsAnsweredAxisAggregate[0]?.correctAnswersCount || 0;
+
+      if (totalQuestionPerAxis === 0) {
+        return 0;
+      }
+
+      return (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+    } catch (error) {
+      console.error('Error in recoverProgress:', error);
+      return -1; // Or return any suitable error code
     }
   }
 
@@ -550,9 +979,10 @@ export class StudentService {
   async saveAnswer(
     studentId: string,
     examId: string,
-    questionId: number,
-    answeredValue: number,
-    rightAnswer: boolean,
+    question: QuestionDto,
+    answeredOptions: OptionsAnswers[],
+    isCorrect: boolean,
+    lastQuestion: boolean,
   ): Promise<boolean> {
     try {
       let studentExam = await this.studentExamModel.findOne({
@@ -565,6 +995,9 @@ export class StudentService {
           studentId,
           examId,
           answers: [],
+          isCorrect,
+          axis_code: question.axis_code,
+          lastQuestion,
         });
       }
 
@@ -573,20 +1006,24 @@ export class StudentService {
       }
 
       // Check if an answer with the same questionId already exists
-      const existingAnswer = studentExam.answers.find(
-        (answer) => answer.questionId === questionId,
+      const existingAnswerIndex = studentExam.answers.findIndex(
+        (answer) => answer.questionId === question.id,
       );
 
-      if (existingAnswer) {
+      if (existingAnswerIndex !== -1) {
         // Update the existing answer
-        existingAnswer.answeredValue = answeredValue;
-        existingAnswer.rightAnswer = rightAnswer;
+        studentExam.answers[existingAnswerIndex].optionsAnswered =
+          answeredOptions;
       } else {
         // Create a new answer entry
         studentExam.answers.push({
-          questionId,
-          answeredValue,
-          rightAnswer,
+          questionId: question.id,
+          isCorrect,
+          optionsAnswered: answeredOptions,
+          axis_code: question.axis_code,
+          level: question.level,
+          lastQuestion,
+          order: question.order,
         });
       }
 
@@ -599,21 +1036,53 @@ export class StudentService {
     }
   }
 
-  // Verificar se questão esta correta questions.position == answerRequestDto.answeredValue retonar questions.isCorrect
-  // Inside the verifyAnswer function:
+  // Verificar se questão esta correta
   async verifyAnswer(
     question: QuestionDto,
-    answeredValue: number,
+    answeredValue: OptionAnswer[],
   ): Promise<boolean> {
-    if (question && question.options && Array.isArray(question.options)) {
-      const selectedOption = question.options.find(
-        (option) => option.position === answeredValue,
+    try {
+      const correctOptions = question.options.filter(
+        (option) => option.isCorrect,
       );
 
-      return selectedOption.isCorrect;
-    }
+      if (correctOptions.length !== answeredValue.length) {
+        return false;
+      }
 
-    return false;
+      if (!question.orderedAnswer) {
+        for (const answeredOption of answeredValue) {
+          const matchingOption = correctOptions.find(
+            (option) => option.position === answeredOption.position,
+          );
+
+          if (
+            !matchingOption ||
+            matchingOption.position !== answeredOption.position
+          ) {
+            return false;
+          }
+        }
+      } else {
+        for (const answeredOption of answeredValue) {
+          const matchingOption = correctOptions.find(
+            (option) => option.position === answeredOption.positionAnswer,
+          );
+
+          if (
+            !matchingOption ||
+            matchingOption.position !== answeredOption.position
+          ) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('verifyAnswer: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 
   //Verificar se o eixo possui mais questões a serem respondidas
@@ -648,7 +1117,10 @@ export class StudentService {
       ])
       .exec();
 
-    return aggregationResult.length !== 0;
+    if (aggregationResult.length === 0) {
+      return false;
+    }
+    return aggregationResult[0].questions.length !== 0;
   }
 
   // Obter a próxima questão do eixo
@@ -659,13 +1131,6 @@ export class StudentService {
   ): Promise<QuestionDto | null> {
     const aggregationResult: any[] = await this.examModel
       .aggregate([
-        {
-          $match: {
-            'questions.order': order,
-            'questions.axis_code': axisCode,
-            'questions.category': category,
-          },
-        },
         {
           $project: {
             questions: {
@@ -696,23 +1161,14 @@ export class StudentService {
   // Obter a próxima questão do eixo seguinte (se houver questão do eixo finaliza a prova)
   async getNextQuestionFromAxis(
     axisCode: string,
+    studentId: string,
+    examId: string,
   ): Promise<QuestionDto | AnswersResponseDto> {
     const nextAxisCode = await this.getNextAxisCode(axisCode);
 
     if (nextAxisCode != null) {
       const aggregationResult: any[] = await this.examModel
         .aggregate([
-          {
-            $match: {
-              'questions.category': 'A',
-              'questions.axis_code': nextAxisCode,
-            },
-          },
-          {
-            $sort: {
-              'questions.order': 1,
-            },
-          },
           {
             $project: {
               questions: {
@@ -721,6 +1177,7 @@ export class StudentService {
                   as: 'question',
                   cond: {
                     $and: [
+                      { $eq: ['$$question.order', 1] },
                       { $eq: ['$$question.category', 'A'] },
                       { $eq: ['$$question.axis_code', nextAxisCode] },
                     ],
@@ -738,7 +1195,33 @@ export class StudentService {
 
       return aggregationResult[0].questions[0];
     } else {
+      return await this.finishExam(studentId, examId);
+    }
+  }
+
+  private async finishExam(
+    studentId: string,
+    examId: string,
+  ): Promise<AnswersResponseDto> {
+    try {
+      const studentExam = await this.studentExamModel.findOne({
+        studentId,
+        examId,
+      });
+
+      if (studentExam) {
+        studentExam.examDate = new Date();
+        studentExam.examPerformed = true;
+      } else {
+        throw new EduException('STUDENT_NOT_FOUND');
+      }
+
+      await studentExam.save();
+
       return { examCompleted: true };
+    } catch (error) {
+      console.error('Erro ao finalizar o exame:', error);
+      throw new EduException('FINALIZE_EXAM');
     }
   }
 
@@ -778,11 +1261,18 @@ export class StudentService {
 
       if (aggregationResult.length > 0) {
         const filteredOrderValues = aggregationResult[0].questions.map(
-          (question: any) => question.id,
+          (question: any) => question,
         );
 
-        for (const questionId of filteredOrderValues) {
-          await this.saveAnswer(studentId, examId, questionId, 0, false);
+        for (const question of filteredOrderValues) {
+          await this.saveAnswer(
+            studentId,
+            examId,
+            question,
+            null,
+            false,
+            false,
+          );
         }
 
         console.log(filteredOrderValues);
@@ -803,5 +1293,33 @@ export class StudentService {
     };
 
     return axisMappings[axisCode] || null;
+  }
+
+  private async createExamStudant(studentId: string): Promise<boolean> {
+    try {
+      const exam = await this.studentExamModel.findOne().sort({ field: 'asc' });
+
+      if (!exam) {
+        console.error('Nenhum exame encontrado');
+        throw new EduException('EXAM_NOT_FOUND');
+      }
+
+      const studentExam = new this.studentExamModel({
+        studentId: studentId,
+        examId: exam.examId,
+        examDate: new Date(),
+        current: true,
+        examPerformed: false,
+        planetTrack: [],
+        answers: [],
+      });
+
+      await studentExam.save();
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao finalizar o exame:', error);
+      throw new EduException('STUDENT_CREATION_FAILED');
+    }
   }
 }

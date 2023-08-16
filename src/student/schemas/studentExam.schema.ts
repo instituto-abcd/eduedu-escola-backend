@@ -42,21 +42,48 @@ export class Planet {
   planetAvatar: string;
 
   @Prop()
-  score: number;
+  score: string;
 
   @Prop()
-  stars: number;
+  stars: string;
+
+  @Prop()
+  axis_code: string;
+
+  @Prop()
+  order: number;
 }
 
 @Schema()
 export class Answers {
   @Prop()
   questionId: number;
-  @Prop()
-  answeredValue: number;
 
   @Prop()
-  rightAnswer: boolean;
+  optionsAnswered?: OptionsAnswers[];
+
+  @Prop()
+  isCorrect: boolean;
+
+  @Prop()
+  axis_code: string;
+
+  @Prop()
+  level: number;
+
+  @Prop()
+  order: number;
+
+  @Prop()
+  lastQuestion: boolean;
+}
+
+@Schema()
+export class OptionsAnswers {
+  @Prop()
+  position: number;
+  @Prop()
+  positionAnswer: number;
 }
 
 export const StudentExamSchema = SchemaFactory.createForClass(StudentExam);

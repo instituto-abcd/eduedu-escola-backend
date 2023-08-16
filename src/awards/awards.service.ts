@@ -9,11 +9,13 @@ export class AwardsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createAward(createAwardDto: CreateAwardDto): Promise<AwardDto> {
-    const { name } = createAwardDto;
+    const { name, title, description } = createAwardDto;
 
     const createdAward = await this.prisma.award.create({
       data: {
         name,
+        title,
+        description,
       },
     });
 

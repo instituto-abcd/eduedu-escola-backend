@@ -92,6 +92,18 @@ model Student {
 
   schoolClasses SchoolClassStudent[]
   studentAwards StudentAward[]
+  examResults   StudentExamResult[]
+}
+
+model StudentExamResult {
+  id            String  @id @default(uuid())
+  studentExamId String
+  axisCode      String
+  percent       Decimal
+  level         String
+  resume        String
+  student       Student @relation(fields: [studentId], references: [id])
+  studentId     String
 }
 
 // Model for User
@@ -133,6 +145,7 @@ model SchoolClassStudent {
   student       Student     @relation(fields: [studentId], references: [id])
   active        Boolean     @default(true)
   reserved      Boolean     @default(false)
+  firstAccess   Boolean     @default(true)
 
   @@id([studentId, schoolClassId])
 }
@@ -141,6 +154,8 @@ model SchoolClassStudent {
 model Award {
   id            String         @id @default(uuid())
   name          String
+  title         String
+  description   String
   studentAwards StudentAward[]
 }
 

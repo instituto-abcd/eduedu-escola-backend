@@ -16,35 +16,42 @@ export class StudentExamService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      const count = await this.studentExamModel.countDocuments();
-      if (count === 0) {
-        const mockData: StudentExam[] = [
-          {
-            studentId: uuidv4(),
-            examId: uuidv4(),
-            examDate: new Date(),
-            current: true,
-            examPerformed: true,
-            planetTrack: [
-              {
-                planetId: uuidv4(),
-                planetName: 'Saturno',
-                planetAvatar: 'url-to-image',
-                score: 80,
-                stars: 3.1,
-              },
-              {
-                planetId: uuidv4(),
-                planetName: 'Plutão',
-                planetAvatar: 'url-to-image',
-                score: 100.0,
-                stars: 4.5,
-              },
-            ],
-            answers: [],
-          },
-        ];
-        await this.studentExamModel.create(mockData);
+      const env = process.env.APP_VERSION;
+      if (env === 'main') {
+        const count = await this.studentExamModel.countDocuments();
+        if (count === 0) {
+          const mockData: StudentExam[] = [
+            {
+              studentId: uuidv4(),
+              examId: uuidv4(),
+              examDate: new Date(),
+              current: true,
+              examPerformed: true,
+              planetTrack: [
+                {
+                  planetId: uuidv4(),
+                  planetName: 'Saturno',
+                  planetAvatar: 'url-to-image',
+                  score: '80',
+                  stars: '3.1',
+                  axis_code: 'LC',
+                  order: 1
+                },
+                {
+                  planetId: uuidv4(),
+                  planetName: 'Plutão',
+                  planetAvatar: 'url-to-image',
+                  score: '100.0',
+                  stars: '4.5',
+                  axis_code: 'ES',
+                  order: 2
+                },
+              ],
+              answers: [],
+            },
+          ];
+          await this.studentExamModel.create(mockData);
+        }
       }
     } catch (error) {
       throw error;
@@ -59,15 +66,27 @@ export class StudentExamService implements OnModuleInit {
         .exec();
 
       if (studentExam) {
-        const planetTrack: PlanetDto[] = studentExam.planetTrack.map(
-          (planet) => ({
-            planetId: planet.planetId,
-            planetName: planet.planetName,
-            planetAvatar: planet.planetAvatar,
-            score: planet.score,
-            stars: planet.stars,
-          }),
-        );
+        studentExam.planetTrack = studentExam.planetTrack.sort((a: any, b: any) => {
+          if (a.order < b.order) return -1;
+          if (a.order > b.order) return 1;
+          return 0;
+        });
+
+        let planetTrack: PlanetDto[] = [];
+        for (let index = 0; index < studentExam.planetTrack.length; index++) {
+          const planetDto = {
+            planetId: studentExam.planetTrack[index].planetId,
+            planetName: studentExam.planetTrack[index].planetName,
+            planetAvatar: studentExam.planetTrack[index].planetAvatar,
+            score: parseFloat(studentExam.planetTrack[index].score.toString()),
+            stars: parseFloat(studentExam.planetTrack[index].stars.toString()),
+            canExecutePlanet:
+              index === 0 || // O planeta é o primeiro da trilha
+              parseFloat(studentExam.planetTrack[index].stars.toString()) > 1 || // O planeta já foi realizado com pelo menos uma estrela
+              (index > 0 && parseFloat(studentExam.planetTrack[index - 1].stars.toString()) >= 1) // O planeta anterior já foi realizado com pelo menos uma estrela
+          } as PlanetDto;
+          planetTrack.push(planetDto);
+        }
 
         return {
           examPerformed: studentExam.examPerformed,

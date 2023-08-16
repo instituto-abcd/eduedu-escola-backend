@@ -385,6 +385,7 @@ export class SchoolClassService {
               status: student.status,
               reserved: scs.reserved,
               examPerformed: examPerformed,
+              firstAccess: scs.firstAccess,
             };
           }),
         );
@@ -569,6 +570,7 @@ export class SchoolClassService {
           studentId: createdStudent.id,
           active: true,
           reserved: false,
+          firstAccess: true,
         };
 
         try {

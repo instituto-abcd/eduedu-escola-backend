@@ -65,6 +65,19 @@ CREATE TABLE "Student" (
 );
 
 -- CreateTable
+CREATE TABLE "StudentExamResult" (
+    "id" TEXT NOT NULL,
+    "studentExamId" TEXT NOT NULL,
+    "axisCode" TEXT NOT NULL,
+    "percent" DECIMAL(65,30) NOT NULL,
+    "level" TEXT NOT NULL,
+    "resume" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+
+    CONSTRAINT "StudentExamResult_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "owner" BOOLEAN NOT NULL DEFAULT false,
@@ -96,6 +109,7 @@ CREATE TABLE "SchoolClassStudent" (
     "studentId" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "reserved" BOOLEAN NOT NULL DEFAULT false,
+    "firstAccess" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "SchoolClassStudent_pkey" PRIMARY KEY ("studentId","schoolClassId")
 );
@@ -104,6 +118,8 @@ CREATE TABLE "SchoolClassStudent" (
 CREATE TABLE "Award" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
 
     CONSTRAINT "Award_pkey" PRIMARY KEY ("id")
 );
@@ -259,6 +275,9 @@ ALTER TABLE "SchoolClass" ADD CONSTRAINT "SchoolClass_schoolId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "SchoolYear" ADD CONSTRAINT "SchoolYear_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentExamResult" ADD CONSTRAINT "StudentExamResult_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
