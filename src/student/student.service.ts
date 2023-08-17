@@ -929,7 +929,8 @@ export class StudentService {
       response.progress = await this.recoverProgress(studentId, schoolGradeYear);
       return response;
     } catch (error) {
-      throw new EduException('DATABASE_ERROR');
+      console.log(error);
+      throw new EduException('UNKNOWN_ERROR');
     }
   }
   async recoverProgress(studentId: string, schoolGradeYear: number): Promise<number> {
@@ -950,8 +951,10 @@ export class StudentService {
                     input: '$questions',
                     as: 'question',
                     cond: {
-                      $in: ['$$question.axis_code', axisCodes],
-                      $lte: ['questions.school_year', schoolGradeYear]
+                      $and: [
+                        { $in: ['$$question.axis_code', axisCodes] },
+                        { $lte: ['$$question.school_year', schoolGradeYear] },
+                      ]
                     },
                   },
                 },
@@ -980,7 +983,10 @@ export class StudentService {
                     input: '$answers',
                     as: 'answer',
                     cond: {
-                      $in: ['$$answer.axis_code', axisCodes],
+                      $and: [
+                        { $in: ['$$answer.axis_code', axisCodes] },
+                        // { $lte: ['questions.school_year', schoolGradeYear] },
+                      ]
                     },
                   },
                 },
@@ -1175,7 +1181,7 @@ export class StudentService {
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
                     { $eq: ['$$question.category', category] },
-                    { $lte: ['questions.school_year', schoolGradeYear] }
+                    { $lte: ['$$question.school_year', schoolGradeYear] }
                   ],
                 },
               },
@@ -1185,7 +1191,7 @@ export class StudentService {
       ])
       .exec();
 
-    if (!aggregationResult || aggregationResult.length === 0) {
+    if (!aggregationResult || aggregationResult.length === 0 || aggregationResult[0].questions.length === 0) {
       return null;
     }
 
@@ -1215,7 +1221,7 @@ export class StudentService {
                       { $eq: ['$$question.order', 1] },
                       { $eq: ['$$question.category', 'A'] },
                       { $eq: ['$$question.axis_code', nextAxisCode] },
-                      { $lte: ['questions.school_year', schoolGradeYear] }
+                      { $lte: ['$$question.school_year', schoolGradeYear] }
                     ],
                   },
                 },
@@ -1287,7 +1293,7 @@ export class StudentService {
                     $and: [
                       { $eq: ['$$question.axis_code', axisCode] },
                       { $gt: ['$$question.order', order] },
-                      { $lte: ['questions.school_year', schoolGradeYear] }
+                      { $lte: ['$$question.school_year', schoolGradeYear] }
                     ],
                   },
                 },
