@@ -433,10 +433,11 @@ export class StudentService {
     const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
     const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
     const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode);
-
     if (questionsByAxisCode == null) {
       throw new EduException('QUESTION_NOT_FOUND');
     }
+
+    questionsByAxisCode.progress = await this.recoverProgress(studentId);
 
     return questionsByAxisCode;
   }
@@ -900,18 +901,19 @@ export class StudentService {
         }
       }
 
-      response.progress = await this.recoverProgress(
-        question.axis_code,
-        studentId,
-      );
+      response.progress = await this.recoverProgress(studentId);
       return response;
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
     }
   }
-  async recoverProgress(axisCode: string, studentId: string): Promise<number> {
+  async recoverProgress(studentId: string): Promise<number> {
     try {
-      const axisCodes = axisCode === 'ES' ? ['ES'] : ['EA', 'LC'];
+      const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
+      const axisCode =
+        schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
+
+      const axisCodes = axisCode === 'ES' ? ['ES', 'EA', 'LC'] : ['EA', 'LC'];
 
       const totalQuestionPerAxisAggregate = await this.examModel
         .aggregate([
@@ -968,7 +970,9 @@ export class StudentService {
         return 0;
       }
 
-      return (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+      const percentage =
+        (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+      return parseFloat(percentage.toFixed(2));
     } catch (error) {
       console.error('Error in recoverProgress:', error);
       return -1; // Or return any suitable error code
