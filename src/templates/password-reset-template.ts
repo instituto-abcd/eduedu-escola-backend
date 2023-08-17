@@ -60,7 +60,7 @@ export const passwordTemplate = (url: string, name: string) => `
                     <a href="">
                       <img
                         style="height: 150px"
-                        src="https://storage.googleapis.com/eduedu-escola/eduedu-preta.svg"
+                        src="cid:logoeduedu"
                         alt="EduEdu Escola Logo"
                       />
                     </a>
