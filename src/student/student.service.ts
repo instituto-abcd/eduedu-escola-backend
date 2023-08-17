@@ -1133,7 +1133,6 @@ export class StudentService {
           $match: {
             'questions.order': order,
             'questions.axis_code': axisCode,
-            'questions.school_year': { $lte: schoolGradeYear },
           },
         },
         {
@@ -1146,6 +1145,7 @@ export class StudentService {
                   $and: [
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
+                    { $lte: ['$$question.school_year', schoolGradeYear] }
                   ],
                 },
               },
