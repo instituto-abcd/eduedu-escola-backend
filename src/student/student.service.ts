@@ -430,22 +430,27 @@ export class StudentService {
       },
     });
 
+    const schoolGradeYear = await this.getSchoolGradeYear(studentId);
+
     const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
     const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
-    const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode);
+    const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode, schoolGradeYear);
 
     if (questionsByAxisCode == null) {
       throw new EduException('QUESTION_NOT_FOUND');
     }
 
+    questionsByAxisCode.progress = await this.recoverProgress(studentId, schoolGradeYear);
+
     return questionsByAxisCode;
   }
 
-  async getQuestionsByAxisCode(axisCode: string): Promise<QuestionDto> {
+  async getQuestionsByAxisCode(axisCode: string, schoolGradeYear: number): Promise<QuestionDto> {
     try {
       const exam = await this.examModel.findOne({
         'questions.axis_code': axisCode,
         'questions.category': 'A',
+        'questions.school_year': { $lte: schoolGradeYear }
       });
 
       if (!exam) {
@@ -490,22 +495,8 @@ export class StudentService {
   ): Promise<ExamEvaluationResponseDto> {
     let planets: PlanetDocument[] = [];
 
-    const student = await this.prisma.student.findUnique({
-      where: { id: studentId },
-      include: {
-        schoolClasses: {
-          include: {
-            schoolClass: {
-              include: {
-                schoolYear: true,
-              },
-            },
-          },
-          where: { active: true },
-        },
-      },
-    });
-    const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
+    const student = await this.getStudent(studentId);
+    const schoolGradeYear = await this.getSchoolGradeByStudentId(studentId);
 
     const axisCodes = ['ES', 'EA', 'LC'];
     for (const axis_code of axisCodes) {
@@ -536,6 +527,32 @@ export class StudentService {
     await this.generateAndSavePlanetTrack(studentId, planets);
 
     return null;
+  }
+
+  private async getStudent(studentId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        schoolClasses: {
+          include: {
+            schoolClass: {
+              include: {
+                schoolYear: true,
+              },
+            },
+          },
+          where: { active: true },
+        },
+      },
+    });
+
+    return student;
+  }
+
+  private async getSchoolGradeYear(studentId: string) {
+    const student = await this.getStudent(studentId);
+    const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
+    return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
   }
 
   private async getPlanetsByAxisAndLevel(
@@ -842,10 +859,13 @@ export class StudentService {
         answerRequestDto.optionsAnswered,
       );
 
+      const schoolGradeYear = await this.getSchoolGradeYear(studentId);
+
       const checkAxisRemainingQuestions =
         await this.checkAxisRemainingQuestions(
           question.order + 1,
           question.axis_code,
+          schoolGradeYear,
         );
 
       await this.saveAnswer(
@@ -863,12 +883,14 @@ export class StudentService {
             question.order + 1,
             question.axis_code,
             'A',
+            schoolGradeYear,
           );
         } else {
           response = await this.getNextQuestionFromAxis(
             question.axis_code,
             studentId,
             examId,
+            schoolGradeYear,
           );
         }
       } else {
@@ -877,6 +899,7 @@ export class StudentService {
           checkQuestionBSecondAttempt = await this.checkAxisRemainingQuestions(
             question.order,
             question.axis_code,
+            schoolGradeYear,
           );
         }
         if (checkQuestionBSecondAttempt) {
@@ -884,6 +907,7 @@ export class StudentService {
             question.order,
             question.axis_code,
             'B',
+            schoolGradeYear,
           );
         } else {
           await this.assignWrongAnswersToRemainingAxisQuestions(
@@ -891,27 +915,31 @@ export class StudentService {
             examId,
             question.order,
             question.axis_code,
+            schoolGradeYear,
           );
           response = await this.getNextQuestionFromAxis(
             question.axis_code,
             studentId,
             examId,
+            schoolGradeYear,
           );
         }
       }
 
-      response.progress = await this.recoverProgress(
-        question.axis_code,
-        studentId,
-      );
+      response.progress = await this.recoverProgress(studentId, schoolGradeYear);
       return response;
     } catch (error) {
-      throw new EduException('DATABASE_ERROR');
+      console.log(error);
+      throw new EduException('UNKNOWN_ERROR');
     }
   }
-  async recoverProgress(axisCode: string, studentId: string): Promise<number> {
+  async recoverProgress(studentId: string, schoolGradeYear: number): Promise<number> {
     try {
-      const axisCodes = axisCode === 'ES' ? ['ES'] : ['EA', 'LC'];
+      const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
+      const axisCode =
+        schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
+
+      const axisCodes = axisCode === 'ES' ? ['ES', 'EA', 'LC'] : ['EA', 'LC'];
 
       const totalQuestionPerAxisAggregate = await this.examModel
         .aggregate([
@@ -923,7 +951,10 @@ export class StudentService {
                     input: '$questions',
                     as: 'question',
                     cond: {
-                      $in: ['$$question.axis_code', axisCodes],
+                      $and: [
+                        { $in: ['$$question.axis_code', axisCodes] },
+                        { $lte: ['$$question.school_year', schoolGradeYear] },
+                      ]
                     },
                   },
                 },
@@ -952,7 +983,10 @@ export class StudentService {
                     input: '$answers',
                     as: 'answer',
                     cond: {
-                      $in: ['$$answer.axis_code', axisCodes],
+                      $and: [
+                        { $in: ['$$answer.axis_code', axisCodes] },
+                        // { $lte: ['questions.school_year', schoolGradeYear] },
+                      ]
                     },
                   },
                 },
@@ -968,7 +1002,9 @@ export class StudentService {
         return 0;
       }
 
-      return (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+      const percentage =
+        (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+      return parseFloat(percentage.toFixed(2));
     } catch (error) {
       console.error('Error in recoverProgress:', error);
       return -1; // Or return any suitable error code
@@ -1089,6 +1125,7 @@ export class StudentService {
   async checkAxisRemainingQuestions(
     order: number,
     axisCode: string,
+    schoolGradeYear: number,
   ): Promise<boolean> {
     const aggregationResult: any[] = await this.examModel
       .aggregate([
@@ -1108,6 +1145,7 @@ export class StudentService {
                   $and: [
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
+                    { $lte: ['$$question.school_year', schoolGradeYear] }
                   ],
                 },
               },
@@ -1128,6 +1166,7 @@ export class StudentService {
     order: number,
     axisCode: string,
     category: string,
+    schoolGradeYear: number,
   ): Promise<QuestionDto | null> {
     const aggregationResult: any[] = await this.examModel
       .aggregate([
@@ -1142,6 +1181,7 @@ export class StudentService {
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
                     { $eq: ['$$question.category', category] },
+                    { $lte: ['$$question.school_year', schoolGradeYear] }
                   ],
                 },
               },
@@ -1151,7 +1191,7 @@ export class StudentService {
       ])
       .exec();
 
-    if (!aggregationResult || aggregationResult.length === 0) {
+    if (!aggregationResult || aggregationResult.length === 0 || aggregationResult[0].questions.length === 0) {
       return null;
     }
 
@@ -1163,6 +1203,7 @@ export class StudentService {
     axisCode: string,
     studentId: string,
     examId: string,
+    schoolGradeYear: number,
   ): Promise<QuestionDto | AnswersResponseDto> {
     const nextAxisCode = await this.getNextAxisCode(axisCode);
 
@@ -1180,6 +1221,7 @@ export class StudentService {
                       { $eq: ['$$question.order', 1] },
                       { $eq: ['$$question.category', 'A'] },
                       { $eq: ['$$question.axis_code', nextAxisCode] },
+                      { $lte: ['$$question.school_year', schoolGradeYear] }
                     ],
                   },
                 },
@@ -1231,6 +1273,7 @@ export class StudentService {
     examId: string,
     order: number,
     axisCode: string,
+    schoolGradeYear: number,
   ): Promise<boolean> {
     try {
       const aggregationResult: any[] = await this.examModel
@@ -1250,6 +1293,7 @@ export class StudentService {
                     $and: [
                       { $eq: ['$$question.axis_code', axisCode] },
                       { $gt: ['$$question.order', order] },
+                      { $lte: ['$$question.school_year', schoolGradeYear] }
                     ],
                   },
                 },
