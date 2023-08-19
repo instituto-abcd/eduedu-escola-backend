@@ -38,6 +38,7 @@ import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
 import { QuestionDto } from '../exam/dto/question.dto';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
+import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -241,5 +242,41 @@ export class StudentController {
   @ApiOperation({ summary: 'Submete a avaliação da prova do aluno' })
   evaluation(@Param('id') id: string): Promise<any> {
     return this.studentService.handleExamEvaluation(id);
+  }
+
+  @Get(':id/planets/:planetId/first-question')
+  @ApiResponse({
+    status: 200,
+    description: 'Retrieve the next question of the planet for the student',
+    type: StudentResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Student not found' })
+  @ApiOperation({ summary: 'Get student by ID' })
+  async getFirstQuestionPlanetForStudent(
+    @Param('id') id: string,
+    @Param('planetId') planetId: string,
+  ): Promise<any> {
+    return await this.studentService.getFirstQuestionPlanetForStudent(
+      id,
+      planetId,
+    );
+  }
+  @Post(':id/planets/:planetId/answer')
+  @ApiOperation({ summary: 'Responder questão da prova' })
+  @ApiResponse({
+    status: 201,
+    description: 'Resposta do estudante enviada com sucesso',
+    type: StudentResponseDto,
+  })
+  async answerPlanet(
+    @Param('id') studentId: string,
+    @Param('planetId') planetId: string,
+    @Body() answerPlanetRequestDto: AnswerPlanetRequestDto,
+  ): Promise<AnswersResponseDto> {
+    return this.studentService.answerPlanet(
+      studentId,
+      planetId,
+      answerPlanetRequestDto,
+    );
   }
 }
