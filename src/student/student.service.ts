@@ -1341,7 +1341,7 @@ export class StudentService {
 
   private async createExamStudant(studentId: string): Promise<boolean> {
     try {
-      const exam = await this.studentExamModel.findOne().sort({ field: 'asc' });
+      const exam = await this.examModel.findOne({ status: 'ACTIVE' });
 
       if (!exam) {
         console.error('Nenhum exame encontrado');
@@ -1350,7 +1350,7 @@ export class StudentService {
 
       const studentExam = new this.studentExamModel({
         studentId: studentId,
-        examId: exam.examId,
+        examId: exam.id,
         examDate: new Date(),
         current: true,
         examPerformed: false,

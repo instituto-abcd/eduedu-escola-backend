@@ -106,7 +106,6 @@ export class PlanetSyncService {
       var question: Question = {
         orderedAnswer: questionOrigin.options.length > 0 && questionOrigin.options.every(o => !o.isCorrect),
         level: questionOrigin.level,
-        axis_code: this.getAxisCode(questionOrigin.axis_id),
         id: questionOrigin.id,
         model_id: questionOrigin.model_id,
         description: questionOrigin.description,
