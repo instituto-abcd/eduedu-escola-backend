@@ -188,7 +188,7 @@ export class SettingsService {
 
     const owner = await this.prismaService.user.update({
       where: { id: result.id },
-      data: { owner: true },
+      data: { owner: true, emailConfirmed: true },
     });
 
     return await this.authService.authenticateUser({

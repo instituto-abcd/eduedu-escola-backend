@@ -1231,6 +1231,13 @@ export class StudentService {
         ])
         .exec();
 
+      // TODO:
+      // Se o próximo eixo for ES e o ano escolar maior que zero :
+      // - Buscar todas as respostas do eixo EA (Eixo anterior);
+      // - Se todas as respostas estiverem corretas:
+      //    - Responder corretamente todas as respostas do eixo ES;
+      //    - Buscar e retornar a primeira questão do eixo LC
+
       if (!aggregationResult || aggregationResult.length === 0) {
         return null;
       }

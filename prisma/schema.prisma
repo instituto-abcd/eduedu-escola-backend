@@ -111,6 +111,7 @@ model User {
   id               String             @id @default(uuid())
   owner            Boolean            @default(false)
   status           Status             @default(ACTIVE)
+  emailConfirmed   Boolean            @default(false)
   password         String?
   accessKey        String             @unique @default("")
   name             String
