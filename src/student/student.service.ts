@@ -25,11 +25,9 @@ import {
   StudentExamDocument,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
-import {
-  PlanetDocument,
-  Question,
-} from 'src/planet-sync/schemas/planet.schema';
+import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
 import { ExamResumes } from 'src/templates/exam-resume-templates';
+import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
 
 @Injectable()
 export class StudentService {
@@ -434,23 +432,32 @@ export class StudentService {
 
     const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
     const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
-    const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode, schoolGradeYear);
+    const questionsByAxisCode = await this.getQuestionsByAxisCode(
+      axisCode,
+      schoolGradeYear,
+    );
 
     if (questionsByAxisCode == null) {
       throw new EduException('QUESTION_NOT_FOUND');
     }
 
-    questionsByAxisCode.progress = await this.recoverProgress(studentId, schoolGradeYear);
+    questionsByAxisCode.progress = await this.recoverProgress(
+      studentId,
+      schoolGradeYear,
+    );
 
     return questionsByAxisCode;
   }
 
-  async getQuestionsByAxisCode(axisCode: string, schoolGradeYear: number): Promise<QuestionDto> {
+  async getQuestionsByAxisCode(
+    axisCode: string,
+    schoolGradeYear: number,
+  ): Promise<QuestionDto> {
     try {
       const exam = await this.examModel.findOne({
         'questions.axis_code': axisCode,
         'questions.category': 'A',
-        'questions.school_year': { $lte: schoolGradeYear }
+        'questions.school_year': { $lte: schoolGradeYear },
       });
 
       if (!exam) {
@@ -926,14 +933,21 @@ export class StudentService {
         }
       }
 
-      response.progress = await this.recoverProgress(studentId, schoolGradeYear);
+      response.progress = await this.recoverProgress(
+        studentId,
+        schoolGradeYear,
+      );
       return response;
     } catch (error) {
       console.log(error);
       throw new EduException('UNKNOWN_ERROR');
     }
   }
-  async recoverProgress(studentId: string, schoolGradeYear: number): Promise<number> {
+
+  async recoverProgress(
+    studentId: string,
+    schoolGradeYear: number,
+  ): Promise<number> {
     try {
       const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
       const axisCode =
@@ -954,7 +968,7 @@ export class StudentService {
                       $and: [
                         { $in: ['$$question.axis_code', axisCodes] },
                         { $lte: ['$$question.school_year', schoolGradeYear] },
-                      ]
+                      ],
                     },
                   },
                 },
@@ -986,7 +1000,7 @@ export class StudentService {
                       $and: [
                         { $in: ['$$answer.axis_code', axisCodes] },
                         // { $lte: ['questions.school_year', schoolGradeYear] },
-                      ]
+                      ],
                     },
                   },
                 },
@@ -1145,7 +1159,7 @@ export class StudentService {
                   $and: [
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
-                    { $lte: ['$$question.school_year', schoolGradeYear] }
+                    { $lte: ['$$question.school_year', schoolGradeYear] },
                   ],
                 },
               },
@@ -1181,7 +1195,7 @@ export class StudentService {
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
                     { $eq: ['$$question.category', category] },
-                    { $lte: ['$$question.school_year', schoolGradeYear] }
+                    { $lte: ['$$question.school_year', schoolGradeYear] },
                   ],
                 },
               },
@@ -1191,7 +1205,11 @@ export class StudentService {
       ])
       .exec();
 
-    if (!aggregationResult || aggregationResult.length === 0 || aggregationResult[0].questions.length === 0) {
+    if (
+      !aggregationResult ||
+      aggregationResult.length === 0 ||
+      aggregationResult[0].questions.length === 0
+    ) {
       return null;
     }
 
@@ -1221,7 +1239,7 @@ export class StudentService {
                       { $eq: ['$$question.order', 1] },
                       { $eq: ['$$question.category', 'A'] },
                       { $eq: ['$$question.axis_code', nextAxisCode] },
-                      { $lte: ['$$question.school_year', schoolGradeYear] }
+                      { $lte: ['$$question.school_year', schoolGradeYear] },
                     ],
                   },
                 },
@@ -1300,7 +1318,7 @@ export class StudentService {
                     $and: [
                       { $eq: ['$$question.axis_code', axisCode] },
                       { $gt: ['$$question.order', order] },
-                      { $lte: ['$$question.school_year', schoolGradeYear] }
+                      { $lte: ['$$question.school_year', schoolGradeYear] },
                     ],
                   },
                 },
@@ -1372,5 +1390,84 @@ export class StudentService {
       console.error('Erro ao finalizar o exame:', error);
       throw new EduException('STUDENT_CREATION_FAILED');
     }
+  }
+
+  async getFirstQuestionPlanetForStudent(
+    studentId: string,
+    planetId: string,
+  ): Promise<any> {
+    const planetTrack: any[] = await this.studentExamModel
+      .aggregate([
+        {
+          $match: {
+            'planetTrack.planetId': planetId,
+          },
+        },
+        {
+          $project: {
+            questions: {
+              $filter: {
+                input: '$planetTrack',
+                as: 'planetTrack',
+                cond: {
+                  $and: [{ $eq: ['$$planetTrack.planetId', planetId] }],
+                },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
+
+    if (planetTrack.length === 0) {
+      throw new EduException('KIDS_WITHOUT_PLANETS');
+    }
+
+    const question = await this.planetModel
+      .aggregate([
+        {
+          $match: {
+            id: planetId,
+          },
+        },
+        {
+          $project: {
+            questions: {
+              $filter: {
+                input: '$questions',
+                as: 'questions',
+                cond: {
+                  $and: [{ $eq: ['$$questions.position', 0] }],
+                },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
+
+    if (question.length === 0) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+    if (question[0].questions[0] === 0) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+    return question[0].questions[0];
+  }
+
+  answerPlanet(
+    studentId: string,
+    planetId: string,
+    answerPlanetRequestDto: AnswerPlanetRequestDto,
+  ): AnswersResponseDto {
+    return undefined;
+
+    // Recebe a resposta do planeta
+    // Se a questão respondida possuir options.length > 0, salvar a resposta;
+    // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
+    // Se a questão respondida possuir options.length == 0,
+
+    // Obter a próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
+    // Quando não houver mais questões, retornar planetCompleted = true
   }
 }
