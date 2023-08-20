@@ -82,6 +82,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "owner" BOOLEAN NOT NULL DEFAULT false,
     "status" "Status" NOT NULL DEFAULT 'ACTIVE',
+    "emailConfirmed" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT,
     "accessKey" TEXT NOT NULL DEFAULT '',
     "name" TEXT NOT NULL,

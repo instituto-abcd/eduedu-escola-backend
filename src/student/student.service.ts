@@ -25,11 +25,9 @@ import {
   StudentExamDocument,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
-import {
-  PlanetDocument,
-  Question,
-} from 'src/planet-sync/schemas/planet.schema';
+import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
 import { ExamResumes } from 'src/templates/exam-resume-templates';
+import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
 
 @Injectable()
 export class StudentService {
@@ -434,23 +432,33 @@ export class StudentService {
 
     const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
     const axisCode = schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
-    const questionsByAxisCode = await this.getQuestionsByAxisCode(axisCode, schoolGradeYear);
+    const questionsByAxisCode = await this.getQuestionsByAxisCode(
+      axisCode,
+      schoolGradeYear,
+    );
 
     if (questionsByAxisCode == null) {
       throw new EduException('QUESTION_NOT_FOUND');
     }
 
-    questionsByAxisCode.progress = await this.recoverProgress(studentId, schoolGradeYear);
+    questionsByAxisCode.progress = await this.recoverProgress(
+      studentId,
+      schoolGradeYear,
+    );
 
+    questionsByAxisCode.options = this.shuffleOptions(questionsByAxisCode.options);
     return questionsByAxisCode;
   }
 
-  async getQuestionsByAxisCode(axisCode: string, schoolGradeYear: number): Promise<QuestionDto> {
+  async getQuestionsByAxisCode(
+    axisCode: string,
+    schoolGradeYear: number,
+  ): Promise<QuestionDto> {
     try {
       const exam = await this.examModel.findOne({
         'questions.axis_code': axisCode,
         'questions.category': 'A',
-        'questions.school_year': { $lte: schoolGradeYear }
+        'questions.school_year': { $lte: schoolGradeYear },
       });
 
       if (!exam) {
@@ -868,6 +876,8 @@ export class StudentService {
           schoolGradeYear,
         );
 
+      examId = await this.getCurrentExamId();
+      
       await this.saveAnswer(
         studentId,
         examId,
@@ -926,14 +936,43 @@ export class StudentService {
         }
       }
 
-      response.progress = await this.recoverProgress(studentId, schoolGradeYear);
+      response.progress = await this.recoverProgress(
+        studentId,
+        schoolGradeYear,
+      );
+
+      response.options = this.shuffleOptions(response.options);
       return response;
     } catch (error) {
       console.log(error);
       throw new EduException('UNKNOWN_ERROR');
     }
   }
-  async recoverProgress(studentId: string, schoolGradeYear: number): Promise<number> {
+
+  private async getCurrentExamId() {
+    const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+    return exam.id;
+  }
+
+  private shuffleOptions(options: any): any {
+    if (options != undefined && options != null && options.length > 0) {
+      let currentIndex = options.length, randomIndex;
+      while (currentIndex != 0) {
+        let random = Math.random();
+        randomIndex = Math.floor(random * currentIndex);
+        currentIndex--;
+
+        [options[currentIndex], options[randomIndex]] = [
+          options[randomIndex], options[currentIndex]];
+      }
+    }
+    return options;
+  }
+
+  async recoverProgress(
+    studentId: string,
+    schoolGradeYear: number,
+  ): Promise<number> {
     try {
       const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
       const axisCode =
@@ -954,7 +993,7 @@ export class StudentService {
                       $and: [
                         { $in: ['$$question.axis_code', axisCodes] },
                         { $lte: ['$$question.school_year', schoolGradeYear] },
-                      ]
+                      ],
                     },
                   },
                 },
@@ -986,7 +1025,7 @@ export class StudentService {
                       $and: [
                         { $in: ['$$answer.axis_code', axisCodes] },
                         // { $lte: ['questions.school_year', schoolGradeYear] },
-                      ]
+                      ],
                     },
                   },
                 },
@@ -1145,7 +1184,7 @@ export class StudentService {
                   $and: [
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
-                    { $lte: ['$$question.school_year', schoolGradeYear] }
+                    { $lte: ['$$question.school_year', schoolGradeYear] },
                   ],
                 },
               },
@@ -1181,7 +1220,7 @@ export class StudentService {
                     { $eq: ['$$question.order', order] },
                     { $eq: ['$$question.axis_code', axisCode] },
                     { $eq: ['$$question.category', category] },
-                    { $lte: ['$$question.school_year', schoolGradeYear] }
+                    { $lte: ['$$question.school_year', schoolGradeYear] },
                   ],
                 },
               },
@@ -1191,7 +1230,11 @@ export class StudentService {
       ])
       .exec();
 
-    if (!aggregationResult || aggregationResult.length === 0 || aggregationResult[0].questions.length === 0) {
+    if (
+      !aggregationResult ||
+      aggregationResult.length === 0 ||
+      aggregationResult[0].questions.length === 0
+    ) {
       return null;
     }
 
@@ -1204,8 +1247,15 @@ export class StudentService {
     studentId: string,
     examId: string,
     schoolGradeYear: number,
+    forcedNextAxis?: string,
   ): Promise<QuestionDto | AnswersResponseDto> {
-    const nextAxisCode = await this.getNextAxisCode(axisCode);
+    let nextAxisCode;
+
+    if (forcedNextAxis != null && forcedNextAxis != '') {
+      nextAxisCode = forcedNextAxis;
+    } else {
+      nextAxisCode = await this.getNextAxisCode(axisCode, schoolGradeYear);
+    }
 
     if (nextAxisCode != null) {
       const aggregationResult: any[] = await this.examModel
@@ -1221,7 +1271,7 @@ export class StudentService {
                       { $eq: ['$$question.order', 1] },
                       { $eq: ['$$question.category', 'A'] },
                       { $eq: ['$$question.axis_code', nextAxisCode] },
-                      { $lte: ['$$question.school_year', schoolGradeYear] }
+                      { $lte: ['$$question.school_year', schoolGradeYear] },
                     ],
                   },
                 },
@@ -1235,10 +1285,110 @@ export class StudentService {
         return null;
       }
 
-      return aggregationResult[0].questions[0];
+      let question = aggregationResult[0].questions[0];
+
+      const wasThereAnAxisJump = await this.handle_EA_To_LC_axisJump(axisCode, studentId, examId, schoolGradeYear);
+      if (wasThereAnAxisJump) {
+        question = await this.getNextQuestionFromAxis("ES", studentId, examId, schoolGradeYear, "LC");
+      }
+
+      return question;
     } else {
       return await this.finishExam(studentId, examId);
     }
+  }
+
+  private async handle_EA_To_LC_axisJump(
+    axis_code: string,
+    studentId: string,
+    examId: string,
+    schoolGradeYear: number,
+  ): Promise<boolean> {
+    var result = false;
+
+    if (axis_code == "EA" && schoolGradeYear > 0) {
+
+      // - Buscar todas as respostas do eixo EA (Eixo anterior). Se basear no método assignWrongAnswersToRemainingAxisQuestions();
+      const axisAnswersAggregation =
+        await this.studentExamModel.aggregate([
+          {
+            $match: {
+              'studentId': studentId,
+            },
+          },
+          {
+            $project: {
+              answers: {
+                $filter: {
+                  input: '$answers',
+                  as: 'answer',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$answer.axis_code', 'EA'] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ]);
+
+      const axisAnswers = axisAnswersAggregation[0].answers.map(
+        (answer: any) => answer,
+      );
+
+      // - Se todas as respostas estiverem corretas:
+      //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
+      if (axisAnswers.every(a => a.isCorrect)) {
+
+        const aggregationResult: any[] = await this.examModel
+          .aggregate([
+            {
+              $match: {
+                'questions.axis_code': 'ES',
+              },
+            },
+            {
+              $project: {
+                questions: {
+                  $filter: {
+                    input: '$questions',
+                    as: 'question',
+                    cond: {
+                      $and: [
+                        { $eq: ['$$question.axis_code', 'ES'] },
+                        { $lte: ['$$question.school_year', schoolGradeYear] },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          ])
+          .exec();
+
+        if (aggregationResult.length > 0) {
+          const filteredOrderValues = aggregationResult[0].questions.map(
+            (question: any) => question,
+          );
+
+          for (const question of filteredOrderValues) {
+            await this.saveAnswer(
+              studentId,
+              examId,
+              question,
+              null,
+              true,
+              false,
+            );
+          }
+        }
+
+        result = true;
+      }
+    }
+
+    return new Promise((resolve) => resolve(result));
   }
 
   private async finishExam(
@@ -1293,7 +1443,7 @@ export class StudentService {
                     $and: [
                       { $eq: ['$$question.axis_code', axisCode] },
                       { $gt: ['$$question.order', order] },
-                      { $lte: ['$$question.school_year', schoolGradeYear] }
+                      { $lte: ['$$question.school_year', schoolGradeYear] },
                     ],
                   },
                 },
@@ -1329,14 +1479,24 @@ export class StudentService {
   }
 
   //Obter o próximo eixo
-  private async getNextAxisCode(axisCode: string): Promise<string | null> {
-    const axisMappings: { [key: string]: string | null } = {
+  private async getNextAxisCode(axisCode: string, schoolGradeYear: number): Promise<string | null> {
+    const axisMappingsFirstYear: { [key: string]: string | null } = {
       ES: 'EA',
       EA: 'LC',
       LC: null,
     };
 
-    return axisMappings[axisCode] || null;
+    const axisMappingsAnotherYears: { [key: string]: string | null } = {
+      EA: 'ES',
+      ES: 'LC',
+      LC: null,
+    };
+
+    if (schoolGradeYear == 0) {
+      return axisMappingsFirstYear[axisCode] || null;
+    } else {
+      return axisMappingsAnotherYears[axisCode] || null;
+    }
   }
 
   private async createExamStudant(studentId: string): Promise<boolean> {
@@ -1365,5 +1525,84 @@ export class StudentService {
       console.error('Erro ao finalizar o exame:', error);
       throw new EduException('STUDENT_CREATION_FAILED');
     }
+  }
+
+  async getFirstQuestionPlanetForStudent(
+    studentId: string,
+    planetId: string,
+  ): Promise<any> {
+    const planetTrack: any[] = await this.studentExamModel
+      .aggregate([
+        {
+          $match: {
+            'planetTrack.planetId': planetId,
+          },
+        },
+        {
+          $project: {
+            questions: {
+              $filter: {
+                input: '$planetTrack',
+                as: 'planetTrack',
+                cond: {
+                  $and: [{ $eq: ['$$planetTrack.planetId', planetId] }],
+                },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
+
+    if (planetTrack.length === 0) {
+      throw new EduException('KIDS_WITHOUT_PLANETS');
+    }
+
+    const question = await this.planetModel
+      .aggregate([
+        {
+          $match: {
+            id: planetId,
+          },
+        },
+        {
+          $project: {
+            questions: {
+              $filter: {
+                input: '$questions',
+                as: 'questions',
+                cond: {
+                  $and: [{ $eq: ['$$questions.position', 0] }],
+                },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
+
+    if (question.length === 0) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+    if (question[0].questions[0] === 0) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+    return question[0].questions[0];
+  }
+
+  answerPlanet(
+    studentId: string,
+    planetId: string,
+    answerPlanetRequestDto: AnswerPlanetRequestDto,
+  ): AnswersResponseDto {
+    return undefined;
+
+    // Recebe a resposta do planeta
+    // Se a questão respondida possuir options.length > 0, salvar a resposta;
+    // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
+    // Se a questão respondida possuir options.length == 0,
+
+    // Obter a próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
+    // Quando não houver mais questões, retornar planetCompleted = true
   }
 }

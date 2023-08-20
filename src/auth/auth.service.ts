@@ -105,7 +105,7 @@ export class AuthService {
 
     await this.prismaService.user.update({
       where: { id: authToken.userId },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, emailConfirmed: true },
     });
 
     await this.prismaService.authToken.delete({
@@ -155,6 +155,10 @@ export class AuthService {
 
     if (!user) {
       throw new EduException('USER_NOT_FOUND');
+    }
+
+    if (!user.emailConfirmed) {
+      throw new EduException('USER_NOT_CONFIRMED');
     }
 
     const accessToken = this.generateAccessToken(user);

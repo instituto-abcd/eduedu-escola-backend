@@ -26,6 +26,10 @@ export const ErrorDetails = {
     message: 'Nenhum usuário encontrado.',
     status: HttpStatus.NOT_FOUND,
   },
+  USER_NOT_CONFIRMED: {
+    message: 'E-mail não confirmado.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
   CANNOT_CREATE_SCHOOL_YEAR: {
     message: 'Não é possível criar o ano letivo.',
     status: HttpStatus.FORBIDDEN,
@@ -213,6 +217,10 @@ export const ErrorDetails = {
     message: 'Prova não encontrada.',
     status: HttpStatus.NOT_FOUND,
   },
+  KIDS_WITHOUT_PLANETS: {
+    message: 'A criança não possui esse planeta.',
+    status: HttpStatus.NOT_FOUND,
+  }
 };
 
 export class EduException extends HttpException {
