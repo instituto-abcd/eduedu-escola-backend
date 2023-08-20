@@ -1222,8 +1222,15 @@ export class StudentService {
     studentId: string,
     examId: string,
     schoolGradeYear: number,
+    forcedNextAxis?: string,
   ): Promise<QuestionDto | AnswersResponseDto> {
-    const nextAxisCode = await this.getNextAxisCode(axisCode);
+    let nextAxisCode;
+
+    if (forcedNextAxis != null && forcedNextAxis != '') {
+      nextAxisCode = forcedNextAxis;
+    } else {
+      nextAxisCode = await this.getNextAxisCode(axisCode);
+    }
 
     if (nextAxisCode != null) {
       const aggregationResult: any[] = await this.examModel
@@ -1249,21 +1256,114 @@ export class StudentService {
         ])
         .exec();
 
-      // TODO:
-      // Se o próximo eixo for ES e o ano escolar maior que zero :
-      // - Buscar todas as respostas do eixo EA (Eixo anterior);
-      // - Se todas as respostas estiverem corretas:
-      //    - Responder corretamente todas as respostas do eixo ES;
-      //    - Buscar e retornar a primeira questão do eixo LC
-
       if (!aggregationResult || aggregationResult.length === 0) {
         return null;
       }
 
-      return aggregationResult[0].questions[0];
+      let question = aggregationResult[0].questions[0];
+
+      const wasThereAnAxisJump = await this.handle_EA_To_LC_axisJump(axisCode, studentId, examId, schoolGradeYear);
+      if (wasThereAnAxisJump) {
+        question = await this.getNextQuestionFromAxis("ES", studentId, examId, schoolGradeYear, "LC");
+      }
+
+      return question;
     } else {
       return await this.finishExam(studentId, examId);
     }
+  }
+
+  private async handle_EA_To_LC_axisJump(
+    axis_code: string,
+    studentId: string,
+    examId: string,
+    schoolGradeYear: number,
+  ): Promise<boolean> {
+    var result = false;
+
+    if (axis_code == "EA" && schoolGradeYear > 0) {
+
+      // - Buscar todas as respostas do eixo EA (Eixo anterior). Se basear no método assignWrongAnswersToRemainingAxisQuestions();
+      const axisAnswersAggregation =
+        await this.studentExamModel.aggregate([
+          {
+            $match: {
+              'studentId': studentId,
+            },
+          },
+          {
+            $project: {
+              answers: {
+                $filter: {
+                  input: '$answers',
+                  as: 'answer',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$answer.axis_code', 'EA'] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ]);
+
+      const axisAnswers = axisAnswersAggregation[0].answers.map(
+        (answer: any) => answer,
+      );
+
+      // - Se todas as respostas estiverem corretas:
+      //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
+      if (axisAnswers.every(a => a.isCorrect)) {
+
+        const aggregationResult: any[] = await this.examModel
+        .aggregate([
+          {
+            $match: {
+              'questions.axis_code': 'ES',
+            },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  cond: {
+                    $and: [
+                      { $eq: ['$$question.axis_code', 'ES'] },
+                      { $lte: ['$$question.school_year', schoolGradeYear] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+        if (aggregationResult.length > 0) {
+          const filteredOrderValues = aggregationResult[0].questions.map(
+            (question: any) => question,
+          );
+
+          for (const question of filteredOrderValues) {
+            await this.saveAnswer(
+              studentId,
+              examId,
+              question,
+              null,
+              true,
+              false,
+            );
+          }
+        }
+
+        result = true; 
+      }
+    }
+
+    return new Promise((resolve) => resolve(result));
   }
 
   private async finishExam(
