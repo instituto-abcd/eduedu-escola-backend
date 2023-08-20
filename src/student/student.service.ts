@@ -446,6 +446,7 @@ export class StudentService {
       schoolGradeYear,
     );
 
+    questionsByAxisCode.options = this.shuffleOptions(questionsByAxisCode.options);
     return questionsByAxisCode;
   }
 
@@ -937,11 +938,28 @@ export class StudentService {
         studentId,
         schoolGradeYear,
       );
+
+      response.options = this.shuffleOptions(response.options);
       return response;
     } catch (error) {
       console.log(error);
       throw new EduException('UNKNOWN_ERROR');
     }
+  }
+
+  private shuffleOptions(options: any): any {
+    if (options != undefined && options != null && options.length > 0) {
+      let currentIndex = options.length, randomIndex;
+      while (currentIndex != 0) {
+        let random = Math.random();
+        randomIndex = Math.floor(random * currentIndex);
+        currentIndex--;
+
+        [options[currentIndex], options[randomIndex]] = [
+          options[randomIndex], options[currentIndex]];
+      }
+    }
+    return options;
   }
 
   async recoverProgress(
@@ -1317,30 +1335,30 @@ export class StudentService {
       if (axisAnswers.every(a => a.isCorrect)) {
 
         const aggregationResult: any[] = await this.examModel
-        .aggregate([
-          {
-            $match: {
-              'questions.axis_code': 'ES',
+          .aggregate([
+            {
+              $match: {
+                'questions.axis_code': 'ES',
+              },
             },
-          },
-          {
-            $project: {
-              questions: {
-                $filter: {
-                  input: '$questions',
-                  as: 'question',
-                  cond: {
-                    $and: [
-                      { $eq: ['$$question.axis_code', 'ES'] },
-                      { $lte: ['$$question.school_year', schoolGradeYear] },
-                    ],
+            {
+              $project: {
+                questions: {
+                  $filter: {
+                    input: '$questions',
+                    as: 'question',
+                    cond: {
+                      $and: [
+                        { $eq: ['$$question.axis_code', 'ES'] },
+                        { $lte: ['$$question.school_year', schoolGradeYear] },
+                      ],
+                    },
                   },
                 },
               },
             },
-          },
-        ])
-        .exec();
+          ])
+          .exec();
 
         if (aggregationResult.length > 0) {
           const filteredOrderValues = aggregationResult[0].questions.map(
@@ -1359,7 +1377,7 @@ export class StudentService {
           }
         }
 
-        result = true; 
+        result = true;
       }
     }
 
