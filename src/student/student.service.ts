@@ -876,6 +876,8 @@ export class StudentService {
           schoolGradeYear,
         );
 
+      examId = await this.getCurrentExamId();
+      
       await this.saveAnswer(
         studentId,
         examId,
@@ -945,6 +947,11 @@ export class StudentService {
       console.log(error);
       throw new EduException('UNKNOWN_ERROR');
     }
+  }
+
+  private async getCurrentExamId() {
+    const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+    return exam.id;
   }
 
   private shuffleOptions(options: any): any {
@@ -1247,7 +1254,7 @@ export class StudentService {
     if (forcedNextAxis != null && forcedNextAxis != '') {
       nextAxisCode = forcedNextAxis;
     } else {
-      nextAxisCode = await this.getNextAxisCode(axisCode);
+      nextAxisCode = await this.getNextAxisCode(axisCode, schoolGradeYear);
     }
 
     if (nextAxisCode != null) {
@@ -1472,14 +1479,24 @@ export class StudentService {
   }
 
   //Obter o próximo eixo
-  private async getNextAxisCode(axisCode: string): Promise<string | null> {
-    const axisMappings: { [key: string]: string | null } = {
+  private async getNextAxisCode(axisCode: string, schoolGradeYear: number): Promise<string | null> {
+    const axisMappingsFirstYear: { [key: string]: string | null } = {
       ES: 'EA',
       EA: 'LC',
       LC: null,
     };
 
-    return axisMappings[axisCode] || null;
+    const axisMappingsAnotherYears: { [key: string]: string | null } = {
+      EA: 'ES',
+      ES: 'LC',
+      LC: null,
+    };
+
+    if (schoolGradeYear == 0) {
+      return axisMappingsFirstYear[axisCode] || null;
+    } else {
+      return axisMappingsAnotherYears[axisCode] || null;
+    }
   }
 
   private async createExamStudant(studentId: string): Promise<boolean> {
