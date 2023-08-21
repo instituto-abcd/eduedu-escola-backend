@@ -8,55 +8,11 @@ import { PlanetTrackDto } from './dto/planet-track.dto';
 import { PlanetDto } from './dto/planet.dto';
 
 @Injectable()
-export class StudentExamService implements OnModuleInit {
+export class StudentExamService {
   constructor(
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
   ) {}
-
-  async onModuleInit() {
-    try {
-      const env = process.env.APP_VERSION;
-      if (env === 'main') {
-        const count = await this.studentExamModel.countDocuments();
-        if (count === 0) {
-          const mockData: StudentExam[] = [
-            {
-              studentId: uuidv4(),
-              examId: uuidv4(),
-              examDate: new Date(),
-              current: true,
-              examPerformed: true,
-              planetTrack: [
-                {
-                  planetId: uuidv4(),
-                  planetName: 'Saturno',
-                  planetAvatar: 'url-to-image',
-                  score: '80',
-                  stars: '3.1',
-                  axis_code: 'LC',
-                  order: 1
-                },
-                {
-                  planetId: uuidv4(),
-                  planetName: 'Plutão',
-                  planetAvatar: 'url-to-image',
-                  score: '100.0',
-                  stars: '4.5',
-                  axis_code: 'ES',
-                  order: 2
-                },
-              ],
-              answers: [],
-            },
-          ];
-          await this.studentExamModel.create(mockData);
-        }
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
 
   async getPlanetTrack(studentId: string): Promise<PlanetTrackDto> {
     try {
