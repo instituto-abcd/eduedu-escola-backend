@@ -39,6 +39,8 @@ import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
 import { QuestionDto } from '../exam/dto/question.dto';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
+import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
+import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -242,6 +244,19 @@ export class StudentController {
   @ApiOperation({ summary: 'Submete a avaliação da prova do aluno' })
   evaluation(@Param('id') id: string): Promise<any> {
     return this.studentService.handleExamEvaluation(id);
+  }
+
+  @Post('authorize-new-exam')
+  @ApiOperation({ summary: 'Autorizar novo exame' })
+  @ApiResponse({
+    status: 200,
+    description: 'Nova prova liberada para os Estudantes',
+    type: AuthorizeNewExamResponseDto,
+  })
+  async authorizeNewExam(
+    @Body() requestDto: AuthorizeNewExamRequestDto,
+  ): Promise<AuthorizeNewExamResponseDto> {
+    return this.studentService.authorizeNewExam(requestDto);
   }
 
   @Get(':id/planets/:planetId/first-question')

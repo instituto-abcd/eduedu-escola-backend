@@ -28,6 +28,8 @@ import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-respon
 import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
 import { ExamResumes } from 'src/templates/exam-resume-templates';
 import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
+import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
+import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
 
 @Injectable()
 export class StudentService {
@@ -537,6 +539,30 @@ export class StudentService {
     return null;
   }
 
+  async authorizeNewExam(
+    requestDto: AuthorizeNewExamRequestDto,
+  ): Promise<AuthorizeNewExamResponseDto> {
+    const { ids } = requestDto;
+
+    if (!ids || ids.length === 0) {
+      throw new EduException('IDS_REQUIRED');
+    }
+
+    // Desativar execuções de prova anteriores (studentexams.current = false);
+    const oldStudentExams = await this.studentExamModel.find({ studentId: { $in: ids } });
+    
+    oldStudentExams.forEach(item => {
+      item.current = false;
+      item.save();
+    });
+
+    // Criar e persistir novo documento de studentexams, com as devidas propriedades
+    let result = await this.createManyExamStudant(ids)
+
+    // Retorar response adequado
+    return { success: result };
+  }
+
   private async getStudent(studentId: string) {
     const student = await this.prisma.student.findUnique({
       where: { id: studentId },
@@ -581,7 +607,7 @@ export class StudentService {
     planets: PlanetDocument[],
   ): Promise<any> {
     // Recuperando studentexam do aluno
-    const studentExam = await this.studentExamModel.findOne({ studentId });
+    const studentExam = await this.studentExamModel.findOne({ studentId, current: true });
 
     if (!studentExam) {
       throw new EduException('USER_NOT_FOUND');
@@ -678,6 +704,7 @@ export class StudentService {
     try {
       const student = await this.studentExamModel.findOne({
         studentId: studentId,
+        current: true
       });
 
       const exam = await this.examModel.findOne({
@@ -1063,6 +1090,7 @@ export class StudentService {
       let studentExam = await this.studentExamModel.findOne({
         studentId,
         examId,
+        current: true
       });
 
       if (!studentExam) {
@@ -1399,6 +1427,7 @@ export class StudentService {
       const studentExam = await this.studentExamModel.findOne({
         studentId,
         examId,
+        current: true
       });
 
       if (studentExam) {
@@ -1499,6 +1528,40 @@ export class StudentService {
     }
   }
 
+  private async createManyExamStudant(studentIds: string[]): Promise<boolean> {
+    try {
+      const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+
+      if (!exam) {
+        console.error('Nenhum exame encontrado');
+        throw new EduException('EXAM_NOT_FOUND');
+      }
+
+      let studentExams = [];
+
+      studentIds.forEach(studentId => {
+        const studentExam = new this.studentExamModel({
+          studentId: studentId,
+          examId: exam.id,
+          examDate: null,
+          current: true,
+          examPerformed: false,
+          planetTrack: [],
+          answers: [],
+        });
+
+        studentExams.push(studentExam);
+      });
+
+      await this.studentExamModel.create(studentExams);
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao criar os studentexams:', error);
+      throw new EduException('STUDENT_CREATION_FAILED');
+    }
+  }
+
   private async createExamStudant(studentId: string): Promise<boolean> {
     try {
       const exam = await this.examModel.findOne({ status: 'ACTIVE' });
@@ -1511,7 +1574,7 @@ export class StudentService {
       const studentExam = new this.studentExamModel({
         studentId: studentId,
         examId: exam.id,
-        examDate: new Date(),
+        examDate: null,
         current: true,
         examPerformed: false,
         planetTrack: [],
