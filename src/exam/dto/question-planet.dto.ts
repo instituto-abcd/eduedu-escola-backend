@@ -17,7 +17,7 @@ class QuestionTitleDto {
   type: string;
 }
 
-class QuestionDto {
+export class QuestionPlanentDto {
   @ApiProperty()
   orderedAnswer: boolean;
 
@@ -94,8 +94,8 @@ export class PlanetDto {
   @ApiProperty()
   position: number;
 
-  @ApiProperty({ type: [QuestionDto] })
-  questions: QuestionDto[];
+  @ApiProperty({ type: [QuestionPlanentDto] })
+  questions: QuestionPlanentDto[];
 
   @ApiProperty()
   status: string;
