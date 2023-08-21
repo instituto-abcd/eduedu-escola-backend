@@ -19,15 +19,19 @@ import {
 } from '../exam/dto/request/answers-request.dto';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import {
+  Answers,
+  AnswersPlanet,
   OptionsAnswers,
   Planet,
   StudentExam,
   StudentExamDocument,
+  StudentExamSchema,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
 import { ExamResumes } from 'src/templates/exam-resume-templates';
-import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
+import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
+import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 
 @Injectable()
 export class StudentService {
@@ -633,6 +637,7 @@ export class StudentService {
         stars: '0',
         axis_code: axis_code,
         order: planetTrackToSave.length,
+        answers: [],
       } as Planet);
 
       this.checkForNextPlanet(planet, planets, planetTrackToSave);
@@ -663,6 +668,7 @@ export class StudentService {
           stars: '0',
           axis_code: nextPlanetToSave.axis_code,
           order: planetTrackToSave.length,
+          answers: [],
         } as Planet);
 
         this.checkForNextPlanet(nextPlanetToSave, planets, planetTrackToSave);
@@ -1388,7 +1394,7 @@ export class StudentService {
   async getFirstQuestionPlanetForStudent(
     studentId: string,
     planetId: string,
-  ): Promise<any> {
+  ): Promise<QuestionPlanentDto> {
     const planetTrack: any[] = await this.studentExamModel
       .aggregate([
         {
@@ -1416,6 +1422,71 @@ export class StudentService {
       throw new EduException('KIDS_WITHOUT_PLANETS');
     }
 
+    const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
+
+    if (question === null) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+    return question;
+  }
+
+  async answerPlanet(
+    studentId: string,
+    planetId: string,
+    answersPlanet: AnswersPlanet,
+  ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
+    // return undefined;
+
+    // Recebe a resposta do planeta
+    const questionAnswered = await this.getQuestionByPlanetId(
+      planetId,
+      answersPlanet.questionId,
+    );
+
+    const skipVerify = questionAnswered.options.every((option) => {
+      return option.position === null && !option.isCorrect;
+    });
+
+    // Se a questão respondida possuir options.length > 0, salvar a resposta;
+    if (
+      questionAnswered.options !== undefined &&
+      questionAnswered.options.length > 0 &&
+      !skipVerify
+    ) {
+      answersPlanet.isCorrect = await this.verifyAnswerPlanet(
+        questionAnswered,
+        answersPlanet.optionsAnswered,
+      );
+
+      await this.saveAnswerPlanet(studentId, planetId, answersPlanet);
+
+      const nextQuestion = await this.getQuestionByPlanetIdAndPosition(
+        planetId,
+        questionAnswered.position + 1,
+      );
+
+      if (nextQuestion === null || nextQuestion === undefined) {
+        return { planetCompleted: true };
+      }
+      return nextQuestion;
+    } else {
+      // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
+      const nextQuestion = await this.getQuestionByPlanetIdAndPosition(
+        planetId,
+        questionAnswered.position + 1,
+      );
+
+      if (nextQuestion === null || nextQuestion === undefined) {
+        return { planetCompleted: true };
+      }
+      return nextQuestion;
+    }
+  }
+
+  async getQuestionByPlanetId(
+    planetId: string,
+    questionId: string,
+  ): Promise<QuestionPlanentDto> {
     const question = await this.planetModel
       .aggregate([
         {
@@ -1425,42 +1496,128 @@ export class StudentService {
         },
         {
           $project: {
-            questions: {
-              $filter: {
-                input: '$questions',
-                as: 'questions',
-                cond: {
-                  $and: [{ $eq: ['$$questions.position', 0] }],
+            question: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$questions',
+                    as: 'questions',
+                    cond: {
+                      $eq: ['$$questions.id', questionId],
+                    },
+                  },
                 },
-              },
+                0,
+              ],
             },
           },
         },
       ])
       .exec();
 
-    if (question.length === 0) {
-      throw new EduException('QUESTION_NOT_FOUND');
-    }
-    if (question[0].questions[0] === 0) {
-      throw new EduException('QUESTION_NOT_FOUND');
-    }
-    return question[0].questions[0];
+    return question[0].question;
   }
 
-  answerPlanet(
+  async getQuestionByPlanetIdAndPosition(
+    planetId: string,
+    position: number,
+  ): Promise<QuestionPlanentDto> {
+    const question = await this.planetModel
+      .aggregate([
+        {
+          $match: {
+            id: planetId,
+          },
+        },
+        {
+          $project: {
+            question: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$questions',
+                    as: 'questions',
+                    cond: {
+                      $eq: ['$$questions.position', position],
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return question[0].question;
+  }
+
+  private async saveAnswerPlanet(
     studentId: string,
     planetId: string,
-    answerPlanetRequestDto: AnswerPlanetRequestDto,
-  ): AnswersResponseDto {
-    return undefined;
+    answersPlanet: AnswersPlanet,
+  ): Promise<boolean> {
+    try {
+      const filter = {
+        studentId,
+        'planetTrack.planetId': planetId,
+      };
 
-    // Recebe a resposta do planeta
-    // Se a questão respondida possuir options.length > 0, salvar a resposta;
-    // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
-    // Se a questão respondida possuir options.length == 0,
+      const update = {
+        $push: { 'planetTrack.$.answers': answersPlanet },
+      };
 
-    // Obter a próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
-    // Quando não houver mais questões, retornar planetCompleted = true
+      const options = { new: true };
+
+      const updatedDocument = await this.studentExamModel.findOneAndUpdate(
+        filter,
+        update,
+
+        options,
+      );
+
+      if (!updatedDocument) {
+        throw new Error('Document not found');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('saveAnswerPlanet: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  async verifyAnswerPlanet(
+    question: QuestionPlanentDto,
+    answeredValue: OptionAnswer[],
+  ): Promise<boolean> {
+    try {
+      const correctOptions = question.options.filter(
+        (option) => option.isCorrect,
+      );
+
+      if (!question.orderedAnswer) {
+        for (const answeredOption of answeredValue) {
+          return correctOptions.every((option) => {
+            return (
+              option.sound_url === answeredOption.sound_url &&
+              option.image_url === answeredOption.image_url &&
+              option.position === answeredOption.position &&
+              option.isCorrect === answeredOption.isCorrect
+            );
+          });
+        }
+      } else {
+        return answeredValue.every(
+          (option) => option.position === option.positionAnswer,
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('verifyAnswer: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 }

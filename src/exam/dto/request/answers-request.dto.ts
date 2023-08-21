@@ -8,6 +8,18 @@ export class OptionAnswer {
 
   @ApiProperty({ description: 'Position of the answered option', example: 0 })
   positionAnswer: number;
+
+  @ApiProperty({ description: '', example: '' })
+  sound_url?: string;
+
+  @ApiProperty({ description: '', example: '' })
+  image_url?: string;
+
+  @ApiProperty({ description: '', example: '' })
+  description?: string;
+
+  @ApiProperty({ description: '', example: '' })
+  isCorrect?: boolean;
 }
 
 export class AnswerRequestDto {
