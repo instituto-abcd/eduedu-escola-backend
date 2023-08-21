@@ -38,9 +38,11 @@ import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
 import { QuestionDto } from '../exam/dto/question.dto';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
-import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
 import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
+import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
+import { AnswersPlanet } from "./schemas/studentExam.schema";
+import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -270,7 +272,7 @@ export class StudentController {
   async getFirstQuestionPlanetForStudent(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
-  ): Promise<any> {
+  ): Promise<QuestionPlanentDto> {
     return await this.studentService.getFirstQuestionPlanetForStudent(
       id,
       planetId,
@@ -286,8 +288,8 @@ export class StudentController {
   async answerPlanet(
     @Param('id') studentId: string,
     @Param('planetId') planetId: string,
-    @Body() answerPlanetRequestDto: AnswerPlanetRequestDto,
-  ): Promise<AnswersResponseDto> {
+    @Body() answerPlanetRequestDto: AnswersPlanet,
+  ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
     return this.studentService.answerPlanet(
       studentId,
       planetId,

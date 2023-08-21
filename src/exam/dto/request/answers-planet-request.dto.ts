@@ -3,10 +3,22 @@ import { OptionsAnswers } from '../../../student/schemas/studentExam.schema';
 import { Prop } from '@nestjs/mongoose';
 
 export class OptionAnswer {
-  @ApiProperty({ description: 'Position of the answered option', example: 0 })
+  @ApiProperty({ description: 'URL do som', example: 0 })
+  sound_url: number;
+
+  @ApiProperty({ description: 'URL da imagem do planeta', example: 0 })
+  image_url: number;
+
+  @ApiProperty({ description: 'Descrição', example: 0 })
+  description: number;
+
+  @ApiProperty({ description: 'Posição', example: 0 })
   position: number;
 
-  @ApiProperty({ description: 'Position of the answered option', example: 0 })
+  @ApiProperty({ description: 'Está correta?', example: 0 })
+  isCorrect: number;
+
+  @ApiProperty({ description: 'Resposta do aluno', example: 0 })
   positionAnswer: number;
 }
 
@@ -15,11 +27,9 @@ export class AnswerPlanetRequestDto {
   questionId: number;
 
   @ApiProperty({
-    description: 'Options answered by their position',
+    description: 'Opções de resposta da prova',
     type: [OptionAnswer],
   })
   @Prop()
   optionsAnswered: OptionsAnswers[];
-
-  isCorrect: boolean;
 }
