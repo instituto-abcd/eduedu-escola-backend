@@ -178,14 +178,12 @@ model Award {
 
 // Model for SchoolClassStudent
 model StudentAward {
-  id        String  @id @default(uuid())
+  id        String  @default(uuid())
   award     Award   @relation(fields: [awardId], references: [id])
   awardId   String
   student   Student @relation(fields: [studentId], references: [id])
   studentId String
-
-  @@index([awardId])
-  @@index([studentId])
+  @@id([awardId, studentId])
 }
 
 // Model for AuthToken
