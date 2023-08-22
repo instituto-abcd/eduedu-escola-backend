@@ -25,17 +25,39 @@ export class StudentAwardService {
         let planetsExecutedCount = planetsExecuted.length;
 
         switch (planetsExecutedCount) {
-            case 1: await this.saveStudentAward(studentId, AwardType.FANTASTICO);
-            case 5: await this.saveStudentAward(studentId, AwardType.LUTADOR);
-            case 10: await this.saveStudentAward(studentId, AwardType.SUPER);
-            case 15: await this.saveStudentAward(studentId, AwardType.INCRIVEL);
-            case 20: await this.saveStudentAward(studentId, AwardType.EXCELENTE);
-            case 25: await this.saveStudentAward(studentId, AwardType.BRILHANTE);
-            case 30: await this.saveStudentAward(studentId, AwardType.GIGANTE);
-            case 30: await this.saveStudentAward(studentId, AwardType.COMPETENTE);
-            case 40: await this.saveStudentAward(studentId, AwardType.BOMBASTICO);
-            case 45: await this.saveStudentAward(studentId, AwardType.SENSACIONAL);
-            case 50: await this.saveStudentAward(studentId, AwardType.PERFEITO);
+            case 1:
+                await this.saveStudentAward(studentId, AwardType.FANTASTICO);
+                break;
+            case 5: 
+                await this.saveStudentAward(studentId, AwardType.LUTADOR);
+                break;
+            case 10: 
+                await this.saveStudentAward(studentId, AwardType.SUPER);
+                break;
+            case 15: 
+                await this.saveStudentAward(studentId, AwardType.INCRIVEL);
+                break;
+            case 20: 
+                await this.saveStudentAward(studentId, AwardType.EXCELENTE);
+                break;
+            case 25: 
+                await this.saveStudentAward(studentId, AwardType.BRILHANTE);
+                break;
+            case 30: 
+                await this.saveStudentAward(studentId, AwardType.GIGANTE);
+                break;
+            case 30: 
+                await this.saveStudentAward(studentId, AwardType.COMPETENTE);
+                break;
+            case 40: 
+                await this.saveStudentAward(studentId, AwardType.BOMBASTICO);
+                break;
+            case 45: 
+                await this.saveStudentAward(studentId, AwardType.SENSACIONAL);
+                break;
+            case 50: 
+                await this.saveStudentAward(studentId, AwardType.PERFEITO);
+                break;
             default:
                 break;
         }

@@ -1733,6 +1733,8 @@ export class StudentService {
       stars,
     );
 
+    await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
+
     return { planetCompleted: true };
   }
 
