@@ -1699,7 +1699,7 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        await this.finishPlanet(studentId, planetId);
+        return await this.finishPlanet(studentId, planetId);
       }
       return nextQuestion;
     } else {
@@ -1710,7 +1710,7 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        await this.finishPlanet(studentId, planetId);
+        return await this.finishPlanet(studentId, planetId);
       }
       return nextQuestion;
     }
@@ -1751,13 +1751,24 @@ export class StudentService {
       throw new NotFoundException(`Student with ID ${studentId} not found`);
     }
 
-    return this.prisma.studentPlanetResult.create({
-      data: {
-        student: { connect: { id: studentId } },
+    return this.prisma.studentPlanetResult.upsert({
+      where: {
+        studentExamId_axisCode_studentId: {
+          studentExamId: studentExamId,
+          axisCode: axisCode,
+          studentId: studentId,
+        },
+      },
+      update: {
+        planetId: planetId,
+        stars: stars,
+      },
+      create: {
         studentExamId: studentExamId,
         planetId: planetId,
-        stars,
-        axisCode,
+        stars: stars,
+        axisCode: axisCode,
+        student: { connect: { id: studentId } },
       },
     });
   }

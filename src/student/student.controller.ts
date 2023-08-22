@@ -41,7 +41,7 @@ import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-respon
 import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
-import { AnswersPlanet } from "./schemas/studentExam.schema";
+import { AnswersPlanet } from './schemas/studentExam.schema';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 
 @Controller('student')
@@ -290,10 +290,12 @@ export class StudentController {
     @Param('planetId') planetId: string,
     @Body() answerPlanetRequestDto: AnswersPlanet,
   ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
-    return this.studentService.answerPlanet(
+    const response = await this.studentService.answerPlanet(
       studentId,
       planetId,
       answerPlanetRequestDto,
     );
+
+    return response;
   }
 }
