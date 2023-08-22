@@ -173,10 +173,24 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
+      // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
+      let currentExamId = await this.getCurrentExamId();
+      let studentIds = students.map((item) => item.id);
+      let studentExamResults = await this.prisma.studentExamResult.findMany({
+        where: {
+          studentId: { in: studentIds },
+          examId: currentExamId
+        }
+      });
+
       const responseStudents: StudentResponseDto[] = students.map((student) => {
-        const cfo = Math.floor(Math.random() * 100) + 1;
-        const sea = Math.floor(Math.random() * 100) + 1;
-        const lct = Math.floor(Math.random() * 100) + 1;
+        
+        let cfoResult = studentExamResults.filter((result) => result.studentId == student.id && result.axisCode == 'ES');
+        let seaResult = studentExamResults.filter((result) => result.studentId == student.id && result.axisCode == 'EA');
+        let lctResult = studentExamResults.filter((result) => result.studentId == student.id && result.axisCode == 'LC');
+        const cfo = cfoResult.length > 0 ? cfoResult[0].percent : 0;
+        const sea = seaResult.length > 0 ? seaResult[0].percent : 0;
+        const lct = lctResult.length > 0 ? lctResult[0].percent : 0;
 
         return {
           id: student.id,
@@ -818,9 +832,17 @@ export class StudentService {
 
     try {
       const createdStudentExamResult =
-        await this.prisma.studentExamResult.create({
-          data: {
-            studentExamId: studentExam.id,
+        await this.prisma.studentExamResult.upsert({
+          where: {
+            examId_axisCode_studentId: { examId: studentExam.examId, axisCode: studentExamResult.axisCode, studentId: studentExamResult.studentId }
+          },
+          update: {
+            percent: studentExamResult.percentage,
+            level: studentExamResult.level,
+            resume: studentExamResult.resume,
+          },
+          create: {
+            examId: studentExam.examId,
             axisCode: studentExamResult.axisCode,
             percent: studentExamResult.percentage,
             level: studentExamResult.level,

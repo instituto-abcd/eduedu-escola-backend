@@ -96,14 +96,15 @@ model Student {
 }
 
 model StudentExamResult {
-  id            String  @id @default(uuid())
-  studentExamId String
+  id            String  @default(uuid())
+  examId        String
   axisCode      String
   percent       Decimal
   level         String
   resume        String
   student       Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId     String
+  @@id([examId, axisCode, studentId])
 }
 
 // Model for User
