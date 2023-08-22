@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentRequestDto } from './dto/request/create-student-request.dto';
 import { UpdateStudentRequestDto } from './dto/request/update-student-request.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
-import { Prisma, SchoolGradeEnum, Status } from '@prisma/client';
+import {
+  Prisma,
+  SchoolGradeEnum,
+  Status,
+  StudentPlanetResult,
+} from '@prisma/client';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
@@ -19,13 +24,11 @@ import {
 } from '../exam/dto/request/answers-request.dto';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import {
-  Answers,
   AnswersPlanet,
   OptionsAnswers,
   Planet,
   StudentExam,
   StudentExamDocument,
-  StudentExamSchema,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
@@ -176,20 +179,25 @@ export class StudentService {
       };
 
       // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
-      let currentExamId = await this.getCurrentExamId();
-      let studentIds = students.map((item) => item.id);
-      let studentExamResults = await this.prisma.studentExamResult.findMany({
+      const currentExamId = await this.getCurrentExamId();
+      const studentIds = students.map((item) => item.id);
+      const studentExamResults = await this.prisma.studentExamResult.findMany({
         where: {
           studentId: { in: studentIds },
-          examId: currentExamId
-        }
+          examId: currentExamId,
+        },
       });
 
       const responseStudents: StudentResponseDto[] = students.map((student) => {
-        
-        let cfoResult = studentExamResults.filter((result) => result.studentId == student.id && result.axisCode == 'ES');
-        let seaResult = studentExamResults.filter((result) => result.studentId == student.id && result.axisCode == 'EA');
-        let lctResult = studentExamResults.filter((result) => result.studentId == student.id && result.axisCode == 'LC');
+        const cfoResult = studentExamResults.filter(
+          (result) => result.studentId == student.id && result.axisCode == 'ES',
+        );
+        const seaResult = studentExamResults.filter(
+          (result) => result.studentId == student.id && result.axisCode == 'EA',
+        );
+        const lctResult = studentExamResults.filter(
+          (result) => result.studentId == student.id && result.axisCode == 'LC',
+        );
         const cfo = cfoResult.length > 0 ? cfoResult[0].percent : 0;
         const sea = seaResult.length > 0 ? seaResult[0].percent : 0;
         const lct = lctResult.length > 0 ? lctResult[0].percent : 0;
@@ -468,7 +476,9 @@ export class StudentService {
       schoolGradeYear,
     );
 
-    questionsByAxisCode.options = this.shuffleOptions(questionsByAxisCode.options);
+    questionsByAxisCode.options = this.shuffleOptions(
+      questionsByAxisCode.options,
+    );
     return questionsByAxisCode;
   }
 
@@ -554,7 +564,6 @@ export class StudentService {
           )),
         ];
       }
-
     }
 
     await this.generateAndSavePlanetTrack(studentId, planets);
@@ -574,15 +583,17 @@ export class StudentService {
     }
 
     // Desativar execuções de prova anteriores (studentexams.current = false);
-    const oldStudentExams = await this.studentExamModel.find({ studentId: { $in: ids } });
-    
-    oldStudentExams.forEach(item => {
+    const oldStudentExams = await this.studentExamModel.find({
+      studentId: { $in: ids },
+    });
+
+    oldStudentExams.forEach((item) => {
       item.current = false;
       item.save();
     });
 
     // Criar e persistir novo documento de studentexams, com as devidas propriedades
-    let result = await this.createManyExamStudant(ids)
+    const result = await this.createManyExamStudant(ids);
 
     // Retorar response adequado
     return { success: result };
@@ -631,13 +642,15 @@ export class StudentService {
     studentId: string,
     planets: PlanetDocument[],
   ): Promise<any> {
-
     if (planets.length == 0) {
       return;
     }
 
     // Recuperando studentexam do aluno
-    const studentExam = await this.studentExamModel.findOne({ studentId, current: true });
+    const studentExam = await this.studentExamModel.findOne({
+      studentId,
+      current: true,
+    });
 
     if (!studentExam) {
       throw new EduException('USER_NOT_FOUND');
@@ -736,15 +749,19 @@ export class StudentService {
     try {
       const student = await this.studentExamModel.findOne({
         studentId: studentId,
-        current: true
+        current: true,
       });
 
       if (!student) {
         return 0;
       }
 
-      const totalCorrectAnswers = student.answers.filter(item => item.axis_code == axisCode && item.isCorrect).length;
-      const totalQuestions = student.answers.filter(item => item.axis_code == axisCode).length;
+      const totalCorrectAnswers = student.answers.filter(
+        (item) => item.axis_code == axisCode && item.isCorrect,
+      ).length;
+      const totalQuestions = student.answers.filter(
+        (item) => item.axis_code == axisCode,
+      ).length;
 
       const percentage = (totalCorrectAnswers / totalQuestions) * 100;
 
@@ -838,7 +855,11 @@ export class StudentService {
       const createdStudentExamResult =
         await this.prisma.studentExamResult.upsert({
           where: {
-            examId_axisCode_studentId: { examId: studentExam.examId, axisCode: studentExamResult.axisCode, studentId: studentExamResult.studentId }
+            examId_axisCode_studentId: {
+              examId: studentExam.examId,
+              axisCode: studentExamResult.axisCode,
+              studentId: studentExamResult.studentId,
+            },
           },
           update: {
             percent: studentExamResult.percentage,
@@ -909,7 +930,7 @@ export class StudentService {
         );
 
       examId = await this.getCurrentExamId();
-      
+
       await this.saveAnswer(
         studentId,
         examId,
@@ -988,14 +1009,17 @@ export class StudentService {
 
   private shuffleOptions(options: any): any {
     if (options != undefined && options != null && options.length > 0) {
-      let currentIndex = options.length, randomIndex;
+      let currentIndex = options.length,
+        randomIndex;
       while (currentIndex != 0) {
-        let random = Math.random();
+        const random = Math.random();
         randomIndex = Math.floor(random * currentIndex);
         currentIndex--;
 
         [options[currentIndex], options[randomIndex]] = [
-          options[randomIndex], options[currentIndex]];
+          options[randomIndex],
+          options[currentIndex],
+        ];
       }
     }
     return options;
@@ -1095,7 +1119,7 @@ export class StudentService {
       let studentExam = await this.studentExamModel.findOne({
         studentId,
         examId,
-        current: true
+        current: true,
       });
 
       if (!studentExam) {
@@ -1320,9 +1344,20 @@ export class StudentService {
 
       let question = aggregationResult[0].questions[0];
 
-      const wasThereAnAxisJump = await this.handle_EA_To_LC_axisJump(axisCode, studentId, examId, schoolGradeYear);
+      const wasThereAnAxisJump = await this.handle_EA_To_LC_axisJump(
+        axisCode,
+        studentId,
+        examId,
+        schoolGradeYear,
+      );
       if (wasThereAnAxisJump) {
-        question = await this.getNextQuestionFromAxis("ES", studentId, examId, schoolGradeYear, "LC");
+        question = await this.getNextQuestionFromAxis(
+          'ES',
+          studentId,
+          examId,
+          schoolGradeYear,
+          'LC',
+        );
       }
 
       return question;
@@ -1337,34 +1372,30 @@ export class StudentService {
     examId: string,
     schoolGradeYear: number,
   ): Promise<boolean> {
-    var result = false;
+    let result = false;
 
-    if (axis_code == "EA" && schoolGradeYear > 0) {
-
+    if (axis_code == 'EA' && schoolGradeYear > 0) {
       // - Buscar todas as respostas do eixo EA (Eixo anterior). Se basear no método assignWrongAnswersToRemainingAxisQuestions();
-      const axisAnswersAggregation =
-        await this.studentExamModel.aggregate([
-          {
-            $match: {
-              'studentId': studentId,
-            },
+      const axisAnswersAggregation = await this.studentExamModel.aggregate([
+        {
+          $match: {
+            studentId: studentId,
           },
-          {
-            $project: {
-              answers: {
-                $filter: {
-                  input: '$answers',
-                  as: 'answer',
-                  cond: {
-                    $and: [
-                      { $eq: ['$$answer.axis_code', 'EA'] },
-                    ],
-                  },
+        },
+        {
+          $project: {
+            answers: {
+              $filter: {
+                input: '$answers',
+                as: 'answer',
+                cond: {
+                  $and: [{ $eq: ['$$answer.axis_code', 'EA'] }],
                 },
               },
             },
           },
-        ]);
+        },
+      ]);
 
       const axisAnswers = axisAnswersAggregation[0].answers.map(
         (answer: any) => answer,
@@ -1372,8 +1403,7 @@ export class StudentService {
 
       // - Se todas as respostas estiverem corretas:
       //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
-      if (axisAnswers.every(a => a.isCorrect)) {
-
+      if (axisAnswers.every((a) => a.isCorrect)) {
         const aggregationResult: any[] = await this.examModel
           .aggregate([
             {
@@ -1432,7 +1462,7 @@ export class StudentService {
       const studentExam = await this.studentExamModel.findOne({
         studentId,
         examId,
-        current: true
+        current: true,
       });
 
       if (studentExam) {
@@ -1513,7 +1543,10 @@ export class StudentService {
   }
 
   //Obter o próximo eixo
-  private async getNextAxisCode(axisCode: string, schoolGradeYear: number): Promise<string | null> {
+  private async getNextAxisCode(
+    axisCode: string,
+    schoolGradeYear: number,
+  ): Promise<string | null> {
     const axisMappingsFirstYear: { [key: string]: string | null } = {
       ES: 'EA',
       EA: 'LC',
@@ -1542,9 +1575,9 @@ export class StudentService {
         throw new EduException('EXAM_NOT_FOUND');
       }
 
-      let studentExams = [];
+      const studentExams = [];
 
-      studentIds.forEach(studentId => {
+      studentIds.forEach((studentId) => {
         const studentExam = new this.studentExamModel({
           studentId: studentId,
           examId: exam.id,
@@ -1639,9 +1672,6 @@ export class StudentService {
     planetId: string,
     answersPlanet: AnswersPlanet,
   ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
-    // return undefined;
-
-    // Recebe a resposta do planeta
     const questionAnswered = await this.getQuestionByPlanetId(
       planetId,
       answersPlanet.questionId,
@@ -1651,7 +1681,6 @@ export class StudentService {
       return option.position === null && !option.isCorrect;
     });
 
-    // Se a questão respondida possuir options.length > 0, salvar a resposta;
     if (
       questionAnswered.options !== undefined &&
       questionAnswered.options.length > 0 &&
@@ -1670,7 +1699,7 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        return { planetCompleted: true };
+        await this.finishPlanet(studentId, planetId);
       }
       return nextQuestion;
     } else {
@@ -1681,10 +1710,103 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        return { planetCompleted: true };
+        await this.finishPlanet(studentId, planetId);
       }
       return nextQuestion;
     }
+  }
+
+  private async finishPlanet(
+    studentId: string,
+    planetId: string,
+  ): Promise<AnswersPlanetResponseDto> {
+    const planet = await this.planetModel.findOne({ id: planetId });
+
+    const exam = await this.getExamByStudentIdAndPlanet(studentId, planetId);
+    const stars = await this.calculateStars(studentId, planetId);
+
+    await this.saveStudentPlanetResult(
+      studentId,
+      exam.examId,
+      planetId,
+      planet.axis_code,
+      stars,
+    );
+
+    return { planetCompleted: true };
+  }
+
+  async saveStudentPlanetResult(
+    studentId: string,
+    studentExamId: string,
+    planetId: string,
+    axisCode: string,
+    stars: number,
+  ): Promise<StudentPlanetResult> {
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException(`Student with ID ${studentId} not found`);
+    }
+
+    return this.prisma.studentPlanetResult.create({
+      data: {
+        student: { connect: { id: studentId } },
+        studentExamId: studentExamId,
+        planetId: planetId,
+        stars,
+        axisCode,
+      },
+    });
+  }
+
+  private async getExamByStudentIdAndPlanet(
+    studentId: string,
+    planetId: string,
+  ): Promise<StudentExam> {
+    const filter = {
+      studentId,
+      'planetTrack.planetId': planetId,
+    };
+
+    const exam = await this.studentExamModel.findOne(filter);
+
+    if (!exam) {
+      throw new Error('Document not found');
+    }
+
+    return exam;
+  }
+
+  private async calculateStars(studentId: string, planetId: string) {
+    const studentExam = await this.studentExamModel
+      .findOne({ studentId })
+      .exec();
+
+    if (!studentExam) {
+      throw new NotFoundException(
+        `Student exam not found for student ID: ${studentId}`,
+      );
+    }
+
+    const planet = studentExam.planetTrack.find((p) => p.planetId === planetId);
+
+    if (!planet) {
+      throw new NotFoundException(
+        `Planet not found for planet ID: ${planetId}`,
+      );
+    }
+
+    const totalAnswers = planet.answers.length;
+    const totalCorrectAnswers = planet.answers.filter(
+      (answer) => answer.isCorrect,
+    ).length;
+
+    const score = (totalCorrectAnswers / totalAnswers) * 5;
+    const start = Math.max(0, Math.min(5, score));
+    return parseFloat(start.toFixed(2));
   }
 
   async getQuestionByPlanetId(

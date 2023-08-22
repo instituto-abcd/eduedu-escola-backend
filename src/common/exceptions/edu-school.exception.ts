@@ -217,6 +217,10 @@ export const ErrorDetails = {
     message: 'Prova não encontrada.',
     status: HttpStatus.NOT_FOUND,
   },
+  PLANET_NOT_FOUND: {
+    message: 'Planeta não encontrado.',
+    status: HttpStatus.NOT_FOUND,
+  },
   KIDS_WITHOUT_PLANETS: {
     message: 'A criança não possui esse planeta.',
     status: HttpStatus.NOT_FOUND,
