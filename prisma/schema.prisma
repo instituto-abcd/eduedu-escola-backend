@@ -93,18 +93,33 @@ model Student {
   schoolClasses SchoolClassStudent[]
   studentAwards StudentAward[]
   examResults   StudentExamResult[]
+  planetResult  StudentPlanetResult[]
 }
 
 model StudentExamResult {
-  id            String  @default(uuid())
-  examId        String
-  axisCode      String
-  percent       Decimal
-  level         String
-  resume        String
-  student       Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
+  id        String  @default(uuid())
+  examId    String
+  axisCode  String
+  percent   Decimal
+  level     String
+  resume    String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+
   @@id([examId, axisCode, studentId])
+}
+
+model StudentPlanetResult {
+  id            String   @default(uuid())
+  studentExamId String
+  planetId      String
+  axisCode      String
+  stars         Decimal
+  lastExecution DateTime @default(now())
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+
+  @@id([studentExamId, axisCode, studentId])
 }
 
 // Model for User
