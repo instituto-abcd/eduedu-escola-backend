@@ -37,12 +37,14 @@ import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-re
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
+import { StudentAwardService } from './studentAward.service';
 
 @Injectable()
 export class StudentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dashboard: DashboardService,
+    private readonly studentAward: StudentAwardService,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
     @InjectModel(StudentExam.name)
@@ -565,6 +567,8 @@ export class StudentService {
     }
 
     await this.generateAndSavePlanetTrack(studentId, planets);
+
+    await this.studentAward.verifyAndGenerateExamAwards(studentId);
 
     return null;
   }
