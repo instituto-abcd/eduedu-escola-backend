@@ -1699,7 +1699,7 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        await this.finishPlanet(studentId, planetId);
+        return await this.finishPlanet(studentId, planetId);
       }
       return nextQuestion;
     } else {
@@ -1710,7 +1710,7 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        await this.finishPlanet(studentId, planetId);
+        return await this.finishPlanet(studentId, planetId);
       }
       return nextQuestion;
     }
