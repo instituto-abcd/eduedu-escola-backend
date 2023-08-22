@@ -43,6 +43,7 @@ import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-req
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanet } from './schemas/studentExam.schema';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
+import { StudentExamDto } from './dto/studentexam.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -278,6 +279,7 @@ export class StudentController {
       planetId,
     );
   }
+
   @Post(':id/planets/:planetId/answer')
   @ApiOperation({ summary: 'Responder questão da prova' })
   @ApiResponse({
@@ -297,5 +299,18 @@ export class StudentController {
     );
 
     return response;
+  }
+
+  @Get(':id/exam-executions')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém as execuções de prova de um aluno',
+    type: StudentResponseDto,
+  })
+  @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
+  async getExamExecutions(
+    @Param('id') id: string,
+  ): Promise<StudentExamDto[]> {
+    return await this.studentExamService.getStudentExams(id);
   }
 }

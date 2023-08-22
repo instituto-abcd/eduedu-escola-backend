@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { PlanetDto } from './dto/planet.dto';
+import { StudentExamDto } from './dto/studentexam.dto';
 
 @Injectable()
 export class StudentExamService {
@@ -13,6 +14,14 @@ export class StudentExamService {
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
   ) {}
+
+  async getStudentExams(studentId: string): Promise<StudentExamDto[]> {
+    const studentExams = await this.studentExamModel.find({ studentId, examPerformed: true });
+    const result: StudentExamDto[] = studentExams.map((item) => {
+      return  { id: item.id, examDate: item.examDate };
+    });
+    return result;
+  }
 
   async getPlanetTrack(studentId: string): Promise<PlanetTrackDto> {
     try {
