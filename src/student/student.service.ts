@@ -529,13 +529,16 @@ export class StudentService {
       );
       await this.saveStudentExamResult(studentExamResult);
 
-      planets = [
-        ...planets,
-        ...(await this.getPlanetsByAxisAndLevel(
-          axis_code,
-          studentExamResult.level,
-        )),
-      ];
+      if (studentExamResult.percentage < 100) {
+        planets = [
+          ...planets,
+          ...(await this.getPlanetsByAxisAndLevel(
+            axis_code,
+            studentExamResult.level,
+          )),
+        ];
+      }
+
     }
 
     await this.generateAndSavePlanetTrack(studentId, planets);
@@ -610,6 +613,11 @@ export class StudentService {
     studentId: string,
     planets: PlanetDocument[],
   ): Promise<any> {
+
+    if (planets.length == 0) {
+      return;
+    }
+
     // Recuperando studentexam do aluno
     const studentExam = await this.studentExamModel.findOne({ studentId, current: true });
 
@@ -713,48 +721,13 @@ export class StudentService {
         current: true
       });
 
-      const exam = await this.examModel.findOne({
-        id: student?.examId,
-      });
-
-      if (!student || !exam || !exam.questions || exam.questions.length === 0) {
+      if (!student) {
         return 0;
       }
 
-      const correctQuestionsCount = await this.studentExamModel.aggregate([
-        {
-          $match: {
-            studentId: studentId,
-            'answers.isCorrect': true,
-            'answers.axis_code': axisCode,
-          },
-        },
-        {
-          $project: {
-            correctAnswersCount: {
-              $size: {
-                $filter: {
-                  input: '$answers',
-                  as: 'answer',
-                  cond: {
-                    $and: [
-                      { $eq: ['$$answer.isCorrect', true] },
-                      { $eq: ['$$answer.axis_code', axisCode] },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-      ]);
+      const totalCorrectAnswers = student.answers.filter(item => item.axis_code == axisCode && item.isCorrect).length;
+      const totalQuestions = student.answers.filter(item => item.axis_code == axisCode).length;
 
-      const totalCorrectAnswers =
-        correctQuestionsCount.length > 0
-          ? correctQuestionsCount[0].correctAnswersCount
-          : 0;
-
-      const totalQuestions = exam.questions.length;
       const percentage = (totalCorrectAnswers / totalQuestions) * 100;
 
       return parseFloat(percentage.toFixed(2));
