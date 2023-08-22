@@ -28,6 +28,7 @@ import { AwardsModule } from './awards/awards.module';
 import { ExamModule } from './exam/exam.module';
 import { StudentExamService } from "./student/studentExam.service";
 import { StudentExam, StudentExamSchema } from "./student/schemas/studentExam.schema";
+import { PlanetModule } from './planet/planet.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { StudentExam, StudentExamSchema } from "./student/schemas/studentExam.sc
     AuditModule,
     AwardsModule,
     ExamModule,
+    PlanetModule,
   ],
   providers: [
     PrismaService,
