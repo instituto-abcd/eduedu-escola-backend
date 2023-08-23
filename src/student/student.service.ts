@@ -1123,13 +1123,11 @@ export class StudentService {
       });
 
       if (!studentExam) {
-        studentExam = new this.studentExamModel({
+        await this.createExamStudant(studentId);
+        studentExam = await this.studentExamModel.findOne({
           studentId,
           examId,
-          answers: [],
-          isCorrect,
-          axis_code: question.axis_code,
-          lastQuestion,
+          current: true,
         });
       }
 
