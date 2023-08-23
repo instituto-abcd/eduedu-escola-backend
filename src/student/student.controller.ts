@@ -46,6 +46,7 @@ import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-re
 import { StudentExamDto } from './dto/studentexam.dto';
 import { StudentResultService } from './studentResult.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
+import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -330,5 +331,18 @@ export class StudentController {
     @Query('loadPlanets') loadPlanets: boolean,
   ): Promise<StudentPlanetResultDetailDto[]> {
     return await this.studentResultService.getStudentPlanetsResultDetail(studentExamId, loadPlanets);
+  }
+
+  @Get(':id/detailed-summary')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém os resultados e resumos de prova por eixo de um aluno',
+    type: StudentResponseDto,
+  })
+  @ApiOperation({ summary: 'Obtém os resultados e resumos de prova por eixo de um aluno' })
+  async getStudentDetailedSummary(
+    @Param('id') id: string,
+  ): Promise<StudentDetailedSummaryDto> {
+    return await this.studentResultService.getStudentDetailedSummary(id);
   }
 }

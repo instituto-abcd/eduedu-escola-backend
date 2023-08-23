@@ -619,7 +619,7 @@ export class StudentService {
     return student;
   }
 
-  private async getSchoolGradeYear(studentId: string) {
+  async getSchoolGradeYear(studentId: string) {
     const student = await this.getStudent(studentId);
     const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
     return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
@@ -763,8 +763,10 @@ export class StudentService {
 
       let correctAnswerOrderList = [];
       for (let index = 0; index < uniqueOrders.length; index++) {
-        let answerOrder = studentAxisAnswers.find(answer => answer.order == uniqueOrders[index] && answer.isCorrect)
-        correctAnswerOrderList.push(answerOrder);
+        let answerOrder = studentAxisAnswers.find(answer => answer.order == uniqueOrders[index] && answer.isCorrect == true)
+        if (answerOrder != undefined && answerOrder != null) {
+          correctAnswerOrderList.push(answerOrder); 
+        }
       };
 
       const totalCorrectAnswers = correctAnswerOrderList.length;
@@ -784,31 +786,10 @@ export class StudentService {
     axisCode: string,
   ): Promise<string> {
     try {
-      const [lastAnswer] = await this.studentExamModel.aggregate([
-        {
-          $match: {
-            studentId: studentId,
-          },
-        },
-        {
-          $unwind: '$answers',
-        },
-        {
-          $match: {
-            'answers.isCorrect': true,
-            'answers.axis_code': axisCode,
-          },
-        },
-        {
-          $sort: { order: -1 },
-        },
-        {
-          $replaceRoot: { newRoot: '$answers' },
-        },
-        {
-          $limit: 1,
-        },
-      ]);
+      const studentExam = await this.studentExamModel.findOne({ studentId: studentId, current: true });
+      const lastAnswer = studentExam.answers
+        .filter(item => item.axis_code == axisCode && item.isCorrect == true)
+        .sort((a,b) => b.order - a.order)[0];
 
       if (lastAnswer == null) {
         return '0';
@@ -842,7 +823,7 @@ export class StudentService {
         item.school_year == school_year,
     );
 
-    return resume.text.replace(examResumes.ReplaceTerm, studentName);
+    return resume.text.replaceAll(examResumes.ReplaceTerm, studentName);
   }
 
   // Persistir registro student_examResult
