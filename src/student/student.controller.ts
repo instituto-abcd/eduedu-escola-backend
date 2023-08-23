@@ -46,6 +46,7 @@ import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-re
 import { StudentExamDto } from './dto/studentexam.dto';
 import { StudentResultService } from './studentResult.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
+import { PlanetChartStudentResponse } from './dto/response/planet-chart-studant-response.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -311,9 +312,7 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
-  async getExamExecutions(
-    @Param('id') id: string,
-  ): Promise<StudentExamDto[]> {
+  async getExamExecutions(@Param('id') id: string): Promise<StudentExamDto[]> {
     return await this.studentExamService.getStudentExams(id);
   }
 
@@ -323,12 +322,33 @@ export class StudentController {
     description: 'Obtém os sumarizados por eixo, com a lista de planetas',
     type: StudentResponseDto,
   })
-  @ApiOperation({ summary: 'Obtém os sumarizados por eixo, com a lista de planetas' })
+  @ApiOperation({
+    summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
+  })
   async getExamExecution(
     @Param('id') id: string,
     @Param('studentExamId') studentExamId: string,
     @Query('loadPlanets') loadPlanets: boolean,
   ): Promise<StudentPlanetResultDetailDto[]> {
-    return await this.studentResultService.getStudentPlanetsResultDetail(studentExamId, loadPlanets);
+    return await this.studentResultService.getStudentPlanetsResultDetail(
+      studentExamId,
+      loadPlanets,
+    );
+  }
+
+  // Card Gráfico Desempenho do Aluno Por Planetas - Endpoint de Retorno dos dados do gráfico
+  @Get(':id/planets-chart')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém o gráfico desempenho do aluno por planetas',
+    type: StudentResponseDto,
+  })
+  @ApiOperation({
+    summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
+  })
+  async planetsChart(
+    @Param('id') id: string,
+  ): Promise<PlanetChartStudentResponse> {
+    return await this.studentResultService.planetsChart(id);
   }
 }
