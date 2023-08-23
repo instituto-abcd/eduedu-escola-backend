@@ -13,6 +13,7 @@ import { AwardsService } from '../awards/awards.service';
 import { Exam, ExamSchema } from '../exam/schemas/exam.schema';
 import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
 import { StudentAwardService } from './studentAward.service';
+import { StudentResultService } from './studentResult.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StudentAwardService } from './studentAward.service';
     StudentExamService,
     AwardsService,
     StudentAwardService,
+    StudentResultService
   ],
 })
 export class StudentModule {}

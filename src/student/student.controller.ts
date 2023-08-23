@@ -44,6 +44,8 @@ import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanet } from './schemas/studentExam.schema';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 import { StudentExamDto } from './dto/studentexam.dto';
+import { StudentResultService } from './studentResult.service';
+import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -52,6 +54,7 @@ export class StudentController {
     private readonly studentService: StudentService,
     private readonly studentExamService: StudentExamService,
     private readonly awardsService: AwardsService,
+    private readonly studentResultService: StudentResultService,
   ) {}
 
   @AuditGuard()
@@ -312,5 +315,20 @@ export class StudentController {
     @Param('id') id: string,
   ): Promise<StudentExamDto[]> {
     return await this.studentExamService.getStudentExams(id);
+  }
+
+  @Get(':id/exam-executions/:studentExamId/planets-detail')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém os sumarizados por eixo, com a lista de planetas',
+    type: StudentResponseDto,
+  })
+  @ApiOperation({ summary: 'Obtém os sumarizados por eixo, com a lista de planetas' })
+  async getExamExecution(
+    @Param('id') id: string,
+    @Param('studentExamId') studentExamId: string,
+    @Query('loadPlanets') loadPlanets: boolean,
+  ): Promise<StudentPlanetResultDetailDto[]> {
+    return await this.studentResultService.getStudentPlanetsResultDetail(studentExamId, loadPlanets);
   }
 }

@@ -113,13 +113,14 @@ model StudentPlanetResult {
   id            String   @default(uuid())
   studentExamId String
   planetId      String
+  planetName    String
   axisCode      String
   stars         Decimal
   lastExecution DateTime @default(now())
   student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId     String
 
-  @@id([studentExamId, axisCode, studentId])
+  @@id([planetId, studentId])
 }
 
 // Model for User

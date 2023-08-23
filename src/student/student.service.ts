@@ -1729,6 +1729,7 @@ export class StudentService {
       studentId,
       exam.examId,
       planetId,
+      planet.title,
       planet.axis_code,
       stars,
     );
@@ -1742,6 +1743,7 @@ export class StudentService {
     studentId: string,
     studentExamId: string,
     planetId: string,
+    planetName: string,
     axisCode: string,
     stars: number,
   ): Promise<StudentPlanetResult> {
@@ -1755,9 +1757,8 @@ export class StudentService {
 
     return this.prisma.studentPlanetResult.upsert({
       where: {
-        studentExamId_axisCode_studentId: {
-          studentExamId: studentExamId,
-          axisCode: axisCode,
+        planetId_studentId: {
+          planetId: planetId,
           studentId: studentId,
         },
       },
@@ -1768,6 +1769,7 @@ export class StudentService {
       create: {
         studentExamId: studentExamId,
         planetId: planetId,
+        planetName: planetName,
         stars: stars,
         axisCode: axisCode,
         student: { connect: { id: studentId } },
