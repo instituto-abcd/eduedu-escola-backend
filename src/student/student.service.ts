@@ -756,12 +756,19 @@ export class StudentService {
         return 0;
       }
 
-      const totalCorrectAnswers = student.answers.filter(
-        (item) => item.axis_code == axisCode && item.isCorrect,
-      ).length;
-      const totalQuestions = student.answers.filter(
-        (item) => item.axis_code == axisCode,
-      ).length;
+      const studentAxisAnswers = student.answers
+        .filter((item) => item.axis_code == axisCode);
+      const allOrders = studentAxisAnswers.map(item => item.order);
+      let uniqueOrders = [... new Set(allOrders)];
+
+      let correctAnswerOrderList = [];
+      for (let index = 0; index < uniqueOrders.length; index++) {
+        let answerOrder = studentAxisAnswers.find(answer => answer.order == uniqueOrders[index] && answer.isCorrect)
+        correctAnswerOrderList.push(answerOrder);
+      };
+
+      const totalCorrectAnswers = correctAnswerOrderList.length;
+      const totalQuestions = uniqueOrders.length;
 
       const percentage = (totalCorrectAnswers / totalQuestions) * 100;
 
@@ -1432,6 +1439,7 @@ export class StudentService {
                     cond: {
                       $and: [
                         { $eq: ['$$question.axis_code', 'ES'] },
+                        { $eq: ['$$question.category', 'A'] },
                         { $lte: ['$$question.school_year', schoolGradeYear] },
                       ],
                     },
