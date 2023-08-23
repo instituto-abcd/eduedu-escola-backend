@@ -1154,6 +1154,7 @@ export class StudentService {
           level: question.level,
           lastQuestion,
           order: question.order,
+          category: question.category
         });
       }
 
@@ -1399,9 +1400,22 @@ export class StudentService {
         (answer: any) => answer,
       );
 
-      // - Se todas as respostas estiverem corretas:
+      // - Se todas as respostas estiverem corretas (A ou B são consideradas como corretas):
       //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
-      if (axisAnswers.every((a) => a.isCorrect)) {
+
+      const allOrders = axisAnswers.map(item => item.order);
+      let orders = [... new Set(allOrders)];
+
+      let allAnswersAreCorrect = true;
+      for (let index = 0; index < orders.length; index++) {
+        let isOrderCorrect = axisAnswers.some(answer => answer.order == orders[index] && answer.isCorrect)
+        if (!isOrderCorrect) {
+          allAnswersAreCorrect = false;
+          break;
+        }
+      };
+
+      if (allAnswersAreCorrect) {
         const aggregationResult: any[] = await this.examModel
           .aggregate([
             {

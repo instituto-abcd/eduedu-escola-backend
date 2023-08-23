@@ -78,6 +78,9 @@ export class Answers {
   order: number;
 
   @Prop()
+  category: string;
+
+  @Prop()
   lastQuestion: boolean;
 }
 
