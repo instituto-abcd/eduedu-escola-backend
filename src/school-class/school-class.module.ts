@@ -12,12 +12,14 @@ import {
 } from '../student/schemas/studentExam.schema';
 import { StudentExamService } from '../student/studentExam.service';
 import { SchoolClassResultService } from "./school-class-result.service";
+import { StudentModule } from 'src/student/student.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
     ]),
+    StudentModule,
   ],
   controllers: [SchoolClassController],
   providers: [

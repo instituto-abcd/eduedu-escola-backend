@@ -43,6 +43,7 @@ import { StudentSimplifiedResponseDto } from '../student/dto/response/student-si
 import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 import { SchoolClassResultService } from './school-class-result.service';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
+import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -263,9 +264,21 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/planets-performance')
-  async getPlanetsDetail(
+  async getPlanetsPerformance(
     @Param('id') id: string,
   ): Promise<SchoolClassPlanetResultDetailDto[]> {
     return this.schoolClassResultService.getSchoolClassPlanetResultDetail(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho da turma em provas agrupados por eixo',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-performance')
+  async getExamsPerformance(
+    @Param('id') id: string,
+  ): Promise<SchoolClassDetailedSummaryDto[]> {
+    return this.schoolClassResultService.getSchoolClassDetailedSummary(id);
   }
 }

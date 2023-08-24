@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StudentExamResult, StudentPlanetResult } from '@prisma/client';
+import { SchoolGradeEnum, StudentExamResult, StudentPlanetResult } from '@prisma/client';
 import {
   StudentExam,
   StudentExamDocument,
@@ -10,14 +10,82 @@ import {
 import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
+import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
+import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
 
 @Injectable()
 export class SchoolClassResultService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly performanceResultUtilsService: PerformanceResultUtilsService,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
   ) {}
+
+  async getSchoolClassDetailedSummary(
+    schoolClassId: string,
+  ): Promise<SchoolClassDetailedSummaryDto[]> {
+    const result: SchoolClassDetailedSummaryDto[] = [];
+
+    const students = await this.prisma.student.findMany({
+      where: {
+        schoolClasses: {
+          some: {
+            schoolClassId: schoolClassId,
+            active: true,
+          },
+        },
+      },
+      include: {
+        examResults: true,
+      }
+    });
+
+    const studentIds = students.map((item) => item.id);
+    const studentExams = await this.studentExamModel.find({
+      studentId: { $in: studentIds },
+      current: true,
+    });
+
+    let schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClassId },
+      include: {
+        schoolYear: true
+      }
+    });
+
+    let schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(schoolClass.schoolGrade)
+
+    const axisList = ['ES', 'EA', 'LC'];
+    axisList.forEach((axisCode) => {
+      let studentsParsed: any[] = students.map((student: any) => {
+        let studentExam = studentExams.find((item) => item.studentId == student.id );
+        let studentExamResult = student.examResults
+          .find((item) => item.examId == studentExam.examId && item.axisCode == axisCode);
+        let classification = this.performanceResultUtilsService
+          .getStudentPerformanceDefinition(schoolGradeYear, studentExamResult.level);
+        student.classification = classification.description;
+        return student;
+      });
+
+      const examResultDetail = new SchoolClassDetailedSummaryDto();
+      examResultDetail.axisCode = axisCode;
+      examResultDetail.axisName = this.mapAxisCodeToLabel(axisCode);
+      examResultDetail.veryLow = studentsParsed
+        .filter((student: any) => student.classification == "Muito abaixo")
+        .length;
+      examResultDetail.below = studentsParsed
+        .filter((student: any) => student.classification == "Abaixo")
+        .length;
+      examResultDetail.expected = studentsParsed
+        .filter((student: any) => student.classification == "Esperado")
+        .length;
+
+      result.push(examResultDetail);
+    });
+
+    return result;
+  }
 
   async getSchoolClassPlanetResultDetail(
     schoolClassId: string,
