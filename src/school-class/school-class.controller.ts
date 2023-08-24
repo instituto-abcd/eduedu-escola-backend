@@ -17,6 +17,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -39,11 +40,17 @@ import { AuditGuard } from 'src/common/guard/audit.guard';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
+import { PlanetChartStudentResponse } from '../student/dto/response/planet-chart-studant-response.dto';
+import { StudentResultService } from '../student/studentResult.service';
+import { SchoolClassResultService } from "./school-class-result.service";
 
 @ApiTags('Turma')
 @Controller('schoolClass')
 export class SchoolClassController {
-  constructor(private readonly schoolClassService: SchoolClassService) {}
+  constructor(
+    private readonly schoolClassService: SchoolClassService,
+    private readonly schoolClassResultService: SchoolClassResultService,
+  ) {}
 
   @AuditGuard()
   @Post()
@@ -224,5 +231,17 @@ export class SchoolClassController {
       studentId,
       reserved,
     );
+  }
+
+  @ApiOkResponse({
+    description: 'Retorna o gráfico de planetas para uma turma específica',
+    type: PlanetChartStudentResponse,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'id-da-turma' })
+  @Get(':id/planets-chart')
+  async getPlanetsChart(
+    @Param('id') id: string,
+  ): Promise<PlanetChartStudentResponse> {
+    return this.schoolClassResultService.calculatePlanetsChartForClass(id);
   }
 }

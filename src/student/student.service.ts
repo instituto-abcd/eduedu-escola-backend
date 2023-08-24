@@ -756,23 +756,31 @@ export class StudentService {
         return 0;
       }
 
-      const studentAxisAnswers = student.answers
-        .filter((item) => item.axis_code == axisCode);
-      const allOrders = studentAxisAnswers.map(item => item.order);
-      let uniqueOrders = [... new Set(allOrders)];
+      const studentAxisAnswers = student.answers.filter(
+        (item) => item.axis_code == axisCode,
+      );
+      const allOrders = studentAxisAnswers.map((item) => item.order);
+      const uniqueOrders = [...new Set(allOrders)];
 
-      let correctAnswerOrderList = [];
+      const correctAnswerOrderList = [];
       for (let index = 0; index < uniqueOrders.length; index++) {
-        let answerOrder = studentAxisAnswers.find(answer => answer.order == uniqueOrders[index] && answer.isCorrect == true)
+        const answerOrder = studentAxisAnswers.find(
+          (answer) =>
+            answer.order == uniqueOrders[index] && answer.isCorrect == true,
+        );
         if (answerOrder != undefined && answerOrder != null) {
-          correctAnswerOrderList.push(answerOrder); 
+          correctAnswerOrderList.push(answerOrder);
         }
-      };
+      }
 
       const totalCorrectAnswers = correctAnswerOrderList.length;
       const totalQuestions = uniqueOrders.length;
 
       const percentage = (totalCorrectAnswers / totalQuestions) * 100;
+
+      if (isNaN(percentage)) {
+        return 0;
+      }
 
       return parseFloat(percentage.toFixed(2));
     } catch (error) {
@@ -786,10 +794,13 @@ export class StudentService {
     axisCode: string,
   ): Promise<string> {
     try {
-      const studentExam = await this.studentExamModel.findOne({ studentId: studentId, current: true });
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        current: true,
+      });
       const lastAnswer = studentExam.answers
-        .filter(item => item.axis_code == axisCode && item.isCorrect == true)
-        .sort((a,b) => b.order - a.order)[0];
+        .filter((item) => item.axis_code == axisCode && item.isCorrect == true)
+        .sort((a, b) => b.order - a.order)[0];
 
       if (lastAnswer == null) {
         return '0';
@@ -1142,7 +1153,7 @@ export class StudentService {
           level: question.level,
           lastQuestion,
           order: question.order,
-          category: question.category
+          category: question.category,
         });
       }
 
@@ -1391,17 +1402,19 @@ export class StudentService {
       // - Se todas as respostas estiverem corretas (A ou B são consideradas como corretas):
       //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
 
-      const allOrders = axisAnswers.map(item => item.order);
-      let orders = [... new Set(allOrders)];
+      const allOrders = axisAnswers.map((item) => item.order);
+      const orders = [...new Set(allOrders)];
 
       let allAnswersAreCorrect = true;
       for (let index = 0; index < orders.length; index++) {
-        let isOrderCorrect = axisAnswers.some(answer => answer.order == orders[index] && answer.isCorrect)
+        const isOrderCorrect = axisAnswers.some(
+          (answer) => answer.order == orders[index] && answer.isCorrect,
+        );
         if (!isOrderCorrect) {
           allAnswersAreCorrect = false;
           break;
         }
-      };
+      }
 
       if (allAnswersAreCorrect) {
         const aggregationResult: any[] = await this.examModel
