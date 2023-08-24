@@ -4,7 +4,7 @@ import { StudentExam, StudentExamDocument } from './schemas/studentExam.schema';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
-import { PlanetChartStudentResponse } from './dto/response/planet-chart-studant-response.dto';
+import { ChartStudentResponse } from './dto/response/chart-studant-response.dto';
 import { ChartDatasetDto } from './dto/response/chart-dataset-dto';
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 import { StudentService } from './student.service';
@@ -146,7 +146,7 @@ export class StudentResultService {
     return planetResultDetail;
   }
 
-  async planetsChart(id: string): Promise<PlanetChartStudentResponse> {
+  async planetsChart(id: string): Promise<ChartStudentResponse> {
     const studentResults = await this.prisma.studentPlanetResult.findMany({
       where: {
         studentId: id,
@@ -208,6 +208,68 @@ export class StudentResultService {
     };
   }
 
+  async examsChart(id: string): Promise<ChartStudentResponse> {
+    const studentResults = await this.prisma.studentExamResult.findMany({
+      where: {
+        studentId: id,
+      },
+      orderBy: {
+        examDate: 'desc',
+      },
+      take: 12,
+    });
+
+    const uniqueDates = [
+      ...new Set(studentResults.map((result) => result.examDate)),
+    ];
+    uniqueDates.sort();
+
+    const chartDatasets: ChartDatasetDto[] = [];
+
+    for (const axisCode of [
+      ...new Set(studentResults.map((result) => result.axisCode)),
+    ]) {
+      const chartDataset: ChartDatasetDto = {
+        label: this.mapAxisCodeToLabel(axisCode), // Map the axisCode to the label
+        data: [],
+        borderWidth: 2,
+      };
+
+      const formattedDates = await Promise.all(
+        uniqueDates.map(async (date) => await this.formatDate(date)),
+      );
+
+      for (const dateString of formattedDates) {
+        const filteredResults = studentResults.filter(
+          async (result) =>
+            result.axisCode === axisCode &&
+            (await this.formatDate(result.examDate)) === dateString,
+        );
+
+        if (filteredResults.length > 0) {
+          const totalStars = filteredResults.reduce(
+            (sum, result) => sum + Number(result.percent),
+            0,
+          );
+
+          const averageStars = totalStars / filteredResults.length;
+          chartDataset.data.push(averageStars);
+        } else {
+          chartDataset.data.push(0);
+        }
+      }
+
+      chartDatasets.push(chartDataset);
+    }
+
+    return {
+      labels: await Promise.all(
+        uniqueDates.map(async (date) => await this.formatDate(date)),
+      ),
+      datasets: chartDatasets,
+    };
+  }
+
   private mapAxisCodeToLabel(axisCode: string): string {
     switch (axisCode) {
       case 'LC':
@@ -229,7 +291,7 @@ export class StudentResultService {
 
   async calculatePlanetsChartForClass(
     classId: string,
-  ): Promise<PlanetChartStudentResponse> {
+  ): Promise<ChartStudentResponse> {
     const studentResults = await this.retrieveStudentResults(classId);
     return this.calculateChartResponse(studentResults);
   }
@@ -255,7 +317,7 @@ export class StudentResultService {
 
   private calculateChartResponse(
     studentResults: StudentPlanetResult[],
-  ): PlanetChartStudentResponse {
+  ): ChartStudentResponse {
     const uniqueAxisCodes = [
       ...new Set(studentResults.map((result) => result.axisCode)),
     ];
