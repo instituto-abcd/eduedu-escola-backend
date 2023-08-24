@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StudentPlanetResult } from '@prisma/client';
+import { StudentExamResult, StudentPlanetResult } from '@prisma/client';
 import {
   StudentExam,
   StudentExamDocument,
 } from '../student/schemas/studentExam.schema';
-import { PlanetChartStudentResponse } from '../student/dto/response/planet-chart-studant-response.dto';
+import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
 
@@ -22,9 +22,9 @@ export class SchoolClassResultService {
   async getSchoolClassPlanetResultDetail(
     schoolClassId: string,
   ): Promise<SchoolClassPlanetResultDetailDto[]> {
-    let result: SchoolClassPlanetResultDetailDto[] = [];
-    
-    let students = await this.prisma.student.findMany({
+    const result: SchoolClassPlanetResultDetailDto[] = [];
+
+    const students = await this.prisma.student.findMany({
       where: {
         schoolClasses: {
           some: {
@@ -32,23 +32,32 @@ export class SchoolClassResultService {
             active: true,
           },
         },
-      }
+      },
     });
 
-    let studentIds = students.map((item) => item.id);
+    const studentIds = students.map((item) => item.id);
 
-    let studentExams = await this.studentExamModel.find({ studentId: { $in: studentIds }, current: true });
-    let planetTrackList = studentExams.reduce((pt, s) => [ ...pt, ...s.planetTrack ], []);
-
-    let studentPlanetResults = await this.prisma.studentPlanetResult.findMany({
-      where: { studentId: { in: studentIds } },
+    const studentExams = await this.studentExamModel.find({
+      studentId: { $in: studentIds },
+      current: true,
     });
+    const planetTrackList = studentExams.reduce(
+      (pt, s) => [...pt, ...s.planetTrack],
+      [],
+    );
+
+    const studentPlanetResults = await this.prisma.studentPlanetResult.findMany(
+      {
+        where: { studentId: { in: studentIds } },
+      },
+    );
 
     const axisList = ['ES', 'EA', 'LC'];
     axisList.forEach((axisCode) => {
       const planetResultDetail = new SchoolClassPlanetResultDetailDto();
-      let axisStudentPlanetResults = studentPlanetResults.filter(
-        (item) => item.axisCode == axisCode);
+      const axisStudentPlanetResults = studentPlanetResults.filter(
+        (item) => item.axisCode == axisCode,
+      );
 
       planetResultDetail.axisCode = axisCode;
       planetResultDetail.axisName = this.mapAxisCodeToLabel(axisCode);
@@ -67,14 +76,14 @@ export class SchoolClassResultService {
     return result;
   }
 
-  async calculatePlanetsChartForClass(
+  async getChartByPlanetsForSchoolClass(
     classId: string,
-  ): Promise<PlanetChartStudentResponse> {
-    const studentResults = await this.retrieveStudentResults(classId);
-    return this.calculateChartResponse(studentResults);
+  ): Promise<ChartStudentResponse> {
+    const studentResults = await this.retrieveStudentResultsPlanets(classId);
+    return this.calculateChartByPlanet(studentResults);
   }
 
-  async retrieveStudentResults(
+  async retrieveStudentResultsPlanets(
     idSchoolClass: string,
   ): Promise<StudentPlanetResult[]> {
     return this.prisma.studentPlanetResult.findMany({
@@ -94,9 +103,9 @@ export class SchoolClassResultService {
     });
   }
 
-  private calculateChartResponse(
+  private calculateChartByPlanet(
     studentResults: StudentPlanetResult[],
-  ): PlanetChartStudentResponse {
+  ): ChartStudentResponse {
     const uniqueAxisCodes = [
       ...new Set(studentResults.map((result) => result.axisCode)),
     ];
@@ -170,5 +179,77 @@ export class SchoolClassResultService {
       default:
         return axisCode;
     }
+  }
+
+  async getChartByExamForSchoolClass(
+    classId: string,
+  ): Promise<ChartStudentResponse> {
+    const studentResults = await this.retrieveStudentResultsExams(classId);
+    return this.calculateChartByExam(studentResults);
+  }
+
+  private calculateChartByExam(
+    studentResults: StudentExamResult[],
+  ): ChartStudentResponse {
+    const uniqueAxisCodes = [
+      ...new Set(studentResults.map((result) => result.axisCode)),
+    ];
+    const uniqueMonths = Array.from({ length: 12 }, (_, month) => month);
+    const chartDatasets: ChartDatasetDto[] = [];
+
+    for (const axisCode of uniqueAxisCodes) {
+      const chartDataset: ChartDatasetDto = {
+        label: this.mapAxisCodeToLabel(axisCode),
+        data: [],
+        borderWidth: 2,
+      };
+
+      for (const month of uniqueMonths) {
+        const filteredResults = studentResults.filter(
+          (result) =>
+            result.axisCode === axisCode &&
+            result.examDate.getMonth() === month,
+        );
+
+        if (filteredResults.length > 0) {
+          const totalStars = filteredResults.reduce(
+            (sum, result) => sum + Number(result.percent),
+            0,
+          );
+
+          const averageStars = totalStars / filteredResults.length;
+          chartDataset.data.push(averageStars);
+        } else {
+          chartDataset.data.push(0);
+        }
+      }
+
+      chartDatasets.push(chartDataset);
+    }
+
+    return {
+      labels: uniqueMonths.map((month) => this.mapMonthToLabel(month)),
+      datasets: chartDatasets,
+    };
+  }
+
+  async retrieveStudentResultsExams(
+    idSchoolClass: string,
+  ): Promise<StudentExamResult[]> {
+    return this.prisma.studentExamResult.findMany({
+      where: {
+        student: {
+          schoolClasses: {
+            some: {
+              schoolClassId: idSchoolClass,
+              active: true,
+            },
+          },
+        },
+      },
+      orderBy: {
+        examDate: 'desc',
+      },
+    });
   }
 }

@@ -25,7 +25,7 @@ import { ReservedStudentRequestDto } from './dto/request/reserved-student-reques
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
 import { StudentExamService } from '../student/studentExam.service';
 import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
-import { PlanetChartStudentResponse } from '../student/dto/response/planet-chart-studant-response.dto';
+import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 
 @Injectable()
 export class SchoolClassService {
