@@ -41,8 +41,8 @@ import { ReservedStudentRequestDto } from './dto/request/reserved-student-reques
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
 import { PlanetChartStudentResponse } from '../student/dto/response/planet-chart-studant-response.dto';
-import { StudentResultService } from '../student/studentResult.service';
 import { SchoolClassResultService } from "./school-class-result.service";
+import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -237,11 +237,23 @@ export class SchoolClassController {
     description: 'Retorna o gráfico de planetas para uma turma específica',
     type: PlanetChartStudentResponse,
   })
-  @ApiParam({ name: 'id', description: 'ID da turma', example: 'id-da-turma' })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/planets-chart')
   async getPlanetsChart(
     @Param('id') id: string,
   ): Promise<PlanetChartStudentResponse> {
     return this.schoolClassResultService.calculatePlanetsChartForClass(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho da turma em planetas agrupados por eixo',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/planets-performance')
+  async getPlanetsDetail(
+    @Param('id') id: string,
+  ): Promise<SchoolClassPlanetResultDetailDto[]> {
+    return this.schoolClassResultService.getSchoolClassPlanetResultDetail(id);
   }
 }

@@ -317,14 +317,14 @@ export class StudentController {
     return await this.studentExamService.getStudentExams(id);
   }
 
-  @Get(':id/exam-executions/:studentExamId/planets-detail')
+  @Get(':id/exam-executions/:studentExamId/planets-performance')
   @ApiResponse({
     status: 200,
-    description: 'Obtém os sumarizados por eixo, com a lista de planetas',
-    type: StudentResponseDto,
+    description: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
+    type: StudentPlanetResultDetailDto,
   })
   @ApiOperation({
-    summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
+    summary: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
   })
   async getExamExecution(
     @Param('id') id: string,
@@ -342,7 +342,7 @@ export class StudentController {
   @ApiResponse({
     status: 200,
     description: 'Obtém o gráfico desempenho do aluno por planetas',
-    type: StudentResponseDto,
+    type: PlanetChartStudentResponse,
   })
   @ApiOperation({
     summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
@@ -357,7 +357,7 @@ export class StudentController {
   @ApiResponse({
     status: 200,
     description: 'Obtém os resultados e resumos de prova por eixo de um aluno',
-    type: StudentResponseDto,
+    type: StudentDetailedSummaryDto,
   })
   @ApiOperation({ summary: 'Obtém os resultados e resumos de prova por eixo de um aluno' })
   async getStudentDetailedSummary(

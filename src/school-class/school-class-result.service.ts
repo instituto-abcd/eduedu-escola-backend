@@ -9,6 +9,7 @@ import {
 } from '../student/schemas/studentExam.schema';
 import { PlanetChartStudentResponse } from '../student/dto/response/planet-chart-studant-response.dto';
 import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
+import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -17,6 +18,54 @@ export class SchoolClassResultService {
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
   ) {}
+
+  async getSchoolClassPlanetResultDetail(
+    schoolClassId: string,
+  ): Promise<SchoolClassPlanetResultDetailDto[]> {
+    let result: SchoolClassPlanetResultDetailDto[] = [];
+    
+    let students = await this.prisma.student.findMany({
+      where: {
+        schoolClasses: {
+          some: {
+            schoolClassId: schoolClassId,
+            active: true,
+          },
+        },
+      }
+    });
+
+    let studentIds = students.map((item) => item.id);
+
+    let studentExams = await this.studentExamModel.find({ studentId: { $in: studentIds }, current: true });
+    let planetTrackList = studentExams.reduce((pt, s) => [ ...pt, ...s.planetTrack ], []);
+
+    let studentPlanetResults = await this.prisma.studentPlanetResult.findMany({
+      where: { studentId: { in: studentIds } },
+    });
+
+    const axisList = ['ES', 'EA', 'LC'];
+    axisList.forEach((axisCode) => {
+      const planetResultDetail = new SchoolClassPlanetResultDetailDto();
+      let axisStudentPlanetResults = studentPlanetResults.filter(
+        (item) => item.axisCode == axisCode);
+
+      planetResultDetail.axisCode = axisCode;
+      planetResultDetail.axisName = this.mapAxisCodeToLabel(axisCode);
+      planetResultDetail.offeredPlanets = planetTrackList.filter(
+        (item) => item.axis_code == axisCode,
+      ).length;
+      planetResultDetail.accomplishedPlanets = axisStudentPlanetResults.length;
+      const averageStars =
+        axisStudentPlanetResults.reduce((a, u) => a + +u.stars, 0) /
+        axisStudentPlanetResults.length;
+      planetResultDetail.averageStars = !isNaN(averageStars) ? averageStars : 0;
+
+      result.push(planetResultDetail);
+    });
+
+    return result;
+  }
 
   async calculatePlanetsChartForClass(
     classId: string,
