@@ -18,6 +18,12 @@ export class StudentPerformanceByAreaDto {
 
     @ApiProperty({ description: 'Média de estrelas', example: 4.5 })
     percent: number;
+
+    @ApiProperty({ description: 'Desempenho em texto', example: 'Muito abaixo' })
+    description: string;
+
+    @ApiProperty({ description: 'Cor Hexadecimal', example: '#FF922B' })
+    color: string;
 }
 
 export class StudentSummaryDto {

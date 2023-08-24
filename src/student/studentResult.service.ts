@@ -9,12 +9,14 @@ import { ChartDatasetDto } from './dto/response/chart-dataset-dto';
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 import { StudentService } from './student.service';
 import { StudentPlanetResult } from '@prisma/client';
+import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
 
 @Injectable()
 export class StudentResultService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly studentService: StudentService,
+    private readonly performanceResultUtilsService: PerformanceResultUtilsService,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
   ) {}
@@ -52,10 +54,15 @@ export class StudentResultService {
         (result) => result.axisCode == axisCode,
       );
 
+      let performanceDefinition = this.performanceResultUtilsService
+        .getStudentPerformanceDefinition(studentSchoolGradeYear, studentExamResult.level);
+
       result.performanceByArea.push({
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
         percent: +studentExamResult.percent,
+        description: `${+studentExamResult.percent}% ${performanceDefinition.description}`,
+        color: performanceDefinition.color
       });
 
       result.summaries.push({
