@@ -50,11 +50,7 @@ export class SchoolClassResultService {
     const uniqueAxisCodes = [
       ...new Set(studentResults.map((result) => result.axisCode)),
     ];
-    const uniqueMonths = [
-      ...new Set(
-        studentResults.map((result) => result.lastExecution.getMonth()),
-      ),
-    ];
+    const uniqueMonths = Array.from({ length: 12 }, (_, month) => month);
 
     const chartDatasets: ChartDatasetDto[] = [];
 
