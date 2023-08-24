@@ -38,37 +38,28 @@ export class StudentResultService {
     );
 
     if (studentSchoolGradeYear == 0) {
-      axisList.push({ axisCode: 'ES', axisName: 'Consciência Fonológica' });
-      axisList.push({
-        axisCode: 'EA',
-        axisName: 'Sistema de Escrita Alfabética',
-      });
+      axisList.push('ES');
+      axisList.push('EA');
     } else {
-      axisList.push({ axisCode: 'ES', axisName: 'Consciência Fonológica' });
-      axisList.push({
-        axisCode: 'EA',
-        axisName: 'Sistema de Escrita Alfabética',
-      });
+      axisList.push('ES');
+      axisList.push('EA');
     }
 
-    axisList.push({
-      axisCode: 'LC',
-      axisName: 'Leitura e Compreensão do Texto',
-    });
+    axisList.push('LC');
 
-    axisList.forEach((axis) => {
+    axisList.forEach((axisCode) => {
       const studentExamResult = studentExamResults.find(
-        (result) => result.axisCode == axis.axisCode,
+        (result) => result.axisCode == axisCode,
       );
 
       result.performanceByArea.push({
-        axisCode: axis.axisCode,
-        axisName: axis.axisName,
+        axisCode: axisCode,
+        axisName: this.mapAxisCodeToLabel(axisCode),
         percent: +studentExamResult.percent,
       });
 
       result.summaries.push({
-        axisCode: axis.axisCode,
+        axisCode: axisCode,
         summary: studentExamResult.resume,
       });
     });
