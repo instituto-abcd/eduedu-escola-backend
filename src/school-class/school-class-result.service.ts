@@ -34,6 +34,7 @@ export class SchoolClassResultService {
           schoolClasses: {
             some: {
               schoolClassId: idSchoolClass,
+              active: true,
             },
           },
         },
