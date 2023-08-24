@@ -47,6 +47,7 @@ import { StudentExamDto } from './dto/studentexam.dto';
 import { StudentResultService } from './studentResult.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
 import { PlanetChartStudentResponse } from './dto/response/planet-chart-studant-response.dto';
+import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -350,5 +351,18 @@ export class StudentController {
     @Param('id') id: string,
   ): Promise<PlanetChartStudentResponse> {
     return await this.studentResultService.planetsChart(id);
+  }
+
+  @Get(':id/detailed-summary')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém os resultados e resumos de prova por eixo de um aluno',
+    type: StudentResponseDto,
+  })
+  @ApiOperation({ summary: 'Obtém os resultados e resumos de prova por eixo de um aluno' })
+  async getStudentDetailedSummary(
+    @Param('id') id: string,
+  ): Promise<StudentDetailedSummaryDto> {
+    return await this.studentResultService.getStudentDetailedSummary(id);
   }
 }

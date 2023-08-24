@@ -182,7 +182,7 @@ model StudentAward {
   id        String  @default(uuid())
   award     Award   @relation(fields: [awardId], references: [id])
   awardId   String
-  student   Student @relation(fields: [studentId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String
   @@id([awardId, studentId])
 }
