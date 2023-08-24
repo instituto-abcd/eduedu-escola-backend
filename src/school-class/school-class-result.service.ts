@@ -10,7 +10,7 @@ import {
 import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
-import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
+import { ClassificationDetailedSummaryDto, SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
 import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
 
 @Injectable()
@@ -65,21 +65,53 @@ export class SchoolClassResultService {
         let classification = this.performanceResultUtilsService
           .getStudentPerformanceDefinition(schoolGradeYear, studentExamResult.level);
         student.classification = classification.description;
+        student.examDate = studentExamResult.examDate;
+        student.percent = studentExamResult.percent;
         return student;
       });
 
       const examResultDetail = new SchoolClassDetailedSummaryDto();
       examResultDetail.axisCode = axisCode;
       examResultDetail.axisName = this.mapAxisCodeToLabel(axisCode);
-      examResultDetail.veryLow = studentsParsed
+
+      examResultDetail.veryLow = new ClassificationDetailedSummaryDto();
+      examResultDetail.veryLow.students = studentsParsed
         .filter((student: any) => student.classification == "Muito abaixo")
-        .length;
-      examResultDetail.below = studentsParsed
+        .map((student) => {
+          return {
+            studentId: student.id,
+            name: student.name,
+            lastExamDate: student.examDate,
+            percent: student.percent,
+          };
+        });
+      examResultDetail.veryLow.count = examResultDetail.veryLow.students.length;
+
+      examResultDetail.below = new ClassificationDetailedSummaryDto();
+      examResultDetail.below.students = studentsParsed
         .filter((student: any) => student.classification == "Abaixo")
-        .length;
-      examResultDetail.expected = studentsParsed
+        .map((student) => {
+          return {
+            studentId: student.id,
+            name: student.name,
+            lastExamDate: student.examDate,
+            percent: student.percent,
+          };
+        });
+      examResultDetail.below.count = examResultDetail.below.students.length;
+
+      examResultDetail.expected = new ClassificationDetailedSummaryDto();
+      examResultDetail.expected.students = studentsParsed
         .filter((student: any) => student.classification == "Esperado")
-        .length;
+        .map((student) => {
+          return {
+            studentId: student.id,
+            name: student.name,
+            lastExamDate: student.examDate,
+            percent: student.percent,
+          };
+        });
+      examResultDetail.expected.count = examResultDetail.expected.students.length;
 
       result.push(examResultDetail);
     });
