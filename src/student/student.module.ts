@@ -34,7 +34,7 @@ import { StudentResultService } from './studentResult.service';
     StudentExamService,
     AwardsService,
     StudentAwardService,
-    StudentResultService
+    StudentResultService,
   ],
 })
 export class StudentModule {}

@@ -11,6 +11,7 @@ import {
   StudentExamSchema,
 } from '../student/schemas/studentExam.schema';
 import { StudentExamService } from '../student/studentExam.service';
+import { SchoolClassResultService } from "./school-class-result.service";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { StudentExamService } from '../student/studentExam.service';
     DateApiService,
     ValidationUtilsService,
     StudentExamService,
+    SchoolClassResultService,
   ],
 })
 export class SchoolClassModule {}
