@@ -40,8 +40,8 @@ import { AuditGuard } from 'src/common/guard/audit.guard';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
-import { PlanetChartStudentResponse } from '../student/dto/response/planet-chart-studant-response.dto';
-import { SchoolClassResultService } from "./school-class-result.service";
+import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
+import { SchoolClassResultService } from './school-class-result.service';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
 
 @ApiTags('Turma')
@@ -235,14 +235,26 @@ export class SchoolClassController {
 
   @ApiOkResponse({
     description: 'Retorna o gráfico de planetas para uma turma específica',
-    type: PlanetChartStudentResponse,
+    type: ChartStudentResponse,
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/planets-chart')
   async getPlanetsChart(
     @Param('id') id: string,
-  ): Promise<PlanetChartStudentResponse> {
-    return this.schoolClassResultService.calculatePlanetsChartForClass(id);
+  ): Promise<ChartStudentResponse> {
+    return this.schoolClassResultService.getChartByPlanetsForSchoolClass(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Retorna o gráfico de provas para uma turma específica',
+    type: ChartStudentResponse,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-chart')
+  async getChartByExamsForSchoolClass(
+    @Param('id') id: string,
+  ): Promise<ChartStudentResponse> {
+    return this.schoolClassResultService.getChartByExamForSchoolClass(id);
   }
 
   @ApiOkResponse({

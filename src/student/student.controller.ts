@@ -46,7 +46,7 @@ import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-re
 import { StudentExamDto } from './dto/studentexam.dto';
 import { StudentResultService } from './studentResult.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
-import { PlanetChartStudentResponse } from './dto/response/planet-chart-studant-response.dto';
+import { ChartStudentResponse } from './dto/response/chart-studant-response.dto';
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 
 @Controller('student')
@@ -342,15 +342,26 @@ export class StudentController {
   @ApiResponse({
     status: 200,
     description: 'Obtém o gráfico desempenho do aluno por planetas',
-    type: PlanetChartStudentResponse,
+    type: ChartStudentResponse,
   })
   @ApiOperation({
     summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
   })
-  async planetsChart(
-    @Param('id') id: string,
-  ): Promise<PlanetChartStudentResponse> {
+  async planetsChart(@Param('id') id: string): Promise<ChartStudentResponse> {
     return await this.studentResultService.planetsChart(id);
+  }
+
+  @Get(':id/exams-chart')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém o gráfico desempenho do aluno por provas',
+    type: ChartStudentResponse,
+  })
+  @ApiOperation({
+    summary: 'Obtém os sumarizados por eixo, com a lista de provas',
+  })
+  async examsChart(@Param('id') id: string): Promise<ChartStudentResponse> {
+    return await this.studentResultService.examsChart(id);
   }
 
   @Get(':id/detailed-summary')
@@ -359,7 +370,9 @@ export class StudentController {
     description: 'Obtém os resultados e resumos de prova por eixo de um aluno',
     type: StudentDetailedSummaryDto,
   })
-  @ApiOperation({ summary: 'Obtém os resultados e resumos de prova por eixo de um aluno' })
+  @ApiOperation({
+    summary: 'Obtém os resultados e resumos de prova por eixo de um aluno',
+  })
   async getStudentDetailedSummary(
     @Param('id') id: string,
   ): Promise<StudentDetailedSummaryDto> {

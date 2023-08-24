@@ -3,16 +3,16 @@ import { ApiProperty } from '@nestjs/swagger';
 export class ChartDatasetDto {
   @ApiProperty({
     type: String,
-    example: 'Consciência Fonológica', // Replace with the actual example value
+    example: 'Consciência Fonológica',
   })
   label: string;
 
-  @ApiProperty({ type: [Number], isArray: true }) // Change the type to an array of numbers
-  data: number[]; // Adjust the type to be an array of numbers
+  @ApiProperty({ type: [Number], isArray: true })
+  data: number[];
 
   @ApiProperty({
     type: Number,
-    example: 2, // Replace with the actual example value
+    example: 2,
   })
   borderWidth: number;
 }
