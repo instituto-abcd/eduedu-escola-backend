@@ -15,5 +15,7 @@ DROP COLUMN "studentExamId",
 ADD COLUMN     "examId" TEXT NOT NULL,
 ADD CONSTRAINT "StudentExamResult_pkey" PRIMARY KEY ("examId", "axisCode", "studentId");
 
+ALTER TABLE "StudentExamResult" ADD COLUMN     "examDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
 -- AddForeignKey
 ALTER TABLE "StudentExamResult" ADD CONSTRAINT "StudentExamResult_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;

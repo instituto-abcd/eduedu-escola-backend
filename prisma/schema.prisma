@@ -103,6 +103,7 @@ model StudentExamResult {
   percent   Decimal
   level     String
   resume    String
+  examDate  DateTime @default(now())
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String
 

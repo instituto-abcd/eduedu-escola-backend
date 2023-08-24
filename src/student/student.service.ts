@@ -535,6 +535,10 @@ export class StudentService {
   ): Promise<ExamEvaluationResponseDto> {
     let planets: PlanetDocument[] = [];
 
+    const studentExam = await this.studentExamModel.findOne({
+      studentId: studentId,
+      current: true,
+    });
     const student = await this.getStudent(studentId);
     const schoolGradeYear = await this.getSchoolGradeByStudentId(studentId);
 
@@ -546,6 +550,7 @@ export class StudentService {
         axisCode: axis_code,
         studentId: studentId,
         resume: '',
+        examDate: studentExam.examDate
       };
       studentExamResult.resume = this.getStudentAxisResume(
         studentExamResult.level,
