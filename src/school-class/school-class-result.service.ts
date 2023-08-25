@@ -381,81 +381,91 @@ export class SchoolClassResultService {
       studentIds,
     );
 
-    const studentsWithResults = students.filter((student) =>
+    const resultsByStudent = this.organizeResultsByStudent(
+      filteredStudentExamResults,
+    );
+
+    const studentsWithResultsAndExams = students.filter((student) =>
       filteredStudentExamResults.some(
-        (result) => result.studentId === student.id,
+        (result) => result.studentId === student.id && result.examId !== null,
       ),
     );
 
-    studentsWithResults.map((student) => {
-      filteredStudentExamResults.filter(
-        (result) => result.studentId === student.id && result.examId !== null,
+    return studentsWithResultsAndExams.map((student) => {
+      const performanceData = this.calculatePerformanceData(
+        student,
+        resultsByStudent,
       );
-    });
 
-    const resultsByStudent: {
-      [studentId: string]: {
-        [axisCode: string]: { examDate: Date; [key: string]: any };
+      return {
+        studentId: student.id,
+        studentName: student.name,
+        ...performanceData,
       };
-    } = {};
+    });
+  }
+
+  organizeResultsByStudent(filteredStudentExamResults) {
+    const resultsByStudent = {};
 
     filteredStudentExamResults.forEach((result) => {
-      if (!resultsByStudent[result.studentId])
+      if (!resultsByStudent[result.studentId]) {
         resultsByStudent[result.studentId] = {};
+      }
       resultsByStudent[result.studentId][result.axisCode] = {
         ...result,
         examDate: result.examDate,
       };
     });
 
-    return studentsWithResults.map((student) => {
-      const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
-        const result = resultsByStudent[student.id]?.[axisCode];
-        return (result ? result.percent : defaultPercent) + '%';
-      };
+    return resultsByStudent;
+  }
 
-      const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
-        student.schoolClasses[0].schoolClass.schoolGrade,
+  calculatePerformanceData(student, resultsByStudent) {
+    const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
+      const result = resultsByStudent[student.id]?.[axisCode];
+      return (result ? result.percent : defaultPercent) + '%';
+    };
+
+    const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
+      student.schoolClasses[0].schoolClass.schoolGrade,
+    );
+    const classification =
+      this.performanceResultUtilsService.getStudentPerformanceDefinition(
+        schoolGradeYear,
+        resultsByStudent[student.id]?.['ES']?.level || '0',
       );
-      const classification =
-        this.performanceResultUtilsService.getStudentPerformanceDefinition(
-          schoolGradeYear,
-          resultsByStudent[student.id]?.['ES']?.level || '0',
-        );
 
-      const examDates = [
-        resultsByStudent[student.id]?.['ES']?.examDate,
-        resultsByStudent[student.id]?.['EA']?.examDate,
-        resultsByStudent[student.id]?.['LC']?.examDate,
-      ];
+    const examDates = [
+      resultsByStudent[student.id]?.['ES']?.examDate,
+      resultsByStudent[student.id]?.['EA']?.examDate,
+      resultsByStudent[student.id]?.['LC']?.examDate,
+    ];
 
-      const validExamDates = examDates.filter(
-        (date) => date instanceof Date && !isNaN(date.getTime()),
-      );
-      const timestamps = validExamDates.map((date) => date.getTime());
+    const validExamDates = examDates.filter(
+      (date) => date instanceof Date && !isNaN(date.getTime()),
+    );
+    const timestamps = validExamDates.map((date) => date.getTime());
 
-      const maxTimestamp = Math.max(...timestamps);
-      const lastExamDate = new Date(maxTimestamp);
-      const lastExamString = this.formatDate(lastExamDate);
+    const maxTimestamp = Math.max(...timestamps);
+    const lastExamDate = new Date(maxTimestamp);
+    const lastExamString = this.formatDate(lastExamDate);
 
-      return {
-        studentId: student.id,
-        studentName: student.name,
-        lastExamDate: lastExamString,
-        cfo: {
-          percent: getPerformanceResult('ES'),
-          color: classification.color,
-        },
-        sea: {
-          percent: getPerformanceResult('EA'),
-          color: classification.color,
-        },
-        lct: {
-          percent: getPerformanceResult('LC'),
-          color: classification.color,
-        },
-      };
-    });
+    return {
+      lastExamDate: lastExamString,
+      cfo: {
+        percent: getPerformanceResult('ES'),
+        color: classification.color,
+      },
+      sea: {
+        percent: getPerformanceResult('EA'),
+        color: classification.color,
+      },
+      lct: {
+        percent: getPerformanceResult('LC'),
+        color: classification.color,
+      },
+    };
   }
 
   async getFilteredStudentExamResults(studentIds: string[]) {
