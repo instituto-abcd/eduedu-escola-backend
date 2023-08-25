@@ -46,6 +46,7 @@ import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-pl
 import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
+import { PlanetsPerformanceResponse } from "./dto/response/planets-performance.dto";
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -301,10 +302,10 @@ export class SchoolClassController {
     type: SchoolClassPlanetResultDetailDto,
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
-  @Get(':id/planets-performance')
+  @Get(':id/planets-performance-students')
   async schoolClassPerformancePlanets(
     @Param('id') id: string,
-  ): Promise<PlanetPerformanceResponse[]> {
+  ): Promise<PlanetsPerformanceResponse[]> {
     return await this.schoolClassResultService.schoolClassPerformancePlanets(
       id,
     );

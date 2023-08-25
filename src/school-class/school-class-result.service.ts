@@ -21,6 +21,7 @@ import {
 import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
 import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
+import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -392,7 +393,7 @@ export class SchoolClassResultService {
     );
 
     return studentsWithResultsAndExams.map((student) => {
-      const performanceData = this.calculatePerformanceData(
+      const performanceData = this.calculatePerformanceExam(
         student,
         resultsByStudent,
       );
@@ -421,7 +422,7 @@ export class SchoolClassResultService {
     return resultsByStudent;
   }
 
-  calculatePerformanceData(student, resultsByStudent) {
+  private calculatePerformanceExam(student, resultsByStudent) {
     const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
       const result = resultsByStudent[student.id]?.[axisCode];
       return (result ? result.percent : defaultPercent) + '%';
@@ -506,33 +507,109 @@ export class SchoolClassResultService {
     });
   }
 
-  async getSchoolGradeYear(studentId: string): Promise<number> {
-    const student = await this.getStudent(studentId);
-    const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
-    return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
+  async schoolClassPerformancePlanets(
+    idSchoolClass: string,
+  ): Promise<PlanetsPerformanceResponse[]> {
+    const students = await this.getStudentBySchoolClasses(idSchoolClass);
+    const studentIds = students.map((student) => student.id);
+    const filteredStudentPlanetResults =
+      await this.getFilteredStudentPlanetResults(studentIds);
+
+    const resultsByStudent = this.organizeResultsByPlanetStudent(
+      filteredStudentPlanetResults,
+    );
+
+    const studentsWithResultsAndPlanets = students.filter((student) =>
+      filteredStudentPlanetResults.some(
+        (result) => result.studentId === student.id && result.planetId !== null,
+      ),
+    );
+
+    return studentsWithResultsAndPlanets.map((student) => {
+      const performanceData = this.calculatePerformancePlanet(
+        student,
+        resultsByStudent,
+      );
+
+      const examDates = [
+        resultsByStudent[student.id]?.['ES']?.lastExecution,
+        resultsByStudent[student.id]?.['EA']?.lastExecution,
+        resultsByStudent[student.id]?.['LC']?.lastExecution,
+      ];
+
+      const validExamDates = examDates.filter(
+        (date) => date instanceof Date && !isNaN(date.getTime()),
+      );
+      const timestamps = validExamDates.map((date) => date.getTime());
+
+      const maxTimestamp = Math.max(...timestamps);
+      const lastExecution = new Date(maxTimestamp);
+      const lastExamString = this.formatDate(lastExecution);
+
+      return {
+        studentId: student.id,
+        studentName: student.name,
+        lastExamDate: lastExamString,
+        ...performanceData,
+      };
+    });
   }
 
-  private async getStudent(studentId: string) {
-    return this.prisma.student.findUnique({
-      where: { id: studentId },
-      include: {
-        schoolClasses: {
-          include: {
-            schoolClass: {
-              include: {
-                schoolYear: true,
-              },
-            },
-          },
-          where: { active: true },
+  organizeResultsByPlanetStudent(filteredStudentExamResults) {
+    const resultsByStudent = {};
+
+    filteredStudentExamResults.forEach((result) => {
+      if (!resultsByStudent[result.studentId]) {
+        resultsByStudent[result.studentId] = {};
+      }
+      resultsByStudent[result.studentId][result.axisCode] = {
+        ...result,
+        lastExecution: result.lastExecution,
+      };
+    });
+
+    return resultsByStudent;
+  }
+  async getFilteredStudentPlanetResults(studentIds: string[]) {
+    return this.prisma.studentPlanetResult.findMany({
+      where: {
+        studentId: {
+          in: studentIds,
+        },
+        lastExecution: {
+          not: undefined,
         },
       },
     });
   }
 
-  async schoolClassPerformancePlanets(
-    id: string,
-  ): Promise<PlanetPerformanceResponse[]> {
-    return null;
+  private calculatePerformancePlanet(student, resultsByStudent) {
+    const examDates = [
+      resultsByStudent[student.id]?.['ES']?.lastExecution,
+      resultsByStudent[student.id]?.['EA']?.lastExecution,
+      resultsByStudent[student.id]?.['LC']?.lastExecution,
+    ];
+
+    const validExamDates = examDates.filter(
+      (date) => date instanceof Date && !isNaN(date.getTime()),
+    );
+    const timestamps = validExamDates.map((date) => date.getTime());
+
+    const maxTimestamp = Math.max(...timestamps);
+    const lastExamDate = new Date(maxTimestamp);
+    const lastExamString = this.formatDate(lastExamDate);
+
+    return {
+      lastExamDate: lastExamString,
+      cfo: {
+        averageStars: resultsByStudent[student.id]?.['ES']?.stars ?? 0,
+      },
+      sea: {
+        averageStars: resultsByStudent[student.id]?.['EA']?.stars ?? 0,
+      },
+      lct: {
+        averageStars: resultsByStudent[student.id]?.['LC']?.stars ?? 0,
+      },
+    };
   }
 }
