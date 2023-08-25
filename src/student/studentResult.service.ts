@@ -167,24 +167,21 @@ export class StudentResultService {
 
     const chartDatasets: ChartDatasetDto[] = [];
 
-    for (const axisCode of [
-      ...new Set(studentResults.map((result) => result.axisCode)),
-    ]) {
+    const axisList = ['ES', 'EA', 'LC'];
+
+    for (const axisCode of axisList) {
       const chartDataset: ChartDatasetDto = {
         label: this.mapAxisCodeToLabel(axisCode), // Map the axisCode to the label
         data: [],
         borderWidth: 2,
       };
 
-      const formattedDates = await Promise.all(
-        uniqueDates.map(async (date) => await this.formatDate(date)),
-      );
+      const formattedDates = uniqueDates.map((date) => this.formatDate(date));
 
       for (const dateString of formattedDates) {
-        const filteredResults = studentResults.filter(
-          async (result) =>
-            result.axisCode === axisCode &&
-            (await this.formatDate(result.lastExecution)) === dateString,
+        const filteredResults = studentResults.filter((result) =>
+          result.axisCode == axisCode &&
+          this.formatDate(result.lastExecution) == dateString,
         );
 
         if (filteredResults.length > 0) {
@@ -204,9 +201,7 @@ export class StudentResultService {
     }
 
     return {
-      labels: await Promise.all(
-        uniqueDates.map(async (date) => await this.formatDate(date)),
-      ),
+      labels: uniqueDates.map((date) => this.formatDate(date)),
       datasets: chartDatasets,
     };
   }
@@ -238,15 +233,13 @@ export class StudentResultService {
         borderWidth: 2,
       };
 
-      const formattedDates = await Promise.all(
-        uniqueDates.map(async (date) => await this.formatDate(date)),
-      );
+      const formattedDates = uniqueDates.map((date) => this.formatDate(date));
 
       for (const dateString of formattedDates) {
         const filteredResults = studentResults.filter(
-          async (result) =>
+          (result) =>
             result.axisCode === axisCode &&
-            (await this.formatDate(result.examDate)) === dateString,
+            (this.formatDate(result.examDate)) === dateString,
         );
 
         if (filteredResults.length > 0) {
@@ -266,9 +259,7 @@ export class StudentResultService {
     }
 
     return {
-      labels: await Promise.all(
-        uniqueDates.map(async (date) => await this.formatDate(date)),
-      ),
+      labels: uniqueDates.map((date) => this.formatDate(date)),
       datasets: chartDatasets,
     };
   }
@@ -286,7 +277,7 @@ export class StudentResultService {
     }
   }
 
-  private async formatDate(date: Date): Promise<string> {
+  private formatDate(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     return `${day}/${month}`;
