@@ -11,8 +11,9 @@ import {
   StudentExamSchema,
 } from '../student/schemas/studentExam.schema';
 import { StudentExamService } from '../student/studentExam.service';
-import { SchoolClassResultService } from "./school-class-result.service";
+import { SchoolClassResultService } from './school-class-result.service';
 import { StudentModule } from 'src/student/student.module';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StudentModule } from 'src/student/student.module';
     ]),
     StudentModule,
   ],
+  exports: [PerformanceResultUtilsService],
   controllers: [SchoolClassController],
   providers: [
     SchoolClassService,
@@ -30,6 +32,7 @@ import { StudentModule } from 'src/student/student.module';
     ValidationUtilsService,
     StudentExamService,
     SchoolClassResultService,
+    PerformanceResultUtilsService,
   ],
 })
 export class SchoolClassModule {}
