@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SchoolGradeEnum, StudentExamResult, StudentPlanetResult } from '@prisma/client';
+import {
+  SchoolGradeEnum,
+  StudentExamResult,
+  StudentPlanetResult,
+} from '@prisma/client';
 import {
   StudentExam,
   StudentExamDocument,
@@ -10,8 +14,13 @@ import {
 import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
-import { ClassificationDetailedSummaryDto, SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
+import {
+  ClassificationDetailedSummaryDto,
+  SchoolClassDetailedSummaryDto,
+} from './dto/response/school-class-detailed-summary.dto';
 import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
+import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
+import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -38,7 +47,7 @@ export class SchoolClassResultService {
       },
       include: {
         examResults: true,
-      }
+      },
     });
 
     const studentIds = students.map((item) => item.id);
@@ -47,23 +56,32 @@ export class SchoolClassResultService {
       current: true,
     });
 
-    let schoolClass = await this.prisma.schoolClass.findFirst({
+    const schoolClass = await this.prisma.schoolClass.findFirst({
       where: { id: schoolClassId },
       include: {
-        schoolYear: true
-      }
+        schoolYear: true,
+      },
     });
 
-    let schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(schoolClass.schoolGrade)
+    const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
+      schoolClass.schoolGrade,
+    );
 
     const axisList = ['ES', 'EA', 'LC'];
     axisList.forEach((axisCode) => {
-      let studentsParsed: any[] = students.map((student: any) => {
-        let studentExam = studentExams.find((item) => item.studentId == student.id );
-        let studentExamResult = student.examResults
-          .find((item) => item.examId == studentExam.examId && item.axisCode == axisCode);
-        let classification = this.performanceResultUtilsService
-          .getStudentPerformanceDefinition(schoolGradeYear, studentExamResult.level);
+      const studentsParsed: any[] = students.map((student: any) => {
+        const studentExam = studentExams.find(
+          (item) => item.studentId == student.id,
+        );
+        const studentExamResult = student.examResults.find(
+          (item) =>
+            item.examId == studentExam.examId && item.axisCode == axisCode,
+        );
+        const classification =
+          this.performanceResultUtilsService.getStudentPerformanceDefinition(
+            schoolGradeYear,
+            studentExamResult.level,
+          );
         student.classification = classification.description;
         student.examDate = studentExamResult.examDate;
         student.percent = studentExamResult.percent;
@@ -76,7 +94,7 @@ export class SchoolClassResultService {
 
       examResultDetail.veryLow = new ClassificationDetailedSummaryDto();
       examResultDetail.veryLow.students = studentsParsed
-        .filter((student: any) => student.classification == "Muito abaixo")
+        .filter((student: any) => student.classification == 'Muito abaixo')
         .map((student) => {
           return {
             studentId: student.id,
@@ -89,7 +107,7 @@ export class SchoolClassResultService {
 
       examResultDetail.below = new ClassificationDetailedSummaryDto();
       examResultDetail.below.students = studentsParsed
-        .filter((student: any) => student.classification == "Abaixo")
+        .filter((student: any) => student.classification == 'Abaixo')
         .map((student) => {
           return {
             studentId: student.id,
@@ -102,7 +120,7 @@ export class SchoolClassResultService {
 
       examResultDetail.expected = new ClassificationDetailedSummaryDto();
       examResultDetail.expected.students = studentsParsed
-        .filter((student: any) => student.classification == "Esperado")
+        .filter((student: any) => student.classification == 'Esperado')
         .map((student) => {
           return {
             studentId: student.id,
@@ -111,7 +129,8 @@ export class SchoolClassResultService {
             percent: student.percent,
           };
         });
-      examResultDetail.expected.count = examResultDetail.expected.students.length;
+      examResultDetail.expected.count =
+        examResultDetail.expected.students.length;
 
       result.push(examResultDetail);
     });
@@ -351,5 +370,110 @@ export class SchoolClassResultService {
         examDate: 'desc',
       },
     });
+  }
+
+  async examsPerformanceStudents(
+    idSchoolClass: string,
+  ): Promise<ExamPerformanceResponse[]> {
+    const students = await this.getStudentBySchoolClasses(idSchoolClass);
+    const studentIds = students.map((student) => student.id);
+
+    const studentExamResults = await this.prisma.studentExamResult.findMany({
+      where: {
+        studentId: { in: studentIds },
+      },
+    });
+
+    const resultsByStudent: {
+      [studentId: string]: { [axisCode: string]: any };
+    } = {};
+
+    studentExamResults.forEach((result) => {
+      if (!resultsByStudent[result.studentId])
+        resultsByStudent[result.studentId] = {};
+      resultsByStudent[result.studentId][result.axisCode] = result;
+    });
+
+    return students.map((student) => {
+      const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
+        const result = resultsByStudent[student.id]?.[axisCode];
+        return (result ? result.percent : defaultPercent) + '%';
+      };
+
+      const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
+        student.schoolClasses[0].schoolClass.schoolGrade,
+      );
+      const classification =
+        this.performanceResultUtilsService.getStudentPerformanceDefinition(
+          schoolGradeYear,
+          resultsByStudent[student.id]?.['ES']?.level || '0',
+        );
+
+      return {
+        studentId: student.id,
+        studentName: student.name,
+        cfo: {
+          percent: getPerformanceResult('ES'),
+          color: classification.color,
+        },
+        sea: {
+          percent: getPerformanceResult('EA'),
+          color: classification.color,
+        },
+        lct: {
+          percent: getPerformanceResult('LC'),
+          color: classification.color,
+        },
+      };
+    });
+  }
+
+  private async getStudentBySchoolClasses(schoolClassesId: string) {
+    return this.prisma.student.findMany({
+      include: {
+        schoolClasses: {
+          where: {
+            AND: [{ schoolClassId: schoolClassesId }],
+          },
+          include: {
+            schoolClass: {
+              include: {
+                schoolYear: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getSchoolGradeYear(studentId: string): Promise<number> {
+    const student = await this.getStudent(studentId);
+    const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
+    return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
+  }
+
+  private async getStudent(studentId: string) {
+    return this.prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        schoolClasses: {
+          include: {
+            schoolClass: {
+              include: {
+                schoolYear: true,
+              },
+            },
+          },
+          where: { active: true },
+        },
+      },
+    });
+  }
+
+  async schoolClassPerformancePlanets(
+    id: string,
+  ): Promise<PlanetPerformanceResponse[]> {
+    return null;
   }
 }

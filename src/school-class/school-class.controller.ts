@@ -44,6 +44,8 @@ import { ChartStudentResponse } from '../student/dto/response/chart-studant-resp
 import { SchoolClassResultService } from './school-class-result.service';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
 import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
+import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
+import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -280,5 +282,31 @@ export class SchoolClassController {
     @Param('id') id: string,
   ): Promise<SchoolClassDetailedSummaryDto[]> {
     return this.schoolClassResultService.getSchoolClassDetailedSummary(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho de alunos por Provas',
+    type: ExamPerformanceResponse,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-performance-students')
+  async examsPerformanceStudents(
+    @Param('id') id: string,
+  ): Promise<ExamPerformanceResponse[]> {
+    return await this.schoolClassResultService.examsPerformanceStudents(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho nos planetas (Turma)',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/planets-performance')
+  async schoolClassPerformancePlanets(
+    @Param('id') id: string,
+  ): Promise<PlanetPerformanceResponse[]> {
+    return await this.schoolClassResultService.schoolClassPerformancePlanets(
+      id,
+    );
   }
 }
