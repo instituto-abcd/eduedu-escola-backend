@@ -233,7 +233,7 @@ export class StudentResultService {
         borderWidth: 2,
       };
 
-      const formattedDates = uniqueDates.map((date) => this.formatDate(date));
+      const formattedDates = [...new Set(uniqueDates.map((date) => this.formatDate(date)))];
 
       for (const dateString of formattedDates) {
         const filteredResults = studentResults.filter(
@@ -259,7 +259,7 @@ export class StudentResultService {
     }
 
     return {
-      labels: uniqueDates.map((date) => this.formatDate(date)),
+      labels: [...new Set(uniqueDates.map((date) => this.formatDate(date)))],
       datasets: chartDatasets,
     };
   }
