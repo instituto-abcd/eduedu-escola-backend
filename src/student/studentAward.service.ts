@@ -84,48 +84,47 @@ export class StudentAwardService {
     
     // Atingiu nível esperado em sistema de escrita alfabética
     private async verify_ESCRITOR_award(studentId: string) {
-        const maximumResult = new Prisma.Decimal(100);
-        let results = await this.getStudentExamResults(studentId, 'EA');
+        const criterionLevel = "IDEAL";
+        let result = await this.getStudentExamResults(studentId, 'EA');
 
-        if (results.length > 0 && results[0].percent.valueOf() === maximumResult.valueOf()) {
+        if ((result !== null && result !== undefined) && result.level == criterionLevel) {
             await this.saveStudentAward(studentId, AwardType.ESCRITOR);
         }
     }
     
     // Atingiu nível esperado em leitura e compreensão de texto
     private async verify_LEITOR_award(studentId: string) {
-        const maximumResult = new Prisma.Decimal(100);
-        let results = await this.getStudentExamResults(studentId, 'LC');
+        const criterionLevel = "IDEAL";
+        let result = await this.getStudentExamResults(studentId, 'LC');
 
-        if (results.length > 0 && results[0].percent.valueOf() === maximumResult.valueOf()) {
+        if ((result !== null && result !== undefined) && result.level == criterionLevel) {
             await this.saveStudentAward(studentId, AwardType.LEITOR);
         }
     }
     
     // Atingiu nível esperado em consciência fonológica
     private async verify_MAESTRO_award(studentId: string) {
-        const maximumResult = new Prisma.Decimal(100);
-        let results = await this.getStudentExamResults(studentId, 'ES');
+        const criterionLevel = "IDEAL";
+        let result = await this.getStudentExamResults(studentId, 'ES');
 
-        if (results.length > 0 && results[0].percent.valueOf() == maximumResult.valueOf()) {
+        if ((result !== null && result !== undefined) && result.level == criterionLevel) {
             await this.saveStudentAward(studentId, AwardType.MAESTRO);
         }
     }
 
-    private async getStudentExamResults(studentId: string, axisCode: string): Promise<StudentExamResult[]> {
+    private async getStudentExamResults(studentId: string, axisCode: string): Promise<StudentExamResult> {
         const exam = await this.examModel.findOne({ status: 'ACTIVE' });
 
         let currentExamId = exam.id;
-        let studentExamResults = await this.prisma.studentExamResult.findMany({
+        let studentExamResult = await this.prisma.studentExamResult.findFirst({
             where: {
                 studentId: studentId,
+                axisCode: axisCode,
                 examId: currentExamId
             }
         });
 
-        let result = studentExamResults.filter((result) => result.axisCode == axisCode);
-
-        return result;
+        return studentExamResult;
     }
 
     private async saveStudentAward(studentId: string, awardType: AwardType) {
