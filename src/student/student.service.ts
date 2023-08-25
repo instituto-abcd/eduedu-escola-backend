@@ -316,6 +316,16 @@ export class StudentService {
       },
     });
 
+
+    let studentExam = await this.studentExamModel.findOne({
+      id,
+      current: true,
+    });
+
+    if (!studentExam) {
+      await this.createExamStudant(id);
+    }
+
     const schollYear = await this.getSchoolYearNameFromClassId(schoolClass.id);
     this.dashboard.updateDashboardData(schollYear).then();
 
