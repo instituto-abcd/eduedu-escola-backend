@@ -13,9 +13,6 @@ export class PlanetDto {
   })
   planetAvatar: string;
 
-  @ApiProperty({ description: 'Pontuação no planeta', example: 100.0 })
-  score: number;
-
   @ApiProperty({ description: 'Número de estrelas no planeta', example: 4.5 })
   stars: number;
 

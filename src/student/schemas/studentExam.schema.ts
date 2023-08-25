@@ -42,12 +42,6 @@ export class Planet {
   planetAvatar: string;
 
   @Prop()
-  score: string;
-
-  @Prop()
-  stars: string;
-
-  @Prop()
   axis_code: string;
 
   @Prop()

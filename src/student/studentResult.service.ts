@@ -137,11 +137,18 @@ export class StudentResultService {
     planetResultDetail.averageStars = !isNaN(averageStars) ? averageStars : 0;
     planetResultDetail.planets =
       /true/.test(loadPlanets.toString()) == true
-        ? studentPlanetResult.map((item) => {
+        ? studentExam.planetTrack.filter((planet) => planet.axis_code == axisCode).map((item) => {
+            let planetResult = studentPlanetResult.find((result) => {
+              return result.planetId == item.planetId &&
+                result.studentExamId == studentExam.id
+            });
+
+            let stars = planetResult ? +planetResult.stars : 0;
+
             return {
               planetId: item.planetId,
               planetName: item.planetName,
-              stars: +item.stars,
+              stars: stars,
             };
           })
         : [];
