@@ -377,24 +377,38 @@ export class SchoolClassResultService {
   ): Promise<ExamPerformanceResponse[]> {
     const students = await this.getStudentBySchoolClasses(idSchoolClass);
     const studentIds = students.map((student) => student.id);
+    const filteredStudentExamResults = await this.getFilteredStudentExamResults(
+      studentIds,
+    );
 
-    const studentExamResults = await this.prisma.studentExamResult.findMany({
-      where: {
-        studentId: { in: studentIds },
-      },
+    const studentsWithResults = students.filter((student) =>
+      filteredStudentExamResults.some(
+        (result) => result.studentId === student.id,
+      ),
+    );
+
+    studentsWithResults.map((student) => {
+      filteredStudentExamResults.filter(
+        (result) => result.studentId === student.id && result.examId !== null,
+      );
     });
 
     const resultsByStudent: {
-      [studentId: string]: { [axisCode: string]: any };
+      [studentId: string]: {
+        [axisCode: string]: { examDate: Date; [key: string]: any };
+      };
     } = {};
 
-    studentExamResults.forEach((result) => {
+    filteredStudentExamResults.forEach((result) => {
       if (!resultsByStudent[result.studentId])
         resultsByStudent[result.studentId] = {};
-      resultsByStudent[result.studentId][result.axisCode] = result;
+      resultsByStudent[result.studentId][result.axisCode] = {
+        ...result,
+        examDate: result.examDate,
+      };
     });
 
-    return students.map((student) => {
+    return studentsWithResults.map((student) => {
       const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
         const result = resultsByStudent[student.id]?.[axisCode];
         return (result ? result.percent : defaultPercent) + '%';
@@ -409,9 +423,25 @@ export class SchoolClassResultService {
           resultsByStudent[student.id]?.['ES']?.level || '0',
         );
 
+      const examDates = [
+        resultsByStudent[student.id]?.['ES']?.examDate,
+        resultsByStudent[student.id]?.['EA']?.examDate,
+        resultsByStudent[student.id]?.['LC']?.examDate,
+      ];
+
+      const validExamDates = examDates.filter(
+        (date) => date instanceof Date && !isNaN(date.getTime()),
+      );
+      const timestamps = validExamDates.map((date) => date.getTime());
+
+      const maxTimestamp = Math.max(...timestamps);
+      const lastExamDate = new Date(maxTimestamp);
+      const lastExamString = this.formatDate(lastExamDate);
+
       return {
         studentId: student.id,
         studentName: student.name,
+        lastExamDate: lastExamString,
         cfo: {
           percent: getPerformanceResult('ES'),
           color: classification.color,
@@ -426,6 +456,25 @@ export class SchoolClassResultService {
         },
       };
     });
+  }
+
+  async getFilteredStudentExamResults(studentIds: string[]) {
+    return this.prisma.studentExamResult.findMany({
+      where: {
+        studentId: {
+          in: studentIds,
+        },
+        examDate: {
+          not: undefined,
+        },
+      },
+    });
+  }
+
+  private formatDate(date: Date): string {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
   }
 
   private async getStudentBySchoolClasses(schoolClassesId: string) {

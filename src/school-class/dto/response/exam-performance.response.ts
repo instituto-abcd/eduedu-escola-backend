@@ -16,6 +16,12 @@ export class ExamPerformanceResponse {
   studentId: string;
 
   @ApiProperty({
+    description: 'Data da última prova',
+    example: 'guid',
+  })
+  lastExamDate: string;
+
+  @ApiProperty({
     description: 'Nome do estudante',
     example: 'Amanda',
   })
