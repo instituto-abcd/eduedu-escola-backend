@@ -197,10 +197,11 @@ export class SchoolClassController {
     @Param('id') id: string,
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
+    @Query('name') name?: string,
   ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
-    return this.schoolClassService.getStudentsByClass(id, pageNumber, pageSize);
+    return this.schoolClassService.getStudentsByClass(id, pageNumber, pageSize, name);
   }
 
   @ApiResponse({
