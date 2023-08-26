@@ -7,7 +7,13 @@ import { SchoolClassResponseDto } from './dto/response/school-class-response';
 import { DeleteUserResponseDto } from '../user/dto/response/delete-user-response.dto';
 import { PaginationInfo } from '../common/pagination/pagination-info-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma, SchoolClassStudent, Status, Student } from '@prisma/client';
+import {
+  Prisma,
+  SchoolClassStudent,
+  Status,
+  Student,
+  StudentPlanetResult,
+} from '@prisma/client';
 import * as xlsx from 'xlsx';
 import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +24,8 @@ import { UpdateStudentReservedResponseDto } from './dto/response/update-student-
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
 import { StudentExamService } from '../student/studentExam.service';
+import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
+import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
 
 @Injectable()
 export class SchoolClassService {
@@ -334,6 +342,7 @@ export class SchoolClassService {
     schoolClassId: string,
     pageNumber: number,
     pageSize: number,
+    name?: string,
   ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
     const skip = (pageNumber - 1) * pageSize;
 
@@ -341,7 +350,10 @@ export class SchoolClassService {
       const totalCount = await this.prismaService.schoolClassStudent.count({
         where: {
           schoolClassId: schoolClassId,
-        },
+          student: {
+            name: name ? { contains: name, mode: 'insensitive' } : undefined,
+          }
+        }
       });
 
       const totalPages = Math.ceil(totalCount / pageSize);
@@ -360,15 +372,18 @@ export class SchoolClassService {
 
       const schoolClassStudents =
         await this.prismaService.schoolClassStudent.findMany({
-          where: {
-            schoolClassId: schoolClassId,
-          },
-          skip,
-          take: pageSize,
-          include: {
-            student: true,
-          },
-        });
+        where: {
+          schoolClassId: schoolClassId,
+          student: {
+            name: name ? { contains: name, mode: 'insensitive' } : undefined,
+          }
+        },
+        skip,
+        take: pageSize,
+        include: {
+          student: true,
+        },
+      });
 
       const responseStudents: StudentSimplifiedResponseDto[] =
         await Promise.all(

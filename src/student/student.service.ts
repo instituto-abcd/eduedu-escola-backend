@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentRequestDto } from './dto/request/create-student-request.dto';
 import { UpdateStudentRequestDto } from './dto/request/update-student-request.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
-import { Prisma, SchoolGradeEnum, Status } from '@prisma/client';
+import {
+  Prisma,
+  SchoolGradeEnum,
+  Status,
+  StudentPlanetResult,
+} from '@prisma/client';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
@@ -19,6 +24,7 @@ import {
 } from '../exam/dto/request/answers-request.dto';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import {
+  AnswersPlanet,
   OptionsAnswers,
   Planet,
   StudentExam,
@@ -27,13 +33,18 @@ import {
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
 import { ExamResumes } from 'src/templates/exam-resume-templates';
-import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
+import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
+import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
+import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
+import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
+import { StudentAwardService } from './studentAward.service';
 
 @Injectable()
 export class StudentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dashboard: DashboardService,
+    private readonly studentAward: StudentAwardService,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
     @InjectModel(StudentExam.name)
@@ -167,10 +178,29 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
+      // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
+      const currentExamId = await this.getCurrentExamId();
+      const studentIds = students.map((item) => item.id);
+      const studentExamResults = await this.prisma.studentExamResult.findMany({
+        where: {
+          studentId: { in: studentIds },
+          examId: currentExamId,
+        },
+      });
+
       const responseStudents: StudentResponseDto[] = students.map((student) => {
-        const cfo = Math.floor(Math.random() * 100) + 1;
-        const sea = Math.floor(Math.random() * 100) + 1;
-        const lct = Math.floor(Math.random() * 100) + 1;
+        const cfoResult = studentExamResults.filter(
+          (result) => result.studentId == student.id && result.axisCode == 'ES',
+        );
+        const seaResult = studentExamResults.filter(
+          (result) => result.studentId == student.id && result.axisCode == 'EA',
+        );
+        const lctResult = studentExamResults.filter(
+          (result) => result.studentId == student.id && result.axisCode == 'LC',
+        );
+        const cfo = cfoResult.length > 0 ? cfoResult[0].percent : 0;
+        const sea = seaResult.length > 0 ? seaResult[0].percent : 0;
+        const lct = lctResult.length > 0 ? lctResult[0].percent : 0;
 
         return {
           id: student.id,
@@ -285,6 +315,16 @@ export class StudentService {
         schoolClasses: { include: { schoolClass: true } },
       },
     });
+
+
+    let studentExam = await this.studentExamModel.findOne({
+      id,
+      current: true,
+    });
+
+    if (!studentExam) {
+      await this.createExamStudant(id);
+    }
 
     const schollYear = await this.getSchoolYearNameFromClassId(schoolClass.id);
     this.dashboard.updateDashboardData(schollYear).then();
@@ -446,7 +486,9 @@ export class StudentService {
       schoolGradeYear,
     );
 
-    questionsByAxisCode.options = this.shuffleOptions(questionsByAxisCode.options);
+    questionsByAxisCode.options = this.shuffleOptions(
+      questionsByAxisCode.options,
+    );
     return questionsByAxisCode;
   }
 
@@ -503,6 +545,10 @@ export class StudentService {
   ): Promise<ExamEvaluationResponseDto> {
     let planets: PlanetDocument[] = [];
 
+    const studentExam = await this.studentExamModel.findOne({
+      studentId: studentId,
+      current: true,
+    });
     const student = await this.getStudent(studentId);
     const schoolGradeYear = await this.getSchoolGradeByStudentId(studentId);
 
@@ -514,6 +560,7 @@ export class StudentService {
         axisCode: axis_code,
         studentId: studentId,
         resume: '',
+        examDate: studentExam.examDate
       };
       studentExamResult.resume = this.getStudentAxisResume(
         studentExamResult.level,
@@ -523,18 +570,48 @@ export class StudentService {
       );
       await this.saveStudentExamResult(studentExamResult);
 
-      planets = [
-        ...planets,
-        ...(await this.getPlanetsByAxisAndLevel(
-          axis_code,
-          studentExamResult.level,
-        )),
-      ];
+      if (studentExamResult.percentage < 100) {
+        planets = [
+          ...planets,
+          ...(await this.getPlanetsByAxisAndLevel(
+            axis_code,
+            studentExamResult.level,
+          )),
+        ];
+      }
     }
 
     await this.generateAndSavePlanetTrack(studentId, planets);
 
+    await this.studentAward.verifyAndGenerateExamAwards(studentId);
+
     return null;
+  }
+
+  async authorizeNewExam(
+    requestDto: AuthorizeNewExamRequestDto,
+  ): Promise<AuthorizeNewExamResponseDto> {
+    const { ids } = requestDto;
+
+    if (!ids || ids.length === 0) {
+      throw new EduException('IDS_REQUIRED');
+    }
+
+    // Desativar execuções de prova anteriores (studentexams.current = false);
+    const oldStudentExams = await this.studentExamModel.find({
+      studentId: { $in: ids },
+    });
+
+    oldStudentExams.forEach((item) => {
+      item.current = false;
+      item.save();
+    });
+
+    // Criar e persistir novo documento de studentexams, com as devidas propriedades
+    const result = await this.createManyExamStudant(ids);
+
+    // Retorar response adequado
+    return { success: result };
   }
 
   private async getStudent(studentId: string) {
@@ -557,7 +634,7 @@ export class StudentService {
     return student;
   }
 
-  private async getSchoolGradeYear(studentId: string) {
+  async getSchoolGradeYear(studentId: string) {
     const student = await this.getStudent(studentId);
     const schoolGradeYear = student.schoolClasses[0].schoolClass.schoolGrade;
     return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
@@ -580,8 +657,15 @@ export class StudentService {
     studentId: string,
     planets: PlanetDocument[],
   ): Promise<any> {
+    if (planets.length == 0) {
+      return;
+    }
+
     // Recuperando studentexam do aluno
-    const studentExam = await this.studentExamModel.findOne({ studentId });
+    const studentExam = await this.studentExamModel.findOne({
+      studentId,
+      current: true,
+    });
 
     if (!studentExam) {
       throw new EduException('USER_NOT_FOUND');
@@ -630,10 +714,9 @@ export class StudentService {
         planetId: planet.id,
         planetName: planet.title,
         planetAvatar: planet.avatar_url,
-        score: '0',
-        stars: '0',
         axis_code: axis_code,
         order: planetTrackToSave.length,
+        answers: [],
       } as Planet);
 
       this.checkForNextPlanet(planet, planets, planetTrackToSave);
@@ -660,10 +743,9 @@ export class StudentService {
           planetId: nextPlanetToSave.id,
           planetName: nextPlanetToSave.title,
           planetAvatar: nextPlanetToSave.avatar_url,
-          score: '0',
-          stars: '0',
           axis_code: nextPlanetToSave.axis_code,
           order: planetTrackToSave.length,
+          answers: [],
         } as Planet);
 
         this.checkForNextPlanet(nextPlanetToSave, planets, planetTrackToSave);
@@ -678,51 +760,38 @@ export class StudentService {
     try {
       const student = await this.studentExamModel.findOne({
         studentId: studentId,
+        current: true,
       });
 
-      const exam = await this.examModel.findOne({
-        id: student?.examId,
-      });
-
-      if (!student || !exam || !exam.questions || exam.questions.length === 0) {
+      if (!student) {
         return 0;
       }
 
-      const correctQuestionsCount = await this.studentExamModel.aggregate([
-        {
-          $match: {
-            studentId: studentId,
-            'answers.isCorrect': true,
-            'answers.axis_code': axisCode,
-          },
-        },
-        {
-          $project: {
-            correctAnswersCount: {
-              $size: {
-                $filter: {
-                  input: '$answers',
-                  as: 'answer',
-                  cond: {
-                    $and: [
-                      { $eq: ['$$answer.isCorrect', true] },
-                      { $eq: ['$$answer.axis_code', axisCode] },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-      ]);
+      const studentAxisAnswers = student.answers.filter(
+        (item) => item.axis_code == axisCode,
+      );
+      const allOrders = studentAxisAnswers.map((item) => item.order);
+      const uniqueOrders = [...new Set(allOrders)];
 
-      const totalCorrectAnswers =
-        correctQuestionsCount.length > 0
-          ? correctQuestionsCount[0].correctAnswersCount
-          : 0;
+      const correctAnswerOrderList = [];
+      for (let index = 0; index < uniqueOrders.length; index++) {
+        const answerOrder = studentAxisAnswers.find(
+          (answer) =>
+            answer.order == uniqueOrders[index] && answer.isCorrect == true,
+        );
+        if (answerOrder != undefined && answerOrder != null) {
+          correctAnswerOrderList.push(answerOrder);
+        }
+      }
 
-      const totalQuestions = exam.questions.length;
+      const totalCorrectAnswers = correctAnswerOrderList.length;
+      const totalQuestions = uniqueOrders.length;
+
       const percentage = (totalCorrectAnswers / totalQuestions) * 100;
+
+      if (isNaN(percentage)) {
+        return 0;
+      }
 
       return parseFloat(percentage.toFixed(2));
     } catch (error) {
@@ -736,31 +805,13 @@ export class StudentService {
     axisCode: string,
   ): Promise<string> {
     try {
-      const [lastAnswer] = await this.studentExamModel.aggregate([
-        {
-          $match: {
-            studentId: studentId,
-          },
-        },
-        {
-          $unwind: '$answers',
-        },
-        {
-          $match: {
-            'answers.isCorrect': true,
-            'answers.axis_code': axisCode,
-          },
-        },
-        {
-          $sort: { order: -1 },
-        },
-        {
-          $replaceRoot: { newRoot: '$answers' },
-        },
-        {
-          $limit: 1,
-        },
-      ]);
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        current: true,
+      });
+      const lastAnswer = studentExam.answers
+        .filter((item) => item.axis_code == axisCode && item.isCorrect == true)
+        .sort((a, b) => b.order - a.order)[0];
 
       if (lastAnswer == null) {
         return '0';
@@ -794,7 +845,7 @@ export class StudentService {
         item.school_year == school_year,
     );
 
-    return resume.text.replace(examResumes.ReplaceTerm, studentName);
+    return resume.text.replaceAll(examResumes.ReplaceTerm, studentName);
   }
 
   // Persistir registro student_examResult
@@ -812,9 +863,21 @@ export class StudentService {
 
     try {
       const createdStudentExamResult =
-        await this.prisma.studentExamResult.create({
-          data: {
-            studentExamId: studentExam.id,
+        await this.prisma.studentExamResult.upsert({
+          where: {
+            examId_axisCode_studentId: {
+              examId: studentExam.examId,
+              axisCode: studentExamResult.axisCode,
+              studentId: studentExamResult.studentId,
+            },
+          },
+          update: {
+            percent: studentExamResult.percentage,
+            level: studentExamResult.level,
+            resume: studentExamResult.resume,
+          },
+          create: {
+            examId: studentExam.examId,
             axisCode: studentExamResult.axisCode,
             percent: studentExamResult.percentage,
             level: studentExamResult.level,
@@ -877,7 +940,7 @@ export class StudentService {
         );
 
       examId = await this.getCurrentExamId();
-      
+
       await this.saveAnswer(
         studentId,
         examId,
@@ -956,14 +1019,17 @@ export class StudentService {
 
   private shuffleOptions(options: any): any {
     if (options != undefined && options != null && options.length > 0) {
-      let currentIndex = options.length, randomIndex;
+      let currentIndex = options.length,
+        randomIndex;
       while (currentIndex != 0) {
-        let random = Math.random();
+        const random = Math.random();
         randomIndex = Math.floor(random * currentIndex);
         currentIndex--;
 
         [options[currentIndex], options[randomIndex]] = [
-          options[randomIndex], options[currentIndex]];
+          options[randomIndex],
+          options[currentIndex],
+        ];
       }
     }
     return options;
@@ -1063,16 +1129,15 @@ export class StudentService {
       let studentExam = await this.studentExamModel.findOne({
         studentId,
         examId,
+        current: true,
       });
 
       if (!studentExam) {
-        studentExam = new this.studentExamModel({
+        await this.createExamStudant(studentId);
+        studentExam = await this.studentExamModel.findOne({
           studentId,
           examId,
-          answers: [],
-          isCorrect,
-          axis_code: question.axis_code,
-          lastQuestion,
+          current: true,
         });
       }
 
@@ -1099,6 +1164,7 @@ export class StudentService {
           level: question.level,
           lastQuestion,
           order: question.order,
+          category: question.category,
         });
       }
 
@@ -1287,9 +1353,20 @@ export class StudentService {
 
       let question = aggregationResult[0].questions[0];
 
-      const wasThereAnAxisJump = await this.handle_EA_To_LC_axisJump(axisCode, studentId, examId, schoolGradeYear);
+      const wasThereAnAxisJump = await this.handle_EA_To_LC_axisJump(
+        axisCode,
+        studentId,
+        examId,
+        schoolGradeYear,
+      );
       if (wasThereAnAxisJump) {
-        question = await this.getNextQuestionFromAxis("ES", studentId, examId, schoolGradeYear, "LC");
+        question = await this.getNextQuestionFromAxis(
+          'ES',
+          studentId,
+          examId,
+          schoolGradeYear,
+          'LC',
+        );
       }
 
       return question;
@@ -1304,43 +1381,53 @@ export class StudentService {
     examId: string,
     schoolGradeYear: number,
   ): Promise<boolean> {
-    var result = false;
+    let result = false;
 
-    if (axis_code == "EA" && schoolGradeYear > 0) {
-
+    if (axis_code == 'EA' && schoolGradeYear > 0) {
       // - Buscar todas as respostas do eixo EA (Eixo anterior). Se basear no método assignWrongAnswersToRemainingAxisQuestions();
-      const axisAnswersAggregation =
-        await this.studentExamModel.aggregate([
-          {
-            $match: {
-              'studentId': studentId,
-            },
+      const axisAnswersAggregation = await this.studentExamModel.aggregate([
+        {
+          $match: {
+            studentId: studentId,
           },
-          {
-            $project: {
-              answers: {
-                $filter: {
-                  input: '$answers',
-                  as: 'answer',
-                  cond: {
-                    $and: [
-                      { $eq: ['$$answer.axis_code', 'EA'] },
-                    ],
-                  },
+        },
+        {
+          $project: {
+            answers: {
+              $filter: {
+                input: '$answers',
+                as: 'answer',
+                cond: {
+                  $and: [{ $eq: ['$$answer.axis_code', 'EA'] }],
                 },
               },
             },
           },
-        ]);
+        },
+      ]);
 
       const axisAnswers = axisAnswersAggregation[0].answers.map(
         (answer: any) => answer,
       );
 
-      // - Se todas as respostas estiverem corretas:
+      // - Se todas as respostas estiverem corretas (A ou B são consideradas como corretas):
       //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
-      if (axisAnswers.every(a => a.isCorrect)) {
 
+      const allOrders = axisAnswers.map((item) => item.order);
+      const orders = [...new Set(allOrders)];
+
+      let allAnswersAreCorrect = true;
+      for (let index = 0; index < orders.length; index++) {
+        const isOrderCorrect = axisAnswers.some(
+          (answer) => answer.order == orders[index] && answer.isCorrect,
+        );
+        if (!isOrderCorrect) {
+          allAnswersAreCorrect = false;
+          break;
+        }
+      }
+
+      if (allAnswersAreCorrect) {
         const aggregationResult: any[] = await this.examModel
           .aggregate([
             {
@@ -1357,6 +1444,7 @@ export class StudentService {
                     cond: {
                       $and: [
                         { $eq: ['$$question.axis_code', 'ES'] },
+                        { $eq: ['$$question.category', 'A'] },
                         { $lte: ['$$question.school_year', schoolGradeYear] },
                       ],
                     },
@@ -1399,6 +1487,7 @@ export class StudentService {
       const studentExam = await this.studentExamModel.findOne({
         studentId,
         examId,
+        current: true,
       });
 
       if (studentExam) {
@@ -1479,7 +1568,10 @@ export class StudentService {
   }
 
   //Obter o próximo eixo
-  private async getNextAxisCode(axisCode: string, schoolGradeYear: number): Promise<string | null> {
+  private async getNextAxisCode(
+    axisCode: string,
+    schoolGradeYear: number,
+  ): Promise<string | null> {
     const axisMappingsFirstYear: { [key: string]: string | null } = {
       ES: 'EA',
       EA: 'LC',
@@ -1499,6 +1591,40 @@ export class StudentService {
     }
   }
 
+  private async createManyExamStudant(studentIds: string[]): Promise<boolean> {
+    try {
+      const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+
+      if (!exam) {
+        console.error('Nenhum exame encontrado');
+        throw new EduException('EXAM_NOT_FOUND');
+      }
+
+      const studentExams = [];
+
+      studentIds.forEach((studentId) => {
+        const studentExam = new this.studentExamModel({
+          studentId: studentId,
+          examId: exam.id,
+          examDate: null,
+          current: true,
+          examPerformed: false,
+          planetTrack: [],
+          answers: [],
+        });
+
+        studentExams.push(studentExam);
+      });
+
+      await this.studentExamModel.create(studentExams);
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao criar os studentexams:', error);
+      throw new EduException('STUDENT_CREATION_FAILED');
+    }
+  }
+
   private async createExamStudant(studentId: string): Promise<boolean> {
     try {
       const exam = await this.examModel.findOne({ status: 'ACTIVE' });
@@ -1511,7 +1637,7 @@ export class StudentService {
       const studentExam = new this.studentExamModel({
         studentId: studentId,
         examId: exam.id,
-        examDate: new Date(),
+        examDate: null,
         current: true,
         examPerformed: false,
         planetTrack: [],
@@ -1530,7 +1656,7 @@ export class StudentService {
   async getFirstQuestionPlanetForStudent(
     studentId: string,
     planetId: string,
-  ): Promise<any> {
+  ): Promise<QuestionPlanentDto> {
     const planetTrack: any[] = await this.studentExamModel
       .aggregate([
         {
@@ -1558,6 +1684,175 @@ export class StudentService {
       throw new EduException('KIDS_WITHOUT_PLANETS');
     }
 
+    const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
+
+    if (question === null) {
+      throw new EduException('QUESTION_NOT_FOUND');
+    }
+    return question;
+  }
+
+  async answerPlanet(
+    studentId: string,
+    planetId: string,
+    answersPlanet: AnswersPlanet,
+  ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
+    const questionAnswered = await this.getQuestionByPlanetId(
+      planetId,
+      answersPlanet.questionId,
+    );
+
+    const skipVerify = questionAnswered.options.every((option) => {
+      return option.position === null && !option.isCorrect;
+    });
+
+    if (
+      questionAnswered.options !== undefined &&
+      questionAnswered.options.length > 0 &&
+      !skipVerify
+    ) {
+      answersPlanet.isCorrect = await this.verifyAnswerPlanet(
+        questionAnswered,
+        answersPlanet.optionsAnswered,
+      );
+
+      await this.saveAnswerPlanet(studentId, planetId, answersPlanet);
+
+      const nextQuestion = await this.getQuestionByPlanetIdAndPosition(
+        planetId,
+        questionAnswered.position + 1,
+      );
+
+      if (nextQuestion === null || nextQuestion === undefined) {
+        return await this.finishPlanet(studentId, planetId);
+      }
+      return nextQuestion;
+    } else {
+      // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
+      const nextQuestion = await this.getQuestionByPlanetIdAndPosition(
+        planetId,
+        questionAnswered.position + 1,
+      );
+
+      if (nextQuestion === null || nextQuestion === undefined) {
+        return await this.finishPlanet(studentId, planetId);
+      }
+      return nextQuestion;
+    }
+  }
+
+  private async finishPlanet(
+    studentId: string,
+    planetId: string,
+  ): Promise<AnswersPlanetResponseDto> {
+    const planet = await this.planetModel.findOne({ id: planetId });
+
+    const exam = await this.getExamByStudentIdAndPlanet(studentId, planetId);
+    const stars = await this.calculateStars(studentId, planetId);
+
+    await this.saveStudentPlanetResult(
+      studentId,
+      exam.examId,
+      planetId,
+      planet.title,
+      planet.axis_code,
+      stars,
+    );
+
+    await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
+
+    return { planetCompleted: true };
+  }
+
+  async saveStudentPlanetResult(
+    studentId: string,
+    studentExamId: string,
+    planetId: string,
+    planetName: string,
+    axisCode: string,
+    stars: number,
+  ): Promise<StudentPlanetResult> {
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException(`Student with ID ${studentId} not found`);
+    }
+
+    return this.prisma.studentPlanetResult.upsert({
+      where: {
+        planetId_studentId: {
+          planetId: planetId,
+          studentId: studentId,
+        },
+      },
+      update: {
+        planetId: planetId,
+        stars: stars,
+      },
+      create: {
+        studentExamId: studentExamId,
+        planetId: planetId,
+        planetName: planetName,
+        stars: stars,
+        axisCode: axisCode,
+        student: { connect: { id: studentId } },
+      },
+    });
+  }
+
+  private async getExamByStudentIdAndPlanet(
+    studentId: string,
+    planetId: string,
+  ): Promise<StudentExam> {
+    const filter = {
+      studentId,
+      'planetTrack.planetId': planetId,
+    };
+
+    const exam = await this.studentExamModel.findOne(filter);
+
+    if (!exam) {
+      throw new Error('Document not found');
+    }
+
+    return exam;
+  }
+
+  private async calculateStars(studentId: string, planetId: string) {
+    const studentExam = await this.studentExamModel
+      .findOne({ studentId })
+      .exec();
+
+    if (!studentExam) {
+      throw new NotFoundException(
+        `Student exam not found for student ID: ${studentId}`,
+      );
+    }
+
+    const planet = studentExam.planetTrack.find((p) => p.planetId === planetId);
+
+    if (!planet) {
+      throw new NotFoundException(
+        `Planet not found for planet ID: ${planetId}`,
+      );
+    }
+
+    const totalAnswers = planet.answers.length;
+    const totalCorrectAnswers = planet.answers.filter(
+      (answer) => answer.isCorrect,
+    ).length;
+
+    const score = (totalCorrectAnswers / totalAnswers) * 5;
+    const start = Math.max(0, Math.min(5, score));
+    return parseFloat(start.toFixed(2));
+  }
+
+  async getQuestionByPlanetId(
+    planetId: string,
+    questionId: string,
+  ): Promise<QuestionPlanentDto> {
     const question = await this.planetModel
       .aggregate([
         {
@@ -1567,42 +1862,128 @@ export class StudentService {
         },
         {
           $project: {
-            questions: {
-              $filter: {
-                input: '$questions',
-                as: 'questions',
-                cond: {
-                  $and: [{ $eq: ['$$questions.position', 0] }],
+            question: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$questions',
+                    as: 'questions',
+                    cond: {
+                      $eq: ['$$questions.id', questionId],
+                    },
+                  },
                 },
-              },
+                0,
+              ],
             },
           },
         },
       ])
       .exec();
 
-    if (question.length === 0) {
-      throw new EduException('QUESTION_NOT_FOUND');
-    }
-    if (question[0].questions[0] === 0) {
-      throw new EduException('QUESTION_NOT_FOUND');
-    }
-    return question[0].questions[0];
+    return question[0].question;
   }
 
-  answerPlanet(
+  async getQuestionByPlanetIdAndPosition(
+    planetId: string,
+    position: number,
+  ): Promise<QuestionPlanentDto> {
+    const question = await this.planetModel
+      .aggregate([
+        {
+          $match: {
+            id: planetId,
+          },
+        },
+        {
+          $project: {
+            question: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$questions',
+                    as: 'questions',
+                    cond: {
+                      $eq: ['$$questions.position', position],
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return question[0].question;
+  }
+
+  private async saveAnswerPlanet(
     studentId: string,
     planetId: string,
-    answerPlanetRequestDto: AnswerPlanetRequestDto,
-  ): AnswersResponseDto {
-    return undefined;
+    answersPlanet: AnswersPlanet,
+  ): Promise<boolean> {
+    try {
+      const filter = {
+        studentId,
+        'planetTrack.planetId': planetId,
+      };
 
-    // Recebe a resposta do planeta
-    // Se a questão respondida possuir options.length > 0, salvar a resposta;
-    // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
-    // Se a questão respondida possuir options.length == 0,
+      const update = {
+        $push: { 'planetTrack.$.answers': answersPlanet },
+      };
 
-    // Obter a próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
-    // Quando não houver mais questões, retornar planetCompleted = true
+      const options = { new: true };
+
+      const updatedDocument = await this.studentExamModel.findOneAndUpdate(
+        filter,
+        update,
+
+        options,
+      );
+
+      if (!updatedDocument) {
+        throw new Error('Document not found');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('saveAnswerPlanet: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
+  async verifyAnswerPlanet(
+    question: QuestionPlanentDto,
+    answeredValue: OptionAnswer[],
+  ): Promise<boolean> {
+    try {
+      const correctOptions = question.options.filter(
+        (option) => option.isCorrect,
+      );
+
+      if (!question.orderedAnswer) {
+        for (const answeredOption of answeredValue) {
+          return correctOptions.every((option) => {
+            return (
+              option.sound_url === answeredOption.sound_url &&
+              option.image_url === answeredOption.image_url &&
+              option.position === answeredOption.position &&
+              option.isCorrect === answeredOption.isCorrect
+            );
+          });
+        }
+      } else {
+        return answeredValue.every(
+          (option) => option.position === option.positionAnswer,
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('verifyAnswer: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 }

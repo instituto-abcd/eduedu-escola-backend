@@ -26,8 +26,13 @@ import { SchoolYearSchedulerService } from './schedules/school-year-schedule.ser
 import { SchoolClassScheduleService } from './schedules/school-class-schedule.service';
 import { AwardsModule } from './awards/awards.module';
 import { ExamModule } from './exam/exam.module';
-import { StudentExamService } from "./student/studentExam.service";
-import { StudentExam, StudentExamSchema } from "./student/schemas/studentExam.schema";
+import { StudentExamService } from './student/studentExam.service';
+import {
+  StudentExam,
+  StudentExamSchema,
+} from './student/schemas/studentExam.schema';
+import { PlanetModule } from './planet/planet.module';
+import { SchoolClassResultService } from './school-class/school-class-result.service';
 
 @Module({
   imports: [
@@ -61,6 +66,7 @@ import { StudentExam, StudentExamSchema } from "./student/schemas/studentExam.sc
     AuditModule,
     AwardsModule,
     ExamModule,
+    PlanetModule,
   ],
   providers: [
     PrismaService,
@@ -70,6 +76,7 @@ import { StudentExam, StudentExamSchema } from "./student/schemas/studentExam.sc
     SchoolYearSchedulerService,
     SchoolClassScheduleService,
     StudentExamService,
+    SchoolClassResultService,
   ],
   controllers: [SchoolClassController],
 })

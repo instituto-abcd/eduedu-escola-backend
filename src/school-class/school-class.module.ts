@@ -11,13 +11,18 @@ import {
   StudentExamSchema,
 } from '../student/schemas/studentExam.schema';
 import { StudentExamService } from '../student/studentExam.service';
+import { SchoolClassResultService } from './school-class-result.service';
+import { StudentModule } from 'src/student/student.module';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
     ]),
+    StudentModule,
   ],
+  exports: [PerformanceResultUtilsService],
   controllers: [SchoolClassController],
   providers: [
     SchoolClassService,
@@ -26,6 +31,8 @@ import { StudentExamService } from '../student/studentExam.service';
     DateApiService,
     ValidationUtilsService,
     StudentExamService,
+    SchoolClassResultService,
+    PerformanceResultUtilsService,
   ],
 })
 export class SchoolClassModule {}

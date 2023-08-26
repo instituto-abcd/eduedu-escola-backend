@@ -6,56 +6,23 @@ import { v4 as uuidv4 } from 'uuid';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { PlanetDto } from './dto/planet.dto';
+import { StudentExamDto } from './dto/studentexam.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class StudentExamService implements OnModuleInit {
+export class StudentExamService {
   constructor(
+    private readonly prisma: PrismaService,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
   ) {}
 
-  async onModuleInit() {
-    try {
-      const env = process.env.APP_VERSION;
-      if (env === 'main') {
-        const count = await this.studentExamModel.countDocuments();
-        if (count === 0) {
-          const mockData: StudentExam[] = [
-            {
-              studentId: uuidv4(),
-              examId: uuidv4(),
-              examDate: new Date(),
-              current: true,
-              examPerformed: true,
-              planetTrack: [
-                {
-                  planetId: uuidv4(),
-                  planetName: 'Saturno',
-                  planetAvatar: 'url-to-image',
-                  score: '80',
-                  stars: '3.1',
-                  axis_code: 'LC',
-                  order: 1
-                },
-                {
-                  planetId: uuidv4(),
-                  planetName: 'Plutão',
-                  planetAvatar: 'url-to-image',
-                  score: '100.0',
-                  stars: '4.5',
-                  axis_code: 'ES',
-                  order: 2
-                },
-              ],
-              answers: [],
-            },
-          ];
-          await this.studentExamModel.create(mockData);
-        }
-      }
-    } catch (error) {
-      throw error;
-    }
+  async getStudentExams(studentId: string): Promise<StudentExamDto[]> {
+    const studentExams = await this.studentExamModel.find({ studentId, examPerformed: true });
+    const result: StudentExamDto[] = studentExams.map((item) => {
+      return  { id: item.id, examDate: item.examDate };
+    });
+    return result;
   }
 
   async getPlanetTrack(studentId: string): Promise<PlanetTrackDto> {
@@ -72,18 +39,33 @@ export class StudentExamService implements OnModuleInit {
           return 0;
         });
 
+        let studentPlanetResult = await this.prisma.studentPlanetResult.findMany({
+          where: {
+            studentId: studentId,
+            studentExamId: studentExam.id,
+          }
+        });
+
         let planetTrack: PlanetDto[] = [];
         for (let index = 0; index < studentExam.planetTrack.length; index++) {
+
+          let currentPlanetResult = studentPlanetResult.find((item) =>
+            item.planetId == studentExam.planetTrack[index].planetId);
+          let currentPlanetStars = currentPlanetResult ? parseFloat(currentPlanetResult.stars.toString()) : 0;
+
+          let previousPlanetResult = index > 0 ? studentPlanetResult.find((item) =>
+            item.planetId == studentExam.planetTrack[index-1].planetId) : undefined;
+          let previousPlanetStars = previousPlanetResult ? parseFloat(previousPlanetResult.stars.toString()) : 0;
+
           const planetDto = {
             planetId: studentExam.planetTrack[index].planetId,
             planetName: studentExam.planetTrack[index].planetName,
             planetAvatar: studentExam.planetTrack[index].planetAvatar,
-            score: parseFloat(studentExam.planetTrack[index].score.toString()),
-            stars: parseFloat(studentExam.planetTrack[index].stars.toString()),
+            stars: currentPlanetStars,
             canExecutePlanet:
               index === 0 || // O planeta é o primeiro da trilha
-              parseFloat(studentExam.planetTrack[index].stars.toString()) > 1 || // O planeta já foi realizado com pelo menos uma estrela
-              (index > 0 && parseFloat(studentExam.planetTrack[index - 1].stars.toString()) >= 1) // O planeta anterior já foi realizado com pelo menos uma estrela
+              currentPlanetStars > 0 || // O planeta já foi realizado pelo menos uma vez
+              (index > 0 && previousPlanetStars > 0) // O planeta anterior já foi realizado pelo menos uma vez
           } as PlanetDto;
           planetTrack.push(planetDto);
         }

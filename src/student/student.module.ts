@@ -12,6 +12,9 @@ import { StudentExamService } from './studentExam.service';
 import { AwardsService } from '../awards/awards.service';
 import { Exam, ExamSchema } from '../exam/schemas/exam.schema';
 import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
+import { StudentAwardService } from './studentAward.service';
+import { StudentResultService } from './studentResult.service';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
       { name: Exam.name, schema: ExamSchema },
       { name: Planet.name, schema: PlanetSchema },
     ]),
+  ],
+  exports: [
+    PerformanceResultUtilsService,
   ],
   controllers: [StudentController],
   providers: [
@@ -31,6 +37,9 @@ import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
     DateApiService,
     StudentExamService,
     AwardsService,
+    StudentAwardService,
+    StudentResultService,
+    PerformanceResultUtilsService,
   ],
 })
 export class StudentModule {}

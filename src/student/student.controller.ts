@@ -38,7 +38,16 @@ import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
 import { QuestionDto } from '../exam/dto/question.dto';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
-import { AnswerPlanetRequestDto } from '../exam/dto/request/answers-planet-request.dto';
+import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
+import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
+import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
+import { AnswersPlanet } from './schemas/studentExam.schema';
+import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
+import { StudentExamDto } from './dto/studentexam.dto';
+import { StudentResultService } from './studentResult.service';
+import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
+import { ChartStudentResponse } from './dto/response/chart-studant-response.dto';
+import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -47,6 +56,7 @@ export class StudentController {
     private readonly studentService: StudentService,
     private readonly studentExamService: StudentExamService,
     private readonly awardsService: AwardsService,
+    private readonly studentResultService: StudentResultService,
   ) {}
 
   @AuditGuard()
@@ -244,6 +254,19 @@ export class StudentController {
     return this.studentService.handleExamEvaluation(id);
   }
 
+  @Post('authorize-new-exam')
+  @ApiOperation({ summary: 'Autorizar novo exame' })
+  @ApiResponse({
+    status: 200,
+    description: 'Nova prova liberada para os Estudantes',
+    type: AuthorizeNewExamResponseDto,
+  })
+  async authorizeNewExam(
+    @Body() requestDto: AuthorizeNewExamRequestDto,
+  ): Promise<AuthorizeNewExamResponseDto> {
+    return this.studentService.authorizeNewExam(requestDto);
+  }
+
   @Get(':id/planets/:planetId/first-question')
   @ApiResponse({
     status: 200,
@@ -255,12 +278,13 @@ export class StudentController {
   async getFirstQuestionPlanetForStudent(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
-  ): Promise<any> {
+  ): Promise<QuestionPlanentDto> {
     return await this.studentService.getFirstQuestionPlanetForStudent(
       id,
       planetId,
     );
   }
+
   @Post(':id/planets/:planetId/answer')
   @ApiOperation({ summary: 'Responder questão da prova' })
   @ApiResponse({
@@ -271,12 +295,87 @@ export class StudentController {
   async answerPlanet(
     @Param('id') studentId: string,
     @Param('planetId') planetId: string,
-    @Body() answerPlanetRequestDto: AnswerPlanetRequestDto,
-  ): Promise<AnswersResponseDto> {
-    return this.studentService.answerPlanet(
+    @Body() answerPlanetRequestDto: AnswersPlanet,
+  ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
+    const response = await this.studentService.answerPlanet(
       studentId,
       planetId,
       answerPlanetRequestDto,
     );
+
+    return response;
+  }
+
+  @Get(':id/exam-executions')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém as execuções de prova de um aluno',
+    type: StudentResponseDto,
+  })
+  @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
+  async getExamExecutions(@Param('id') id: string): Promise<StudentExamDto[]> {
+    return await this.studentExamService.getStudentExams(id);
+  }
+
+  @Get(':id/exam-executions/:studentExamId/planets-performance')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
+    type: StudentPlanetResultDetailDto,
+  })
+  @ApiOperation({
+    summary: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
+  })
+  async getExamExecution(
+    @Param('id') id: string,
+    @Param('studentExamId') studentExamId: string,
+    @Query('loadPlanets') loadPlanets: boolean,
+  ): Promise<StudentPlanetResultDetailDto[]> {
+    return await this.studentResultService.getStudentPlanetsResultDetail(
+      studentExamId,
+      loadPlanets,
+    );
+  }
+
+  // Card Gráfico Desempenho do Aluno Por Planetas - Endpoint de Retorno dos dados do gráfico
+  @Get(':id/planets-chart')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém o gráfico desempenho do aluno por planetas',
+    type: ChartStudentResponse,
+  })
+  @ApiOperation({
+    summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
+  })
+  async planetsChart(@Param('id') id: string): Promise<ChartStudentResponse> {
+    return await this.studentResultService.planetsChart(id);
+  }
+
+  @Get(':id/exams-chart')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém o gráfico desempenho do aluno por provas',
+    type: ChartStudentResponse,
+  })
+  @ApiOperation({
+    summary: 'Obtém os sumarizados por eixo, com a lista de provas',
+  })
+  async examsChart(@Param('id') id: string): Promise<ChartStudentResponse> {
+    return await this.studentResultService.examsChart(id);
+  }
+
+  @Get(':id/detailed-summary')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém os resultados e resumos de prova por eixo de um aluno',
+    type: StudentDetailedSummaryDto,
+  })
+  @ApiOperation({
+    summary: 'Obtém os resultados e resumos de prova por eixo de um aluno',
+  })
+  async getStudentDetailedSummary(
+    @Param('id') id: string,
+  ): Promise<StudentDetailedSummaryDto> {
+    return await this.studentResultService.getStudentDetailedSummary(id);
   }
 }

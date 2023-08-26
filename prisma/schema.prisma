@@ -93,17 +93,35 @@ model Student {
   schoolClasses SchoolClassStudent[]
   studentAwards StudentAward[]
   examResults   StudentExamResult[]
+  planetResult  StudentPlanetResult[]
 }
 
 model StudentExamResult {
-  id            String  @id @default(uuid())
+  id        String  @default(uuid())
+  examId    String
+  axisCode  String
+  percent   Decimal
+  level     String
+  resume    String
+  examDate  DateTime @default(now())
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+
+  @@id([examId, axisCode, studentId])
+}
+
+model StudentPlanetResult {
+  id            String   @default(uuid())
   studentExamId String
+  planetId      String
+  planetName    String
   axisCode      String
-  percent       Decimal
-  level         String
-  resume        String
-  student       Student @relation(fields: [studentId], references: [id])
+  stars         Decimal
+  lastExecution DateTime @default(now())
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId     String
+
+  @@id([planetId, studentId])
 }
 
 // Model for User
@@ -162,14 +180,12 @@ model Award {
 
 // Model for SchoolClassStudent
 model StudentAward {
-  id        String  @id @default(uuid())
+  id        String  @default(uuid())
   award     Award   @relation(fields: [awardId], references: [id])
   awardId   String
-  student   Student @relation(fields: [studentId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String
-
-  @@index([awardId])
-  @@index([studentId])
+  @@id([awardId, studentId])
 }
 
 // Model for AuthToken

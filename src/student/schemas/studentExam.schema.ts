@@ -42,16 +42,13 @@ export class Planet {
   planetAvatar: string;
 
   @Prop()
-  score: string;
-
-  @Prop()
-  stars: string;
-
-  @Prop()
   axis_code: string;
 
   @Prop()
   order: number;
+
+  @Prop()
+  answers?: AnswersPlanet[];
 }
 
 @Schema()
@@ -75,11 +72,46 @@ export class Answers {
   order: number;
 
   @Prop()
+  category: string;
+
+  @Prop()
   lastQuestion: boolean;
 }
 
 @Schema()
 export class OptionsAnswers {
+  @Prop()
+  position: number;
+  @Prop()
+  positionAnswer: number;
+}
+
+@Schema()
+export class AnswersPlanet {
+  @Prop()
+  questionId: string;
+
+  @Prop()
+  optionsAnswered?: OptionsAnswersPlanet[];
+
+  @Prop()
+  isCorrect: boolean;
+
+  @Prop()
+  axis_code: string;
+
+  @Prop()
+  level: number;
+
+  @Prop()
+  order: number;
+
+  @Prop()
+  lastQuestion: boolean;
+}
+
+@Schema()
+export class OptionsAnswersPlanet {
   @Prop()
   position: number;
   @Prop()

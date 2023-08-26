@@ -17,6 +17,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -39,11 +40,21 @@ import { AuditGuard } from 'src/common/guard/audit.guard';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
+import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
+import { SchoolClassResultService } from './school-class-result.service';
+import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
+import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
+import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
+import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
+import { PlanetsPerformanceResponse } from "./dto/response/planets-performance.dto";
 
 @ApiTags('Turma')
 @Controller('schoolClass')
 export class SchoolClassController {
-  constructor(private readonly schoolClassService: SchoolClassService) {}
+  constructor(
+    private readonly schoolClassService: SchoolClassService,
+    private readonly schoolClassResultService: SchoolClassResultService,
+  ) {}
 
   @AuditGuard()
   @Post()
@@ -187,10 +198,11 @@ export class SchoolClassController {
     @Param('id') id: string,
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
+    @Query('name') name?: string,
   ): Promise<PaginationResponse<StudentSimplifiedResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
-    return this.schoolClassService.getStudentsByClass(id, pageNumber, pageSize);
+    return this.schoolClassService.getStudentsByClass(id, pageNumber, pageSize, name);
   }
 
   @ApiResponse({
@@ -223,6 +235,80 @@ export class SchoolClassController {
       schoolClassId,
       studentId,
       reserved,
+    );
+  }
+
+  @ApiOkResponse({
+    description: 'Retorna o gráfico de planetas para uma turma específica',
+    type: ChartStudentResponse,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/planets-chart')
+  async getPlanetsChart(
+    @Param('id') id: string,
+  ): Promise<ChartStudentResponse> {
+    return this.schoolClassResultService.getChartByPlanetsForSchoolClass(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Retorna o gráfico de provas para uma turma específica',
+    type: ChartStudentResponse,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-chart')
+  async getChartByExamsForSchoolClass(
+    @Param('id') id: string,
+  ): Promise<ChartStudentResponse> {
+    return this.schoolClassResultService.getChartByExamForSchoolClass(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho da turma em planetas agrupados por eixo',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/planets-performance')
+  async getPlanetsPerformance(
+    @Param('id') id: string,
+  ): Promise<SchoolClassPlanetResultDetailDto[]> {
+    return this.schoolClassResultService.getSchoolClassPlanetResultDetail(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho da turma em provas agrupados por eixo',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-performance')
+  async getExamsPerformance(
+    @Param('id') id: string,
+  ): Promise<SchoolClassDetailedSummaryDto[]> {
+    return this.schoolClassResultService.getSchoolClassDetailedSummary(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho de alunos por Provas',
+    type: ExamPerformanceResponse,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-performance-students')
+  async examsPerformanceStudents(
+    @Param('id') id: string,
+  ): Promise<ExamPerformanceResponse[]> {
+    return await this.schoolClassResultService.examsPerformanceStudents(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Obtém o desempenho nos planetas (Turma)',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/planets-performance-students')
+  async schoolClassPerformancePlanets(
+    @Param('id') id: string,
+  ): Promise<PlanetsPerformanceResponse[]> {
+    return await this.schoolClassResultService.schoolClassPerformancePlanets(
+      id,
     );
   }
 }
