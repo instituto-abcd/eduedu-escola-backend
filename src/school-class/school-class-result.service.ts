@@ -81,11 +81,11 @@ export class SchoolClassResultService {
         const classification =
           this.performanceResultUtilsService.getStudentPerformanceDefinition(
             schoolGradeYear,
-            studentExamResult.level,
+            (studentExamResult ? studentExamResult.level : "0"),
           );
         student.classification = classification.description;
-        student.examDate = studentExamResult.examDate;
-        student.percent = studentExamResult.percent;
+        student.examDate = studentExamResult ? studentExamResult.examDate : undefined;
+        student.percent = studentExamResult ? studentExamResult.percent : 0;
         return student;
       });
 
