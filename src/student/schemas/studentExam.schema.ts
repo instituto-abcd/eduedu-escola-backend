@@ -48,6 +48,9 @@ export class Planet {
   order: number;
 
   @Prop()
+  level: string;
+
+  @Prop()
   answers?: AnswersPlanet[];
 }
 
@@ -73,6 +76,9 @@ export class Answers {
 
   @Prop()
   category: string;
+
+  @Prop()
+  school_year: number;
 
   @Prop()
   lastQuestion: boolean;

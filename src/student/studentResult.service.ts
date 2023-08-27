@@ -31,7 +31,7 @@ export class StudentResultService {
     });
 
     const studentExamResults = await this.prisma.studentExamResult.findMany({
-      where: { studentId: studentId, examId: studentExam.examId },
+      where: { studentId: studentId, studentExamId: studentExam.id },
     });
 
     const axisList = [];

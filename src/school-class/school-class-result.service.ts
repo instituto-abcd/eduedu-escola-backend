@@ -388,11 +388,11 @@ export class SchoolClassResultService {
 
     const studentsWithResultsAndExams = students.filter((student) =>
       filteredStudentExamResults.some(
-        (result) => result.studentId === student.id && result.examId !== null,
+        (result) => result.studentId === student.id && result.studentExamId !== null,
       ),
     );
 
-    return studentsWithResultsAndExams.map((student) => {
+    return students.map((student) => {
       const performanceData = this.calculatePerformanceExam(
         student,
         resultsByStudent,
@@ -425,7 +425,7 @@ export class SchoolClassResultService {
   private calculatePerformanceExam(student, resultsByStudent) {
     const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
       const result = resultsByStudent[student.id]?.[axisCode];
-      return (result ? result.percent : defaultPercent) + '%';
+      return (result ? result.percent + '%' : '-');
     };
 
     const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
@@ -449,8 +449,8 @@ export class SchoolClassResultService {
     const timestamps = validExamDates.map((date) => date.getTime());
 
     const maxTimestamp = Math.max(...timestamps);
-    const lastExamDate = new Date(maxTimestamp);
-    const lastExamString = this.formatDate(lastExamDate);
+    const lastExamDate = isFinite(maxTimestamp) ? new Date(maxTimestamp) : new Date();
+    const lastExamString = isFinite(maxTimestamp) ? this.formatDate(lastExamDate) : "-";
 
     return {
       lastExamDate: lastExamString,
@@ -490,11 +490,15 @@ export class SchoolClassResultService {
 
   private async getStudentBySchoolClasses(schoolClassesId: string) {
     return this.prisma.student.findMany({
+      where: {
+        schoolClasses: {
+          some: {
+            schoolClassId: schoolClassesId
+          }
+        }
+      },
       include: {
         schoolClasses: {
-          where: {
-            AND: [{ schoolClassId: schoolClassesId }],
-          },
           include: {
             schoolClass: {
               include: {
