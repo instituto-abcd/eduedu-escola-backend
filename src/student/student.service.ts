@@ -675,12 +675,7 @@ export class StudentService {
 
     // Ordenando planetas que possuem planeta agregado primeiro
     planets = planets.sort((a: any, b: any) => {
-      if (a.next_planet_id === null) {
-        return 1;
-      }
-      if (b.next_planet_id === null) {
-        return -1;
-      }
+      return a.position - b.position
     });
 
     // Aplicando lógica de ordenação da trilha de planetas
@@ -719,6 +714,7 @@ export class StudentService {
         axis_code: axis_code,
         order: planetTrackToSave.length,
         level: planet.level,
+        position: planet.position,
         answers: [],
       } as Planet);
 
