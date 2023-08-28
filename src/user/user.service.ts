@@ -122,7 +122,7 @@ export class UserService {
       throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
 
-    const { name, email, document, profile } = filters || {};
+    const { name, email, document, profile, status } = filters || {};
 
     const where: Prisma.UserWhereInput = {
       name: name ? { contains: name, mode: 'insensitive' } : undefined,
@@ -131,6 +131,7 @@ export class UserService {
         ? { contains: document, mode: 'insensitive' }
         : undefined,
       profile: profile ? { equals: Profile[profile] } : undefined,
+      status: status ? { equals: Status[status] } : undefined,
     };
 
     try {
