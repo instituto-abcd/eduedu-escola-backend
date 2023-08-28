@@ -49,6 +49,7 @@ export class PerformanceResultUtilsService {
     switch (axisCode) {
       case "ES":
         switch (level) {
+          case "0":
           case "1":
             return type == ClassificationType.TEXT ? this.belowText : this.belowColor;
           default:
@@ -56,6 +57,7 @@ export class PerformanceResultUtilsService {
         }
       case "EA":
         switch (level) {
+          case "0":
           case "1":
             return type == ClassificationType.TEXT ? this.belowText : this.belowColor;
           default:
@@ -63,6 +65,7 @@ export class PerformanceResultUtilsService {
         }
       case "LC":
         switch (level) {
+          case "0":
           case "1":
             return type == ClassificationType.TEXT ? this.belowText : this.belowColor;
           default:
