@@ -24,6 +24,10 @@ export class StudentResultService {
   async getStudentDetailedSummary(
     studentId: string,
   ): Promise<StudentDetailedSummaryDto> {
+    const round = (value: number): number => {
+      return Math.round(100 * value) / 100;
+    };
+
     const result = new StudentDetailedSummaryDto();
     const studentExam = await this.studentExamModel.findOne({
       studentId: studentId,
@@ -67,8 +71,8 @@ export class StudentResultService {
       result.performanceByArea.push({
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
-        percent: +percent,
-        description: `${+percent}% ${classificationText}`,
+        percent: round(+percent),
+        description: `${round(+percent)}% ${classificationText}`,
         color: classificationColor
       });
 

@@ -84,7 +84,7 @@ export class SchoolClassResultService {
             (studentExamResult ? studentExamResult.level : "1"));
         student.classification = classificationText;
         student.examDate = studentExamResult ? studentExamResult.examDate : undefined;
-        student.percent = studentExamResult ? studentExamResult.percent : 0;
+        student.percent = studentExamResult ? this.round(studentExamResult.percent) : 0;
         return student;
       });
 
@@ -332,7 +332,7 @@ export class SchoolClassResultService {
 
         if (filteredResults.length > 0) {
           const totalStars = filteredResults.reduce(
-            (sum, result) => sum + Number(result.percent),
+            (sum, result) => sum + this.round(Number(result.percent)),
             0,
           );
 
@@ -424,7 +424,7 @@ export class SchoolClassResultService {
   private calculatePerformanceExam(student, resultsByStudent) {
     const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
       const result = resultsByStudent[student.id]?.[axisCode];
-      return (result ? result.percent + '%' : '-');
+      return (result ? this.round(result.percent) + '%' : '-');
     };
 
     const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
@@ -625,4 +625,8 @@ export class SchoolClassResultService {
       },
     };
   }
+
+  private round(value: number): number {
+    return Math.round(100 * value) / 100;
+  };
 }
