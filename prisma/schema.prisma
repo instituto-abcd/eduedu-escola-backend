@@ -45,6 +45,8 @@ model SchoolClass {
   students     SchoolClassStudent[]
   schoolId     String?
   School       School?              @relation(fields: [schoolId], references: [id])
+
+  @@unique([name, schoolYearId, schoolGrade, schoolPeriod])
 }
 
 // Enum for SchoolGrade
@@ -94,18 +96,20 @@ model Student {
   studentAwards StudentAward[]
   examResults   StudentExamResult[]
   planetResult  StudentPlanetResult[]
+
+  @@unique([id, name, registry])
 }
 
 model StudentExamResult {
-  id              String  @default(uuid())
-  studentExamId   String
-  axisCode        String
-  percent         Decimal
-  level           String
-  resume          String
-  examDate        DateTime @default(now())
-  student         Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId       String
+  id            String   @default(uuid())
+  studentExamId String
+  axisCode      String
+  percent       Decimal
+  level         String
+  resume        String
+  examDate      DateTime @default(now())
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
 
   @@id([studentExamId, axisCode, studentId])
 }
@@ -185,6 +189,7 @@ model StudentAward {
   awardId   String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String
+
   @@id([awardId, studentId])
 }
 
