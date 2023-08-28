@@ -31,7 +31,7 @@ export class StudentResultService {
     const result = new StudentDetailedSummaryDto();
     const studentExam = await this.studentExamModel.findOne({
       studentId: studentId,
-      current: true,
+      lastExam: true,
     });
 
     const studentExamResults = await this.prisma.studentExamResult.findMany({
@@ -58,22 +58,33 @@ export class StudentResultService {
         (result) => result.axisCode == axisCode,
       );
 
-      let level = studentExamResult ? studentExamResult.level : "0";
-      let percent = studentExamResult ? studentExamResult.percent : 0;
-      let resume =  studentExamResult ? studentExamResult.resume :
-        `Esse aluno ainda não foi avaliado no eixo ${this.mapAxisCodeToLabel(axisCode)}.`;
-      
-      let classificationText = this.performanceResultUtilsService
-        .getStudentClassificationText(studentSchoolGradeYear, axisCode, level);
-      let classificationColor = this.performanceResultUtilsService
-        .getStudentClassificationColor(studentSchoolGradeYear, axisCode, level);
+      const level = studentExamResult ? studentExamResult.level : '0';
+      const percent = studentExamResult ? studentExamResult.percent : 0;
+      const resume = studentExamResult
+        ? studentExamResult.resume
+        : `Esse aluno ainda não foi avaliado no eixo ${this.mapAxisCodeToLabel(
+            axisCode,
+          )}.`;
+
+      const classificationText =
+        this.performanceResultUtilsService.getStudentClassificationText(
+          studentSchoolGradeYear,
+          axisCode,
+          level,
+        );
+      const classificationColor =
+        this.performanceResultUtilsService.getStudentClassificationColor(
+          studentSchoolGradeYear,
+          axisCode,
+          level,
+        );
 
       result.performanceByArea.push({
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
         percent: round(+percent),
         description: `${round(+percent)}% ${classificationText}`,
-        color: classificationColor
+        color: classificationColor,
       });
 
       result.summaries.push({
@@ -143,20 +154,24 @@ export class StudentResultService {
     planetResultDetail.averageStars = !isNaN(averageStars) ? averageStars : 0;
     planetResultDetail.planets =
       /true/.test(loadPlanets.toString()) == true
-        ? studentExam.planetTrack.filter((planet) => planet.axis_code == axisCode).map((item) => {
-            let planetResult = studentPlanetResult.find((result) => {
-              return result.planetId == item.planetId &&
-                result.studentExamId == studentExam.id
-            });
+        ? studentExam.planetTrack
+            .filter((planet) => planet.axis_code == axisCode)
+            .map((item) => {
+              const planetResult = studentPlanetResult.find((result) => {
+                return (
+                  result.planetId == item.planetId &&
+                  result.studentExamId == studentExam.id
+                );
+              });
 
-            let stars = planetResult ? +planetResult.stars : 0;
+              const stars = planetResult ? +planetResult.stars : 0;
 
-            return {
-              planetId: item.planetId,
-              planetName: item.planetName,
-              stars: stars,
-            };
-          })
+              return {
+                planetId: item.planetId,
+                planetName: item.planetName,
+                stars: stars,
+              };
+            })
         : [];
 
     return planetResultDetail;
@@ -189,12 +204,15 @@ export class StudentResultService {
         borderWidth: 2,
       };
 
-      const formattedDates = [...new Set(uniqueDates.map((date) => this.formatDate(date)))];
+      const formattedDates = [
+        ...new Set(uniqueDates.map((date) => this.formatDate(date))),
+      ];
 
       for (const dateString of formattedDates) {
-        const filteredResults = studentResults.filter((result) =>
-          result.axisCode == axisCode &&
-          this.formatDate(result.lastExecution) == dateString,
+        const filteredResults = studentResults.filter(
+          (result) =>
+            result.axisCode == axisCode &&
+            this.formatDate(result.lastExecution) == dateString,
         );
 
         if (filteredResults.length > 0) {
@@ -246,13 +264,15 @@ export class StudentResultService {
         borderWidth: 2,
       };
 
-      const formattedDates = [...new Set(uniqueDates.map((date) => this.formatDate(date)))];
+      const formattedDates = [
+        ...new Set(uniqueDates.map((date) => this.formatDate(date))),
+      ];
 
       for (const dateString of formattedDates) {
         const filteredResults = studentResults.filter(
           (result) =>
             result.axisCode === axisCode &&
-            (this.formatDate(result.examDate)) === dateString,
+            this.formatDate(result.examDate) === dateString,
         );
 
         if (filteredResults.length > 0) {

@@ -62,6 +62,20 @@ export class StudentService {
       throw new EduException('MISSING_REQUIRED_FIELDS');
     }
 
+    const existingStudent = await this.prisma.student.findFirst({
+      where: {
+        OR: [
+          { id: createStudentDto.id },
+          { name: createStudentDto.name },
+          { registry: createStudentDto.registry },
+        ],
+      },
+    });
+
+    if (existingStudent) {
+      throw new EduException('STUDENT_ALREADY_EXISTS');
+    }
+
     const schoolClass = await this.prisma.schoolClass.findFirst({
       where: { id: schoolClassId },
       include: { schoolYear: true },
@@ -73,6 +87,7 @@ export class StudentService {
 
     const createdStudent = await this.prisma.student.create({
       data: {
+        id: createStudentDto.id,
         name,
         registry,
         status,
@@ -178,9 +193,10 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
+      // Obter os resultados da última prova executada de aluno e retornar abaixo (cfo, sea, lct)
       const studentIds = students.map((item) => item.id);
-      const currentStudentExams = await this.studentExamModel.find({ studentId: { $in: studentIds }, current: true });
+      const currentStudentExams = await this.studentExamModel
+        .find({ studentId: { $in: studentIds }, lastExam: true });
       const currentStudentExamIds = currentStudentExams.map((item) => item.id);
 
       const studentExamResults = await this.prisma.studentExamResult.findMany({
@@ -675,12 +691,7 @@ export class StudentService {
 
     // Ordenando planetas que possuem planeta agregado primeiro
     planets = planets.sort((a: any, b: any) => {
-      if (a.next_planet_id === null) {
-        return 1;
-      }
-      if (b.next_planet_id === null) {
-        return -1;
-      }
+      return a.position - b.position
     });
 
     // Aplicando lógica de ordenação da trilha de planetas
@@ -719,6 +730,7 @@ export class StudentService {
         axis_code: axis_code,
         order: planetTrackToSave.length,
         level: planet.level,
+        position: planet.position,
         answers: [],
       } as Planet);
 
@@ -1468,11 +1480,21 @@ export class StudentService {
       if (studentExam) {
         studentExam.examDate = new Date();
         studentExam.examPerformed = true;
+        studentExam.lastExam = true;
       } else {
         throw new EduException('STUDENT_NOT_FOUND');
       }
 
       await studentExam.save();
+
+      let oldStudentExams = (await this.studentExamModel.find({
+        studentId: studentId,
+      })).filter((item) => item.id != studentExam.id);
+
+      for (let index = 0; index < oldStudentExams.length; index++) {
+        oldStudentExams[index].lastExam = false;
+        await oldStudentExams[index].save();
+      }
 
       return { examCompleted: true };
     } catch (error) {

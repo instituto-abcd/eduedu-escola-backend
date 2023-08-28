@@ -92,6 +92,14 @@ export const ErrorDetails = {
     message: 'O ano letivo atual já existe como rascunho.',
     status: HttpStatus.CONFLICT,
   },
+  SCHOOL_CLASS_EXISTS: {
+    message: 'A turma já existe.',
+    status: HttpStatus.CONFLICT,
+  },
+  STUDENT_ALREADY_EXISTS: {
+    message: 'O aluno já existe.',
+    status: HttpStatus.CONFLICT,
+  },
   NEXT_SCHOOL_YEAR_ALREADY_EXISTS: {
     message: 'O próximo ano letivo já existe.',
     status: HttpStatus.CONFLICT,

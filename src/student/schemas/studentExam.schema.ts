@@ -21,6 +21,9 @@ export class StudentExam {
   examPerformed: boolean;
 
   @Prop()
+  lastExam: boolean;
+
+  @Prop()
   planetTrack: Planet[];
 
   createdAt?: Date;
@@ -49,6 +52,9 @@ export class Planet {
 
   @Prop()
   level: string;
+
+  @Prop()
+  position: number;
 
   @Prop()
   answers?: AnswersPlanet[];
