@@ -817,8 +817,9 @@ export class StudentService {
         .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
         .sort((a, b) => b.order - a.order)[0];
 
+      let schoolGradeYear = await this.getSchoolGradeYear(studentId);
+
       if (lastAnswer == null) {
-        let schoolGradeYear = await this.getSchoolGradeYear(studentId);
         if (schoolGradeYear > 0) {
           return '1';
         } else {
@@ -828,6 +829,10 @@ export class StudentService {
 
       if (lastAnswer.lastQuestion) {
         return 'IDEAL';
+      }
+
+      if (schoolGradeYear == 0) {
+        return '0';
       }
 
       return lastAnswer.level.toString();
