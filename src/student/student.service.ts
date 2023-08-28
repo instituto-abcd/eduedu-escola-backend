@@ -814,7 +814,7 @@ export class StudentService {
         current: true,
       });
       const lastAnswer = studentExam.answers
-        .filter((item) => item.axis_code == axisCode && item.isCorrect == true)
+        .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
         .sort((a, b) => b.order - a.order)[0];
 
       if (lastAnswer == null) {
@@ -1133,6 +1133,7 @@ export class StudentService {
     answeredOptions: OptionsAnswers[],
     isCorrect: boolean,
     lastQuestion: boolean,
+    autoAssignedAnswer: boolean = false,
   ): Promise<boolean> {
     try {
       let studentExam = await this.studentExamModel.findOne({
@@ -1175,6 +1176,7 @@ export class StudentService {
           school_year: question.school_year,
           order: question.order,
           category: question.category,
+          autoAssignedAnswer: autoAssignedAnswer
         });
       }
 
@@ -1533,7 +1535,7 @@ export class StudentService {
           question.school_year <= schoolGradeYear
       }).sort(
         (a, b) => a.order - b.order,
-      );;
+      );
 
       if (remainingQuestions.length > 0) {
         for (const question of remainingQuestions) {
@@ -1544,6 +1546,7 @@ export class StudentService {
             null,
             false,
             false,
+            true,
           );
         }
 

@@ -82,6 +82,9 @@ export class Answers {
 
   @Prop()
   lastQuestion: boolean;
+
+  @Prop()
+  autoAssignedAnswer: boolean;
 }
 
 @Schema()
