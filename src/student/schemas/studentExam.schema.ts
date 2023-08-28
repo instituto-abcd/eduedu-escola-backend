@@ -51,6 +51,9 @@ export class Planet {
   level: string;
 
   @Prop()
+  position: number;
+
+  @Prop()
   answers?: AnswersPlanet[];
 }
 

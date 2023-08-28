@@ -690,12 +690,7 @@ export class StudentService {
 
     // Ordenando planetas que possuem planeta agregado primeiro
     planets = planets.sort((a: any, b: any) => {
-      if (a.next_planet_id === null) {
-        return 1;
-      }
-      if (b.next_planet_id === null) {
-        return -1;
-      }
+      return a.position - b.position
     });
 
     // Aplicando lógica de ordenação da trilha de planetas
@@ -734,6 +729,7 @@ export class StudentService {
         axis_code: axis_code,
         order: planetTrackToSave.length,
         level: planet.level,
+        position: planet.position,
         answers: [],
       } as Planet);
 
@@ -832,8 +828,9 @@ export class StudentService {
         .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
         .sort((a, b) => b.order - a.order)[0];
 
+      let schoolGradeYear = await this.getSchoolGradeYear(studentId);
+
       if (lastAnswer == null) {
-        let schoolGradeYear = await this.getSchoolGradeYear(studentId);
         if (schoolGradeYear > 0) {
           return '1';
         } else {
@@ -843,6 +840,10 @@ export class StudentService {
 
       if (lastAnswer.lastQuestion) {
         return 'IDEAL';
+      }
+
+      if (schoolGradeYear == 0) {
+        return '0';
       }
 
       return lastAnswer.level.toString();
