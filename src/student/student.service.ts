@@ -62,6 +62,20 @@ export class StudentService {
       throw new EduException('MISSING_REQUIRED_FIELDS');
     }
 
+    const existingStudent = await this.prisma.student.findFirst({
+      where: {
+        OR: [
+          { id: createStudentDto.id },
+          { name: createStudentDto.name },
+          { registry: createStudentDto.registry },
+        ],
+      },
+    });
+
+    if (existingStudent) {
+      throw new EduException('STUDENT_ALREADY_EXISTS');
+    }
+
     const schoolClass = await this.prisma.schoolClass.findFirst({
       where: { id: schoolClassId },
       include: { schoolYear: true },
@@ -73,6 +87,7 @@ export class StudentService {
 
     const createdStudent = await this.prisma.student.create({
       data: {
+        id: createStudentDto.id,
         name,
         registry,
         status,

@@ -39,45 +39,52 @@ export class SchoolClassService {
     createSchoolClassDto: CreateSchoolClassDto,
     schoolId: string,
   ): Promise<CreateSchoolClassResponseDto> {
-    const { teacherIds, ...schoolClassData } =
-      createSchoolClassDto as CreateSchoolClassDto;
+    try {
+      const { teacherIds, ...schoolClassData } =
+        createSchoolClassDto as CreateSchoolClassDto;
 
-    this.validateCreateSchoolClassDto(createSchoolClassDto, teacherIds);
+      this.validateCreateSchoolClassDto(createSchoolClassDto, teacherIds);
 
-    const schoolClass = await this.prismaService.schoolClass.create({
-      data: {
-        ...schoolClassData,
-        schoolId,
-      },
-    });
+      const schoolClass = await this.prismaService.schoolClass.create({
+        data: {
+          ...schoolClassData,
+          schoolId,
+        },
+      });
 
-    this.dashboard
-      .createSchoolClass(
-        schoolClass.schoolYearId,
-        schoolClass.id,
-        schoolClass.name,
-        schoolClass.schoolGrade,
-      )
-      .then((r) => console.log(r));
+      this.dashboard
+        .createSchoolClass(
+          schoolClass.schoolYearId,
+          schoolClass.id,
+          schoolClass.name,
+          schoolClass.schoolGrade,
+        )
+        .then((r) => console.log(r));
 
-    await this.associateTeachersWithSchoolClass(schoolClass.id, teacherIds);
+      await this.associateTeachersWithSchoolClass(schoolClass.id, teacherIds);
 
-    const teachers = await this.prismaService.userSchoolClass.findMany({
-      where: { schoolClassId: schoolClass.id },
-      select: { userId: true },
-    });
+      const teachers = await this.prismaService.userSchoolClass.findMany({
+        where: { schoolClassId: schoolClass.id },
+        select: { userId: true },
+      });
 
-    const teacherIdsAssociated = teachers.map((teacher) => teacher.userId);
+      const teacherIdsAssociated = teachers.map((teacher) => teacher.userId);
 
-    return {
-      id: schoolClass.id,
-      name: schoolClass.name,
-      schoolGrade: schoolClass.schoolGrade,
-      schoolPeriod: schoolClass.schoolPeriod,
-      createdAt: schoolClass.createdAt,
-      updatedAt: schoolClass.updatedAt,
-      teachers: teacherIdsAssociated,
-    };
+      return {
+        id: schoolClass.id,
+        name: schoolClass.name,
+        schoolGrade: schoolClass.schoolGrade,
+        schoolPeriod: schoolClass.schoolPeriod,
+        createdAt: schoolClass.createdAt,
+        updatedAt: schoolClass.updatedAt,
+        teachers: teacherIdsAssociated,
+      };
+    } catch (e) {
+      if (e.code === 'P2002') {
+        throw new EduException('SCHOOL_CLASS_EXISTS');
+      }
+      throw new EduException('UNKNOWN_ERROR');
+    }
   }
 
   async findAll(
@@ -352,8 +359,8 @@ export class SchoolClassService {
           schoolClassId: schoolClassId,
           student: {
             name: name ? { contains: name, mode: 'insensitive' } : undefined,
-          }
-        }
+          },
+        },
       });
 
       const totalPages = Math.ceil(totalCount / pageSize);
@@ -372,18 +379,18 @@ export class SchoolClassService {
 
       const schoolClassStudents =
         await this.prismaService.schoolClassStudent.findMany({
-        where: {
-          schoolClassId: schoolClassId,
-          student: {
-            name: name ? { contains: name, mode: 'insensitive' } : undefined,
-          }
-        },
-        skip,
-        take: pageSize,
-        include: {
-          student: true,
-        },
-      });
+          where: {
+            schoolClassId: schoolClassId,
+            student: {
+              name: name ? { contains: name, mode: 'insensitive' } : undefined,
+            },
+          },
+          skip,
+          take: pageSize,
+          include: {
+            student: true,
+          },
+        });
 
       const responseStudents: StudentSimplifiedResponseDto[] =
         await Promise.all(

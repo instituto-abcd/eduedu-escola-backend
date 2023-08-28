@@ -97,6 +97,7 @@ export class UserController {
     @Query('email') email?: string,
     @Query('document') document?: string,
     @Query('profile') profile?: string,
+    @Query('status') status?: string,
   ): Promise<PaginationResponse<UserResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
@@ -106,6 +107,7 @@ export class UserController {
       email,
       document,
       profile,
+      status,
     };
 
     return this.userService.findAll(pageNumber, pageSize, filters);
