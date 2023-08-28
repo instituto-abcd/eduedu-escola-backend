@@ -58,16 +58,18 @@ export class StudentResultService {
       let percent = studentExamResult ? studentExamResult.percent : 0;
       let resume =  studentExamResult ? studentExamResult.resume :
         `Esse aluno ainda não foi avaliado no eixo ${this.mapAxisCodeToLabel(axisCode)}.`;
-
-      let performanceDefinition = this.performanceResultUtilsService
-        .getStudentPerformanceDefinition(studentSchoolGradeYear, level);
+      
+      let classificationText = this.performanceResultUtilsService
+        .getStudentClassificationText(studentSchoolGradeYear, axisCode, level);
+      let classificationColor = this.performanceResultUtilsService
+        .getStudentClassificationColor(studentSchoolGradeYear, axisCode, level);
 
       result.performanceByArea.push({
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
         percent: +percent,
-        description: `${+percent}% ${performanceDefinition.description}`,
-        color: performanceDefinition.color
+        description: `${+percent}% ${classificationText}`,
+        color: classificationColor
       });
 
       result.summaries.push({

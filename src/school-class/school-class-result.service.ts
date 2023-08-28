@@ -78,12 +78,11 @@ export class SchoolClassResultService {
           (item) =>
             item.examId == studentExam.examId && item.axisCode == axisCode,
         );
-        const classification =
-          this.performanceResultUtilsService.getStudentPerformanceDefinition(
-            schoolGradeYear,
-            (studentExamResult ? studentExamResult.level : "0"),
-          );
-        student.classification = classification.description;
+        const classificationText =
+          this.performanceResultUtilsService.getStudentClassificationText(
+            schoolGradeYear, axisCode,
+            (studentExamResult ? studentExamResult.level : "1"));
+        student.classification = classificationText;
         student.examDate = studentExamResult ? studentExamResult.examDate : undefined;
         student.percent = studentExamResult ? studentExamResult.percent : 0;
         return student;
@@ -431,11 +430,21 @@ export class SchoolClassResultService {
     const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
       student.schoolClasses[0].schoolClass.schoolGrade,
     );
-    const classification =
-      this.performanceResultUtilsService.getStudentPerformanceDefinition(
-        schoolGradeYear,
-        resultsByStudent[student.id]?.['ES']?.level || '0',
-      );
+    
+    const ES_ClassificationColor =
+      this.performanceResultUtilsService.getStudentClassificationColor(
+        schoolGradeYear, 'ES',
+        resultsByStudent[student.id]?.['ES']?.level || '1');
+
+    const EA_ClassificationColor =
+      this.performanceResultUtilsService.getStudentClassificationColor(
+        schoolGradeYear, 'EA',
+        resultsByStudent[student.id]?.['EA']?.level || '1');
+
+    const LC_ClassificationColor =
+      this.performanceResultUtilsService.getStudentClassificationColor(
+        schoolGradeYear, 'LC',
+        resultsByStudent[student.id]?.['LC']?.level || '1');
 
     const examDates = [
       resultsByStudent[student.id]?.['ES']?.examDate,
@@ -456,15 +465,15 @@ export class SchoolClassResultService {
       lastExamDate: lastExamString,
       cfo: {
         percent: getPerformanceResult('ES'),
-        color: classification.color,
+        color: ES_ClassificationColor,
       },
       sea: {
         percent: getPerformanceResult('EA'),
-        color: classification.color,
+        color: EA_ClassificationColor,
       },
       lct: {
         percent: getPerformanceResult('LC'),
-        color: classification.color,
+        color: LC_ClassificationColor,
       },
     };
   }
