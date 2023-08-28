@@ -179,12 +179,14 @@ export class StudentService {
       };
 
       // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
-      const currentExamId = await this.getCurrentExamId();
       const studentIds = students.map((item) => item.id);
+      const currentStudentExams = await this.studentExamModel.find({ studentId: { $in: studentIds }, current: true });
+      const currentStudentExamIds = currentStudentExams.map((item) => item.id);
+
       const studentExamResults = await this.prisma.studentExamResult.findMany({
         where: {
           studentId: { in: studentIds },
-          examId: currentExamId,
+          studentExamId: { in: currentStudentExamIds },
         },
       });
 
@@ -210,9 +212,9 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfo.toString().concat('%'),
-          sea: sea.toString().concat('%'),
-          lct: lct.toString().concat('%'),
+          cfo: cfoResult.length > 0 ? cfo.toString().concat('%') : '-',
+          sea: seaResult.length > 0 ? sea.toString().concat('%') : '-',
+          lct: lctResult.length > 0 ? lct.toString().concat('%') : '-',
           status: student.status,
         };
       });
@@ -716,6 +718,7 @@ export class StudentService {
         planetAvatar: planet.avatar_url,
         axis_code: axis_code,
         order: planetTrackToSave.length,
+        level: planet.level,
         answers: [],
       } as Planet);
 
@@ -745,6 +748,7 @@ export class StudentService {
           planetAvatar: nextPlanetToSave.avatar_url,
           axis_code: nextPlanetToSave.axis_code,
           order: planetTrackToSave.length,
+          level: planet.level,
           answers: [],
         } as Planet);
 
@@ -810,11 +814,16 @@ export class StudentService {
         current: true,
       });
       const lastAnswer = studentExam.answers
-        .filter((item) => item.axis_code == axisCode && item.isCorrect == true)
+        .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
         .sort((a, b) => b.order - a.order)[0];
 
       if (lastAnswer == null) {
-        return '0';
+        let schoolGradeYear = await this.getSchoolGradeYear(studentId);
+        if (schoolGradeYear > 0) {
+          return '1';
+        } else {
+          return '0';
+        }
       }
 
       if (lastAnswer.lastQuestion) {
@@ -865,8 +874,8 @@ export class StudentService {
       const createdStudentExamResult =
         await this.prisma.studentExamResult.upsert({
           where: {
-            examId_axisCode_studentId: {
-              examId: studentExam.examId,
+            studentExamId_axisCode_studentId: {
+              studentExamId: studentExam.id,
               axisCode: studentExamResult.axisCode,
               studentId: studentExamResult.studentId,
             },
@@ -877,7 +886,7 @@ export class StudentService {
             resume: studentExamResult.resume,
           },
           create: {
-            examId: studentExam.examId,
+            studentExamId: studentExam.id,
             axisCode: studentExamResult.axisCode,
             percent: studentExamResult.percentage,
             level: studentExamResult.level,
@@ -1124,6 +1133,7 @@ export class StudentService {
     answeredOptions: OptionsAnswers[],
     isCorrect: boolean,
     lastQuestion: boolean,
+    autoAssignedAnswer: boolean = false,
   ): Promise<boolean> {
     try {
       let studentExam = await this.studentExamModel.findOne({
@@ -1163,8 +1173,10 @@ export class StudentService {
           axis_code: question.axis_code,
           level: question.level,
           lastQuestion,
+          school_year: question.school_year,
           order: question.order,
           category: question.category,
+          autoAssignedAnswer: autoAssignedAnswer
         });
       }
 
@@ -1385,40 +1397,20 @@ export class StudentService {
 
     if (axis_code == 'EA' && schoolGradeYear > 0) {
       // - Buscar todas as respostas do eixo EA (Eixo anterior). Se basear no método assignWrongAnswersToRemainingAxisQuestions();
-      const axisAnswersAggregation = await this.studentExamModel.aggregate([
-        {
-          $match: {
-            studentId: studentId,
-          },
-        },
-        {
-          $project: {
-            answers: {
-              $filter: {
-                input: '$answers',
-                as: 'answer',
-                cond: {
-                  $and: [{ $eq: ['$$answer.axis_code', 'EA'] }],
-                },
-              },
-            },
-          },
-        },
-      ]);
-
-      const axisAnswers = axisAnswersAggregation[0].answers.map(
-        (answer: any) => answer,
-      );
+      const studentExam = await this.studentExamModel.findOne({studentId: studentId, current: true});
+      const previousAxisAnswers = studentExam.answers.filter((item) => {
+        return item.axis_code == 'EA'
+      });
 
       // - Se todas as respostas estiverem corretas (A ou B são consideradas como corretas):
       //    - Responder corretamente todas as respostas do eixo ES e setar variável result = true;
 
-      const allOrders = axisAnswers.map((item) => item.order);
+      const allOrders = previousAxisAnswers.map((item) => item.order);
       const orders = [...new Set(allOrders)];
 
       let allAnswersAreCorrect = true;
       for (let index = 0; index < orders.length; index++) {
-        const isOrderCorrect = axisAnswers.some(
+        const isOrderCorrect = previousAxisAnswers.some(
           (answer) => answer.order == orders[index] && answer.isCorrect,
         );
         if (!isOrderCorrect) {
@@ -1428,46 +1420,24 @@ export class StudentService {
       }
 
       if (allAnswersAreCorrect) {
-        const aggregationResult: any[] = await this.examModel
-          .aggregate([
-            {
-              $match: {
-                'questions.axis_code': 'ES',
-              },
-            },
-            {
-              $project: {
-                questions: {
-                  $filter: {
-                    input: '$questions',
-                    as: 'question',
-                    cond: {
-                      $and: [
-                        { $eq: ['$$question.axis_code', 'ES'] },
-                        { $eq: ['$$question.category', 'A'] },
-                        { $lte: ['$$question.school_year', schoolGradeYear] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          ])
-          .exec();
+        const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+        let nextAxisQuestions = exam.questions.filter((question) => {
+          return question.axis_code == 'ES' &&
+            question.category == 'A' &&
+            question.school_year <= schoolGradeYear
+        }).sort(
+          (a, b) => a.order - b.order,
+        );
 
-        if (aggregationResult.length > 0) {
-          const filteredOrderValues = aggregationResult[0].questions.map(
-            (question: any) => question,
-          );
-
-          for (const question of filteredOrderValues) {
+        if (nextAxisQuestions.length > 0) {
+          for (const question of nextAxisQuestions) {
             await this.saveAnswer(
               studentId,
               examId,
               question,
               null,
               true,
-              false,
+              true,
             );
           }
         }
@@ -1515,39 +1485,18 @@ export class StudentService {
     schoolGradeYear: number,
   ): Promise<boolean> {
     try {
-      const aggregationResult: any[] = await this.examModel
-        .aggregate([
-          {
-            $match: {
-              'questions.axis_code': axisCode,
-            },
-          },
-          {
-            $project: {
-              questions: {
-                $filter: {
-                  input: '$questions',
-                  as: 'question',
-                  cond: {
-                    $and: [
-                      { $eq: ['$$question.axis_code', axisCode] },
-                      { $gt: ['$$question.order', order] },
-                      { $lte: ['$$question.school_year', schoolGradeYear] },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        ])
-        .exec();
 
-      if (aggregationResult.length > 0) {
-        const filteredOrderValues = aggregationResult[0].questions.map(
-          (question: any) => question,
-        );
+      const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+      let remainingQuestions = exam.questions.filter((question) => {
+        return question.axis_code == axisCode &&
+          question.order > order &&
+          question.school_year <= schoolGradeYear
+      }).sort(
+        (a, b) => a.order - b.order,
+      );
 
-        for (const question of filteredOrderValues) {
+      if (remainingQuestions.length > 0) {
+        for (const question of remainingQuestions) {
           await this.saveAnswer(
             studentId,
             examId,
@@ -1555,10 +1504,11 @@ export class StudentService {
             null,
             false,
             false,
+            true,
           );
         }
 
-        console.log(filteredOrderValues);
+        console.log(remainingQuestions);
       }
 
       return true;

@@ -48,6 +48,9 @@ export class Planet {
   order: number;
 
   @Prop()
+  level: string;
+
+  @Prop()
   answers?: AnswersPlanet[];
 }
 
@@ -75,7 +78,13 @@ export class Answers {
   category: string;
 
   @Prop()
+  school_year: number;
+
+  @Prop()
   lastQuestion: boolean;
+
+  @Prop()
+  autoAssignedAnswer: boolean;
 }
 
 @Schema()

@@ -78,14 +78,13 @@ export class SchoolClassResultService {
           (item) =>
             item.examId == studentExam.examId && item.axisCode == axisCode,
         );
-        const classification =
-          this.performanceResultUtilsService.getStudentPerformanceDefinition(
-            schoolGradeYear,
-            (studentExamResult ? studentExamResult.level : "0"),
-          );
-        student.classification = classification.description;
+        const classificationText =
+          this.performanceResultUtilsService.getStudentClassificationText(
+            schoolGradeYear, axisCode,
+            (studentExamResult ? studentExamResult.level : "1"));
+        student.classification = classificationText;
         student.examDate = studentExamResult ? studentExamResult.examDate : undefined;
-        student.percent = studentExamResult ? studentExamResult.percent : 0;
+        student.percent = studentExamResult ? this.round(studentExamResult.percent) : 0;
         return student;
       });
 
@@ -333,7 +332,7 @@ export class SchoolClassResultService {
 
         if (filteredResults.length > 0) {
           const totalStars = filteredResults.reduce(
-            (sum, result) => sum + Number(result.percent),
+            (sum, result) => sum + this.round(Number(result.percent)),
             0,
           );
 
@@ -388,11 +387,11 @@ export class SchoolClassResultService {
 
     const studentsWithResultsAndExams = students.filter((student) =>
       filteredStudentExamResults.some(
-        (result) => result.studentId === student.id && result.examId !== null,
+        (result) => result.studentId === student.id && result.studentExamId !== null,
       ),
     );
 
-    return studentsWithResultsAndExams.map((student) => {
+    return students.map((student) => {
       const performanceData = this.calculatePerformanceExam(
         student,
         resultsByStudent,
@@ -425,17 +424,27 @@ export class SchoolClassResultService {
   private calculatePerformanceExam(student, resultsByStudent) {
     const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
       const result = resultsByStudent[student.id]?.[axisCode];
-      return (result ? result.percent : defaultPercent) + '%';
+      return (result ? this.round(result.percent) + '%' : '-');
     };
 
     const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
       student.schoolClasses[0].schoolClass.schoolGrade,
     );
-    const classification =
-      this.performanceResultUtilsService.getStudentPerformanceDefinition(
-        schoolGradeYear,
-        resultsByStudent[student.id]?.['ES']?.level || '0',
-      );
+    
+    const ES_ClassificationColor =
+      this.performanceResultUtilsService.getStudentClassificationColor(
+        schoolGradeYear, 'ES',
+        resultsByStudent[student.id]?.['ES']?.level || '1');
+
+    const EA_ClassificationColor =
+      this.performanceResultUtilsService.getStudentClassificationColor(
+        schoolGradeYear, 'EA',
+        resultsByStudent[student.id]?.['EA']?.level || '1');
+
+    const LC_ClassificationColor =
+      this.performanceResultUtilsService.getStudentClassificationColor(
+        schoolGradeYear, 'LC',
+        resultsByStudent[student.id]?.['LC']?.level || '1');
 
     const examDates = [
       resultsByStudent[student.id]?.['ES']?.examDate,
@@ -449,22 +458,22 @@ export class SchoolClassResultService {
     const timestamps = validExamDates.map((date) => date.getTime());
 
     const maxTimestamp = Math.max(...timestamps);
-    const lastExamDate = new Date(maxTimestamp);
-    const lastExamString = this.formatDate(lastExamDate);
+    const lastExamDate = isFinite(maxTimestamp) ? new Date(maxTimestamp) : new Date();
+    const lastExamString = isFinite(maxTimestamp) ? this.formatDate(lastExamDate) : "-";
 
     return {
       lastExamDate: lastExamString,
       cfo: {
         percent: getPerformanceResult('ES'),
-        color: classification.color,
+        color: ES_ClassificationColor,
       },
       sea: {
         percent: getPerformanceResult('EA'),
-        color: classification.color,
+        color: EA_ClassificationColor,
       },
       lct: {
         percent: getPerformanceResult('LC'),
-        color: classification.color,
+        color: LC_ClassificationColor,
       },
     };
   }
@@ -490,11 +499,15 @@ export class SchoolClassResultService {
 
   private async getStudentBySchoolClasses(schoolClassesId: string) {
     return this.prisma.student.findMany({
+      where: {
+        schoolClasses: {
+          some: {
+            schoolClassId: schoolClassesId
+          }
+        }
+      },
       include: {
         schoolClasses: {
-          where: {
-            AND: [{ schoolClassId: schoolClassesId }],
-          },
           include: {
             schoolClass: {
               include: {
@@ -612,4 +625,8 @@ export class SchoolClassResultService {
       },
     };
   }
+
+  private round(value: number): number {
+    return Math.round(100 * value) / 100;
+  };
 }

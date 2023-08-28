@@ -24,6 +24,10 @@ export class StudentResultService {
   async getStudentDetailedSummary(
     studentId: string,
   ): Promise<StudentDetailedSummaryDto> {
+    const round = (value: number): number => {
+      return Math.round(100 * value) / 100;
+    };
+
     const result = new StudentDetailedSummaryDto();
     const studentExam = await this.studentExamModel.findOne({
       studentId: studentId,
@@ -31,7 +35,7 @@ export class StudentResultService {
     });
 
     const studentExamResults = await this.prisma.studentExamResult.findMany({
-      where: { studentId: studentId, examId: studentExam.examId },
+      where: { studentId: studentId, studentExamId: studentExam.id },
     });
 
     const axisList = [];
@@ -58,16 +62,18 @@ export class StudentResultService {
       let percent = studentExamResult ? studentExamResult.percent : 0;
       let resume =  studentExamResult ? studentExamResult.resume :
         `Esse aluno ainda não foi avaliado no eixo ${this.mapAxisCodeToLabel(axisCode)}.`;
-
-      let performanceDefinition = this.performanceResultUtilsService
-        .getStudentPerformanceDefinition(studentSchoolGradeYear, level);
+      
+      let classificationText = this.performanceResultUtilsService
+        .getStudentClassificationText(studentSchoolGradeYear, axisCode, level);
+      let classificationColor = this.performanceResultUtilsService
+        .getStudentClassificationColor(studentSchoolGradeYear, axisCode, level);
 
       result.performanceByArea.push({
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
-        percent: +percent,
-        description: `${+percent}% ${performanceDefinition.description}`,
-        color: performanceDefinition.color
+        percent: round(+percent),
+        description: `${round(+percent)}% ${classificationText}`,
+        color: classificationColor
       });
 
       result.summaries.push({

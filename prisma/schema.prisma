@@ -97,17 +97,17 @@ model Student {
 }
 
 model StudentExamResult {
-  id        String  @default(uuid())
-  examId    String
-  axisCode  String
-  percent   Decimal
-  level     String
-  resume    String
-  examDate  DateTime @default(now())
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
+  id              String  @default(uuid())
+  studentExamId   String
+  axisCode        String
+  percent         Decimal
+  level           String
+  resume          String
+  examDate        DateTime @default(now())
+  student         Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId       String
 
-  @@id([examId, axisCode, studentId])
+  @@id([studentExamId, axisCode, studentId])
 }
 
 model StudentPlanetResult {
