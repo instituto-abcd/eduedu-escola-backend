@@ -479,14 +479,16 @@ export class SchoolClassResultService {
   }
 
   async getFilteredStudentExamResults(studentIds: string[]) {
+    const currentStudentExams = await this.studentExamModel
+        .find({ studentId: { $in: studentIds }, lastExam: true });
+    const currentStudentExamIds = currentStudentExams.map((item) => item.id);
+
     return this.prisma.studentExamResult.findMany({
       where: {
         studentId: {
           in: studentIds,
         },
-        examDate: {
-          not: undefined,
-        },
+        studentExamId: { in: currentStudentExamIds },
       },
     });
   }

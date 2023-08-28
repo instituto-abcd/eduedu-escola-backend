@@ -178,9 +178,10 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
+      // Obter os resultados da última prova executada de aluno e retornar abaixo (cfo, sea, lct)
       const studentIds = students.map((item) => item.id);
-      const currentStudentExams = await this.studentExamModel.find({ studentId: { $in: studentIds }, current: true });
+      const currentStudentExams = await this.studentExamModel
+        .find({ studentId: { $in: studentIds }, lastExam: true });
       const currentStudentExamIds = currentStudentExams.map((item) => item.id);
 
       const studentExamResults = await this.prisma.studentExamResult.findMany({
@@ -1464,11 +1465,21 @@ export class StudentService {
       if (studentExam) {
         studentExam.examDate = new Date();
         studentExam.examPerformed = true;
+        studentExam.lastExam = true;
       } else {
         throw new EduException('STUDENT_NOT_FOUND');
       }
 
       await studentExam.save();
+
+      let oldStudentExams = (await this.studentExamModel.find({
+        studentId: studentId,
+      })).filter((item) => item.id != studentExam.id);
+
+      for (let index = 0; index < oldStudentExams.length; index++) {
+        oldStudentExams[index].lastExam = false;
+        await oldStudentExams[index].save();
+      }
 
       return { examCompleted: true };
     } catch (error) {

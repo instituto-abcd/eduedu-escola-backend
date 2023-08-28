@@ -31,7 +31,7 @@ export class StudentResultService {
     const result = new StudentDetailedSummaryDto();
     const studentExam = await this.studentExamModel.findOne({
       studentId: studentId,
-      current: true,
+      lastExam: true,
     });
 
     const studentExamResults = await this.prisma.studentExamResult.findMany({
