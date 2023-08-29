@@ -228,9 +228,9 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfoResult.length > 0 ? cfo.toString().concat('%') : '-',
-          sea: seaResult.length > 0 ? sea.toString().concat('%') : '-',
-          lct: lctResult.length > 0 ? lct.toString().concat('%') : '-',
+          cfo: cfoResult.length > 0 ? Math.round(+cfo).toString().concat('%') : '-',
+          sea: seaResult.length > 0 ? Math.round(+sea).toString().concat('%') : '-',
+          lct: lctResult.length > 0 ? Math.round(+lct).toString().concat('%') : '-',
           status: student.status,
         };
       });

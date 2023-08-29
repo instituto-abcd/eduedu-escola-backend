@@ -25,7 +25,7 @@ export class StudentResultService {
     studentId: string,
   ): Promise<StudentDetailedSummaryDto> {
     const round = (value: number): number => {
-      return Math.round(100 * value) / 100;
+      return Math.round(value);
     };
 
     const result = new StudentDetailedSummaryDto();
