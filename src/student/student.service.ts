@@ -827,7 +827,7 @@ export class StudentService {
       });
       const lastAnswer = studentExam.answers
         .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
-        .sort((a, b) => b.order - a.order)[0];
+        .sort((a, b) => (b.order - a.order || b.category.localeCompare(a.category)))[0];
 
       let schoolGradeYear = await this.getSchoolGradeYear(studentId);
 
