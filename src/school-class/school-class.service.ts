@@ -152,7 +152,7 @@ export class SchoolClassService {
         where,
         skip,
         take: pageSize,
-        include: { schoolYear: true, users: { include: { user: true } } },
+        include: { schoolYear: true, students: true, users: { include: { user: true } } },
       });
 
       const totalPages = Math.ceil(totalCount / pageSize);
@@ -183,6 +183,7 @@ export class SchoolClassService {
             id: user.user.id,
             name: user.user.name,
           })),
+          studentsCount: schoolClass.students.length
         }),
       );
 
@@ -203,6 +204,7 @@ export class SchoolClassService {
           schoolClass: {
             include: {
               schoolYear: true,
+              students: true
             },
           },
           user: true,
@@ -229,6 +231,7 @@ export class SchoolClassService {
         id: userSchoolClass.user.id,
         name: userSchoolClass.user.name,
       })),
+      studentsCount: schoolClass.students.length,
     };
   }
 
