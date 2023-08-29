@@ -54,7 +54,7 @@ export class SchoolClassResultService {
     const studentIds = students.map((item) => item.id);
     const studentExams = await this.studentExamModel.find({
       studentId: { $in: studentIds },
-      current: true,
+      lastExam: true,
     });
 
     const schoolClass = await this.prisma.schoolClass.findFirst({
@@ -76,7 +76,7 @@ export class SchoolClassResultService {
         );
         const studentExamResult = student.examResults.find(
           (item) =>
-            item.examId == studentExam.examId && item.axisCode == axisCode,
+            item.studentExamId == studentExam.id && item.axisCode == axisCode,
         );
         const classificationText =
           this.performanceResultUtilsService.getStudentClassificationText(
