@@ -112,7 +112,7 @@ export class PerformanceResultUtilsService {
 
   private getStudentClassification_SecondYear(axisCode: string, level: string, type: ClassificationType): string {
     switch (axisCode) {
-      case "EA":
+      case "ES":
         switch (level) {
           case "1":
             return type == ClassificationType.TEXT ? this.veryLowText: this.veryLowColor;
