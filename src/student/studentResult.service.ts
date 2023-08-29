@@ -34,8 +34,10 @@ export class StudentResultService {
       lastExam: true,
     });
 
+    let studentExamId = studentExam ? studentExam.id : "";
+
     const studentExamResults = await this.prisma.studentExamResult.findMany({
-      where: { studentId: studentId, studentExamId: studentExam.id },
+      where: { studentId: studentId, studentExamId: studentExamId },
     });
 
     const axisList = [];
@@ -83,7 +85,7 @@ export class StudentResultService {
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
         percent: round(+percent),
-        description: `${round(+percent)}% ${classificationText}`,
+        description: studentExamResult ? `${round(+percent)}% ${classificationText}` : '-',
         color: classificationColor,
       });
 
