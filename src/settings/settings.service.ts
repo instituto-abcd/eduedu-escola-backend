@@ -93,7 +93,10 @@ export class SettingsService {
       updateData.smtpPort = updateSettingsDto.smtpPort;
     }
 
-    if (updateSettingsDto.schoolName !== undefined) {
+    if (
+      updateSettingsDto.schoolName !== undefined &&
+      updateSettingsDto.schoolName !== ''
+    ) {
       settings.schoolName = updateSettingsDto.schoolName;
       updateData.school = { update: { name: updateSettingsDto.schoolName } };
     }

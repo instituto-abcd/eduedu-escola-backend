@@ -26,4 +26,7 @@ export class SchoolClassResponseDto {
     type: SchoolYearDto,
   })
   schoolYear: SchoolYearDto;
+
+  @ApiProperty({ description: 'Quantidade de alunos na Turma' })
+  studentsCount: number
 }
