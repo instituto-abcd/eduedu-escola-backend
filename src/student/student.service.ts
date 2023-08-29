@@ -839,7 +839,7 @@ export class StudentService {
         }
       }
 
-      if (lastAnswer.lastQuestion) {
+      if (lastAnswer.lastQuestion && lastAnswer.isCorrect) {
         return 'IDEAL';
       }
 
