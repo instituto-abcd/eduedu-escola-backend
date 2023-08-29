@@ -629,6 +629,6 @@ export class SchoolClassResultService {
   }
 
   private round(value: number): number {
-    return Math.round(100 * value) / 100;
+    return Math.round(value);
   };
 }
