@@ -57,15 +57,21 @@ export class StudentExamService {
             item.planetId == studentExam.planetTrack[index-1].planetId) : undefined;
           let previousPlanetStars = previousPlanetResult ? parseFloat(previousPlanetResult.stars.toString()) : 0;
 
+          let planetAvailable = studentExam.planetTrack[index].availableAt != undefined &&
+            studentExam.planetTrack[index].availableAt <= new Date();
+
           const planetDto = {
             planetId: studentExam.planetTrack[index].planetId,
             planetName: studentExam.planetTrack[index].planetName,
             planetAvatar: studentExam.planetTrack[index].planetAvatar,
             stars: currentPlanetStars,
             canExecutePlanet:
-              index === 0 || // O planeta é o primeiro da trilha
-              currentPlanetStars > 0 || // O planeta já foi realizado pelo menos uma vez
-              (index > 0 && previousPlanetStars > 0) // O planeta anterior já foi realizado pelo menos uma vez
+              planetAvailable // O planeta está disponível
+              && (
+                index === 0 || // O planeta é o primeiro da trilha
+                currentPlanetStars > 0 || // O planeta já foi realizado pelo menos uma vez
+                (index > 0 && previousPlanetStars > 0) // O planeta anterior já foi realizado pelo menos uma vez
+              )
           } as PlanetDto;
           planetTrack.push(planetDto);
         }
