@@ -25,17 +25,19 @@ export class StudentResultService {
     studentId: string,
   ): Promise<StudentDetailedSummaryDto> {
     const round = (value: number): number => {
-      return Math.round(100 * value) / 100;
+      return Math.round(value);
     };
 
     const result = new StudentDetailedSummaryDto();
     const studentExam = await this.studentExamModel.findOne({
       studentId: studentId,
-      current: true,
+      lastExam: true,
     });
 
+    let studentExamId = studentExam ? studentExam.id : "";
+
     const studentExamResults = await this.prisma.studentExamResult.findMany({
-      where: { studentId: studentId, studentExamId: studentExam.id },
+      where: { studentId: studentId, studentExamId: studentExamId },
     });
 
     const axisList = [];
@@ -83,7 +85,7 @@ export class StudentResultService {
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
         percent: round(+percent),
-        description: `${round(+percent)}% ${classificationText}`,
+        description: studentExamResult ? `${round(+percent)}% ${classificationText}` : '-',
         color: classificationColor,
       });
 

@@ -21,6 +21,9 @@ export class StudentExam {
   examPerformed: boolean;
 
   @Prop()
+  lastExam: boolean;
+
+  @Prop()
   planetTrack: Planet[];
 
   createdAt?: Date;

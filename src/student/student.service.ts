@@ -193,9 +193,10 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      // Obter os resultados de aluno e retornar abaixo (cfo, sea, lct)
+      // Obter os resultados da última prova executada de aluno e retornar abaixo (cfo, sea, lct)
       const studentIds = students.map((item) => item.id);
-      const currentStudentExams = await this.studentExamModel.find({ studentId: { $in: studentIds }, current: true });
+      const currentStudentExams = await this.studentExamModel
+        .find({ studentId: { $in: studentIds }, lastExam: true });
       const currentStudentExamIds = currentStudentExams.map((item) => item.id);
 
       const studentExamResults = await this.prisma.studentExamResult.findMany({
@@ -227,9 +228,9 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfoResult.length > 0 ? cfo.toString().concat('%') : '-',
-          sea: seaResult.length > 0 ? sea.toString().concat('%') : '-',
-          lct: lctResult.length > 0 ? lct.toString().concat('%') : '-',
+          cfo: cfoResult.length > 0 ? Math.round(+cfo).toString().concat('%') : '-',
+          sea: seaResult.length > 0 ? Math.round(+sea).toString().concat('%') : '-',
+          lct: lctResult.length > 0 ? Math.round(+lct).toString().concat('%') : '-',
           status: student.status,
         };
       });
@@ -826,7 +827,7 @@ export class StudentService {
       });
       const lastAnswer = studentExam.answers
         .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
-        .sort((a, b) => b.order - a.order)[0];
+        .sort((a, b) => (b.order - a.order || b.category.localeCompare(a.category)))[0];
 
       let schoolGradeYear = await this.getSchoolGradeYear(studentId);
 
@@ -838,7 +839,7 @@ export class StudentService {
         }
       }
 
-      if (lastAnswer.lastQuestion) {
+      if (lastAnswer.lastQuestion && lastAnswer.isCorrect) {
         return 'IDEAL';
       }
 
@@ -1479,11 +1480,21 @@ export class StudentService {
       if (studentExam) {
         studentExam.examDate = new Date();
         studentExam.examPerformed = true;
+        studentExam.lastExam = true;
       } else {
         throw new EduException('STUDENT_NOT_FOUND');
       }
 
       await studentExam.save();
+
+      let oldStudentExams = (await this.studentExamModel.find({
+        studentId: studentId,
+      })).filter((item) => item.id != studentExam.id);
+
+      for (let index = 0; index < oldStudentExams.length; index++) {
+        oldStudentExams[index].lastExam = false;
+        await oldStudentExams[index].save();
+      }
 
       return { examCompleted: true };
     } catch (error) {

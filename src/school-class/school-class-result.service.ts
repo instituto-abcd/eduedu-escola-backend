@@ -22,7 +22,6 @@ import { PerformanceResultUtilsService } from 'src/common/utils/performance-resu
 import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
-import { IdealStudentsDto } from './dto/response/ideal-students.dto';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -81,17 +80,11 @@ export class SchoolClassResultService {
         );
         const classificationText =
           this.performanceResultUtilsService.getStudentClassificationText(
-            schoolGradeYear,
-            axisCode,
-            studentExamResult ? studentExamResult.level : '1',
-          );
+            schoolGradeYear, axisCode,
+            (studentExamResult ? studentExamResult.level : "1"));
         student.classification = classificationText;
-        student.examDate = studentExamResult
-          ? studentExamResult.examDate
-          : undefined;
-        student.percent = studentExamResult
-          ? this.round(studentExamResult.percent)
-          : 0;
+        student.examDate = studentExamResult ? studentExamResult.examDate : undefined;
+        student.percent = studentExamResult ? this.round(studentExamResult.percent) : 0;
         return student;
       });
 
@@ -394,8 +387,7 @@ export class SchoolClassResultService {
 
     const studentsWithResultsAndExams = students.filter((student) =>
       filteredStudentExamResults.some(
-        (result) =>
-          result.studentId === student.id && result.studentExamId !== null,
+        (result) => result.studentId === student.id && result.studentExamId !== null,
       ),
     );
 
@@ -432,33 +424,27 @@ export class SchoolClassResultService {
   private calculatePerformanceExam(student, resultsByStudent) {
     const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
       const result = resultsByStudent[student.id]?.[axisCode];
-      return result ? this.round(result.percent) + '%' : '-';
+      return (result ? this.round(result.percent) + '%' : '-');
     };
 
     const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
       student.schoolClasses[0].schoolClass.schoolGrade,
     );
-
+    
     const ES_ClassificationColor =
       this.performanceResultUtilsService.getStudentClassificationColor(
-        schoolGradeYear,
-        'ES',
-        resultsByStudent[student.id]?.['ES']?.level || '1',
-      );
+        schoolGradeYear, 'ES',
+        resultsByStudent[student.id]?.['ES']?.level || '1');
 
     const EA_ClassificationColor =
       this.performanceResultUtilsService.getStudentClassificationColor(
-        schoolGradeYear,
-        'EA',
-        resultsByStudent[student.id]?.['EA']?.level || '1',
-      );
+        schoolGradeYear, 'EA',
+        resultsByStudent[student.id]?.['EA']?.level || '1');
 
     const LC_ClassificationColor =
       this.performanceResultUtilsService.getStudentClassificationColor(
-        schoolGradeYear,
-        'LC',
-        resultsByStudent[student.id]?.['LC']?.level || '1',
-      );
+        schoolGradeYear, 'LC',
+        resultsByStudent[student.id]?.['LC']?.level || '1');
 
     const examDates = [
       resultsByStudent[student.id]?.['ES']?.examDate,
@@ -472,12 +458,8 @@ export class SchoolClassResultService {
     const timestamps = validExamDates.map((date) => date.getTime());
 
     const maxTimestamp = Math.max(...timestamps);
-    const lastExamDate = isFinite(maxTimestamp)
-      ? new Date(maxTimestamp)
-      : new Date();
-    const lastExamString = isFinite(maxTimestamp)
-      ? this.formatDate(lastExamDate)
-      : '-';
+    const lastExamDate = isFinite(maxTimestamp) ? new Date(maxTimestamp) : new Date();
+    const lastExamString = isFinite(maxTimestamp) ? this.formatDate(lastExamDate) : "-";
 
     return {
       lastExamDate: lastExamString,
@@ -645,7 +627,7 @@ export class SchoolClassResultService {
   }
 
   private round(value: number): number {
-    return Math.round(100 * value) / 100;
+    return Math.round(value);
   }
 
   async getAllStudentsIdealAxis(
