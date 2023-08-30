@@ -150,7 +150,7 @@ export class AuthService {
 
   async authenticateAccessKey(accessKey: string): Promise<AuthResponseDto> {
     const user = await this.prismaService.user.findFirst({
-      where: { accessKey },
+      where: { accessKey: { equals: accessKey, mode: 'insensitive' } },
     });
 
     if (!user) {
