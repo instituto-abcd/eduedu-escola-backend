@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -19,9 +19,9 @@ import {
   SchoolClassDetailedSummaryDto,
 } from './dto/response/school-class-detailed-summary.dto';
 import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
-import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
+import { IdealStudentsDto } from './dto/response/ideal-students.dto';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -54,7 +54,7 @@ export class SchoolClassResultService {
     const studentIds = students.map((item) => item.id);
     const studentExams = await this.studentExamModel.find({
       studentId: { $in: studentIds },
-      lastExam: true,
+      current: true,
     });
 
     const schoolClass = await this.prisma.schoolClass.findFirst({
@@ -76,15 +76,21 @@ export class SchoolClassResultService {
         );
         const studentExamResult = student.examResults.find(
           (item) =>
-            item.studentExamId == studentExam.id && item.axisCode == axisCode,
+            item.examId == studentExam.examId && item.axisCode == axisCode,
         );
         const classificationText =
           this.performanceResultUtilsService.getStudentClassificationText(
-            schoolGradeYear, axisCode,
-            (studentExamResult ? studentExamResult.level : "1"));
+            schoolGradeYear,
+            axisCode,
+            studentExamResult ? studentExamResult.level : '1',
+          );
         student.classification = classificationText;
-        student.examDate = studentExamResult ? studentExamResult.examDate : undefined;
-        student.percent = studentExamResult ? this.round(studentExamResult.percent) : 0;
+        student.examDate = studentExamResult
+          ? studentExamResult.examDate
+          : undefined;
+        student.percent = studentExamResult
+          ? this.round(studentExamResult.percent)
+          : 0;
         return student;
       });
 
@@ -387,7 +393,8 @@ export class SchoolClassResultService {
 
     const studentsWithResultsAndExams = students.filter((student) =>
       filteredStudentExamResults.some(
-        (result) => result.studentId === student.id && result.studentExamId !== null,
+        (result) =>
+          result.studentId === student.id && result.studentExamId !== null,
       ),
     );
 
@@ -424,27 +431,33 @@ export class SchoolClassResultService {
   private calculatePerformanceExam(student, resultsByStudent) {
     const getPerformanceResult = (axisCode: string, defaultPercent = '0') => {
       const result = resultsByStudent[student.id]?.[axisCode];
-      return (result ? this.round(result.percent) + '%' : '-');
+      return result ? this.round(result.percent) + '%' : '-';
     };
 
     const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
       student.schoolClasses[0].schoolClass.schoolGrade,
     );
-    
+
     const ES_ClassificationColor =
       this.performanceResultUtilsService.getStudentClassificationColor(
-        schoolGradeYear, 'ES',
-        resultsByStudent[student.id]?.['ES']?.level || '1');
+        schoolGradeYear,
+        'ES',
+        resultsByStudent[student.id]?.['ES']?.level || '1',
+      );
 
     const EA_ClassificationColor =
       this.performanceResultUtilsService.getStudentClassificationColor(
-        schoolGradeYear, 'EA',
-        resultsByStudent[student.id]?.['EA']?.level || '1');
+        schoolGradeYear,
+        'EA',
+        resultsByStudent[student.id]?.['EA']?.level || '1',
+      );
 
     const LC_ClassificationColor =
       this.performanceResultUtilsService.getStudentClassificationColor(
-        schoolGradeYear, 'LC',
-        resultsByStudent[student.id]?.['LC']?.level || '1');
+        schoolGradeYear,
+        'LC',
+        resultsByStudent[student.id]?.['LC']?.level || '1',
+      );
 
     const examDates = [
       resultsByStudent[student.id]?.['ES']?.examDate,
@@ -458,8 +471,12 @@ export class SchoolClassResultService {
     const timestamps = validExamDates.map((date) => date.getTime());
 
     const maxTimestamp = Math.max(...timestamps);
-    const lastExamDate = isFinite(maxTimestamp) ? new Date(maxTimestamp) : new Date();
-    const lastExamString = isFinite(maxTimestamp) ? this.formatDate(lastExamDate) : "-";
+    const lastExamDate = isFinite(maxTimestamp)
+      ? new Date(maxTimestamp)
+      : new Date();
+    const lastExamString = isFinite(maxTimestamp)
+      ? this.formatDate(lastExamDate)
+      : '-';
 
     return {
       lastExamDate: lastExamString,
@@ -479,16 +496,14 @@ export class SchoolClassResultService {
   }
 
   async getFilteredStudentExamResults(studentIds: string[]) {
-    const currentStudentExams = await this.studentExamModel
-        .find({ studentId: { $in: studentIds }, lastExam: true });
-    const currentStudentExamIds = currentStudentExams.map((item) => item.id);
-
     return this.prisma.studentExamResult.findMany({
       where: {
         studentId: {
           in: studentIds,
         },
-        studentExamId: { in: currentStudentExamIds },
+        examDate: {
+          not: undefined,
+        },
       },
     });
   }
@@ -504,9 +519,9 @@ export class SchoolClassResultService {
       where: {
         schoolClasses: {
           some: {
-            schoolClassId: schoolClassesId
-          }
-        }
+            schoolClassId: schoolClassesId,
+          },
+        },
       },
       include: {
         schoolClasses: {
@@ -630,5 +645,62 @@ export class SchoolClassResultService {
 
   private round(value: number): number {
     return Math.round(value);
-  };
+  }
+
+  async getAllStudentsIdealAxis(
+    idSchoolClass: string,
+  ): Promise<IdealStudentsDto[]> {
+    try {
+      const schoolClass = await this.prisma.schoolClass.findFirst({
+        where: { id: idSchoolClass },
+      });
+
+      let axisCode = ['ES', 'EA', 'LC'];
+      if (schoolClass.schoolGrade == SchoolGradeEnum.CHILDREN) {
+        axisCode = ['EA', 'LC'];
+      }
+
+      const studentExamResults = await this.prisma.studentExamResult.findMany({
+        where: {
+          axisCode: {
+            in: axisCode,
+          },
+          level: 'IDEAL',
+          student: {
+            schoolClasses: {
+              some: {
+                schoolClassId: idSchoolClass,
+              },
+            },
+          },
+        },
+        include: {
+          student: true,
+        },
+        orderBy: {
+          examDate: 'desc',
+        },
+      });
+
+      const uniqueStudents = studentExamResults.reduce((acc, result) => {
+        const existingStudent = acc.find(
+          (student) => student.studentId === result.studentId,
+        );
+        if (!existingStudent) {
+          acc.push({
+            studentId: result.studentId,
+            name: result.student.name ?? '',
+            lastExamDate: result.examDate,
+          });
+        }
+        return acc;
+      }, []);
+
+      return uniqueStudents;
+    } catch (error) {
+      throw new NotFoundException(
+        `Failed to get students for school class ${idSchoolClass}`,
+      );
+    }
+  }
 }
