@@ -20,4 +20,17 @@ export class ExamController {
   async syncExam() {
     return await this.examService.syncExams();
   }
+
+  @Get("/questions")
+  @ApiOperation({
+    summary: 'Obter questões da prova atual',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Status da operação'
+  })
+  async getExamQuestions() {
+    return await this.examService.getExamQuestions();
+  }
+
 }
