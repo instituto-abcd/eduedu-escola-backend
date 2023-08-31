@@ -9,15 +9,24 @@ import {
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserGuard } from 'src/auth/guard/user.guard';
 import { NotificationDto } from './dto/notifications.dto';
 import { NotifiedCountDto } from './dto/notified-count.dto';
 import { CreateNotificationResponseDto } from './dto/create-notification-response.dto';
 import { SendNotificationDto } from './dto/send-notification.dto';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Notificação')
 @Controller('notification')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 

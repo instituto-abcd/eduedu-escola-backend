@@ -39,13 +39,12 @@ import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
 import { Request } from 'express';
 import { UserSchoolClassesDto } from './dto/response/user-classes.dto';
-
-// import { TeacherAuthGuard } from '../auth/guard/teacher-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiBearerAuth()
 @ApiTags('Usuário')
 @Controller('user')
-// @UseGuards(TeacherAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
