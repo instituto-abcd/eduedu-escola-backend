@@ -1,6 +1,15 @@
-import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiOperation,
   ApiResponse,
@@ -16,9 +25,12 @@ import {
 } from '../common/exceptions/edu-school.exception';
 import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Ano Letivo')
 @Controller('school-year')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class SchoolYearController {
   constructor(private readonly schoolYearService: SchoolYearService) {}
 

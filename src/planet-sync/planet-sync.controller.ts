@@ -1,10 +1,18 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Post, UseGuards } from '@nestjs/common';
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Sincronizar Planetas')
 @Controller('planet-sync')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class PlanetSyncController {
   constructor(private readonly planetSyncService: PlanetSyncService) {}
 
