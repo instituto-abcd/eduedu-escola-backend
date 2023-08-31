@@ -9,10 +9,12 @@ import {
   Query,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -45,12 +47,14 @@ import { SchoolClassResultService } from './school-class-result.service';
 import { SchoolClassPlanetResultDetailDto } from './dto/response/school-class-planet-result-detail.dto';
 import { SchoolClassDetailedSummaryDto } from './dto/response/school-class-detailed-summary.dto';
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
-import { PlanetPerformanceResponse } from './dto/response/planet-performance.response';
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
