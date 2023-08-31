@@ -1988,6 +1988,11 @@ export class StudentService {
     answeredValue: OptionAnswer[],
   ): Promise<boolean> {
     try {
+
+      if (question.options.every((item) => item.isCorrect)) {
+        return true
+      }
+
       const correctOptions = question.options.filter(
         (option) => option.isCorrect,
       );
