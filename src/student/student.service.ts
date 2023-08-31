@@ -38,6 +38,7 @@ import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-req
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 import { StudentAwardService } from './studentAward.service';
+import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
 
 @Injectable()
 export class StudentService {
@@ -45,6 +46,7 @@ export class StudentService {
     private readonly prisma: PrismaService,
     private readonly dashboard: DashboardService,
     private readonly studentAward: StudentAwardService,
+    private readonly studentPlanetExecution: StudentPlanetExecutionService,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
     @InjectModel(StudentExam.name)
@@ -658,6 +660,38 @@ export class StudentService {
     return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
   }
 
+  async releasePlanets(
+    studentId: string
+  ): Promise<any>  {
+    // Obtém studentexam com a execução de prova atual
+    let studentExam = await this.studentExamModel.findOne({
+      studentId: studentId,
+      lastExam: true });
+
+    let counter = 1;
+    let nextAvaiableDate = new Date();
+    nextAvaiableDate.setHours(0, 0, 0, 0);
+
+    let plantTrackToUpdate = studentExam.planetTrack;
+
+    studentExam.planetTrack
+      .filter((item) => item.availableAt > new Date())
+      .forEach((item) => {
+        item.availableAt = new Date(nextAvaiableDate.toISOString());;
+        
+        if (counter == 2) { // 2 = quantidade de planetas que está sendo liberada
+          nextAvaiableDate.setDate(nextAvaiableDate.getDate() + 1);
+          counter = 1;
+        } else {
+          counter++;
+        }
+      });
+    
+    studentExam.planetTrack = plantTrackToUpdate.sort((a,b) => a.order - b.order);
+
+    await studentExam.save();
+  }
+
   private async getPlanetsByAxisAndLevel(
     axis_code: string,
     level: string,
@@ -703,9 +737,25 @@ export class StudentService {
       });
     }
 
+    // Definindo disponibilidade dos planetas
+    this.setPlanetTrackAvailability(planetTrackToSave);
+
     // Persistindo planetTrack ordenada
     studentExam.planetTrack = planetTrackToSave;
     await studentExam.save();
+  }
+
+  private setPlanetTrackAvailability(planetTrack: Planet[]) {
+    let nextAvaiableDate = new Date();
+    nextAvaiableDate.setHours(0, 0, 0, 0);
+
+    for (let index = 0; index < planetTrack.length; index += 2) {
+      planetTrack[index].availableAt = new Date(nextAvaiableDate.toISOString());;
+      if (index+1 < planetTrack.length) {
+        planetTrack[index+1].availableAt = new Date(nextAvaiableDate.toISOString());
+        nextAvaiableDate.setDate(nextAvaiableDate.getDate() + 1);
+      }
+    }
   }
 
   private addByAxisCode(
@@ -1674,10 +1724,12 @@ export class StudentService {
     planetId: string,
     answersPlanet: AnswersPlanet,
   ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
-    const questionAnswered = await this.getQuestionByPlanetId(
+    let questionAnswered = await this.getQuestionByPlanetId(
       planetId,
       answersPlanet.questionId,
     );
+
+    questionAnswered = this.studentPlanetExecution.handleCustomQuestion(questionAnswered);
 
     const skipVerify = questionAnswered.options.every((option) => {
       return option.position === null && !option.isCorrect;
@@ -1936,6 +1988,11 @@ export class StudentService {
     answeredValue: OptionAnswer[],
   ): Promise<boolean> {
     try {
+
+      if (question.options.every((item) => item.isCorrect)) {
+        return true
+      }
+
       const correctOptions = question.options.filter(
         (option) => option.isCorrect,
       );

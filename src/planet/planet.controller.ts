@@ -1,10 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PlanetService } from './planet.service';
 import { PlanetDto } from './dto/planet.dto';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @Controller('planet')
 @ApiTags('Planetas')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class PlanetController {
   constructor(private readonly planetService: PlanetService) {}
 
@@ -17,5 +20,4 @@ export class PlanetController {
   findAll(): Promise<PlanetDto[]> {
     return this.planetService.findAll();
   }
-
 }

@@ -57,6 +57,9 @@ export class Planet {
   position: number;
 
   @Prop()
+  availableAt: Date;
+
+  @Prop()
   answers?: AnswersPlanet[];
 }
 

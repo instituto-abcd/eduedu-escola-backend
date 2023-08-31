@@ -7,19 +7,20 @@ import {
   Param,
   Patch,
   Post,
-  Query,
-} from '@nestjs/common';
+  Put,
+  Query, UseGuards
+} from "@nestjs/common";
 import { StudentService } from './student.service';
 import { CreateStudentRequestDto } from './dto/request/create-student-request.dto';
 import { DeleteStudentRequestDto } from './dto/request/delete-student-request.dto';
 import { UpdateStudentRequestDto } from './dto/request/update-student-request.dto';
 import {
-  ApiBadRequestResponse,
+  ApiBadRequestResponse, ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+  ApiTags
+} from "@nestjs/swagger";
 import {
   EduException,
   ErrorDetails,
@@ -48,9 +49,12 @@ import { StudentResultService } from './studentResult.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
 import { ChartStudentResponse } from './dto/response/chart-studant-response.dto';
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
+import { JwtAuthGuard } from "../auth/guard/jwt-auth.guard";
 
 @Controller('student')
 @ApiTags('Estudante')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class StudentController {
   constructor(
     private readonly studentService: StudentService,
@@ -186,6 +190,17 @@ export class StudentController {
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
     return this.studentExamService.getPlanetTrack(studentId);
+  }
+
+  @Put('/:id/release-planets')
+  @ApiResponse({
+    status: 200,
+    description: 'Status da operação'
+  })
+  async releasePlanets(
+    @Param('id') studentId: string,
+  ): Promise<PlanetTrackDto> {
+    return this.studentService.releasePlanets(studentId);
   }
 
   @Get('/:id/awards')

@@ -15,6 +15,7 @@ import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
 import { StudentAwardService } from './studentAward.service';
 import { StudentResultService } from './studentResult.service';
 import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
+import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { PerformanceResultUtilsService } from '../common/utils/performance-resul
     AwardsService,
     StudentAwardService,
     StudentResultService,
+    StudentPlanetExecutionService,
     PerformanceResultUtilsService,
   ],
 })

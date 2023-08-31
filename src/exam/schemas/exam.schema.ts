@@ -10,7 +10,7 @@ type IAxis = {
   domain: 'PORTUGUESE' | 'MATH';
 };
 
-type Question = {
+export type Question = {
   orderedAnswer: boolean;
   level: number;
   axis_code: string;

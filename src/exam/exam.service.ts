@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { FirestoreService } from 'src/planet-sync/firestore.service';
-import { Exam } from './schemas/exam.schema';
+import { Exam, Question } from './schemas/exam.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { ca } from 'date-fns/locale';
 
@@ -11,6 +11,11 @@ export class ExamService {
     @InjectModel(Exam.name) private examModel: Model<Exam>,
     private readonly firestoreService: FirestoreService,
   ) {}
+
+  async getExamQuestions(): Promise<Question[]> {
+    const currentExam = await this.examModel.findOne({ status: "ACTIVE" });
+    return currentExam.questions;
+  }
 
   async syncExams() {
     try {

@@ -27,6 +27,11 @@ export type Question = {
     placeholder: string;
     type: string;
   }[];
+  rules: {
+    name: string;
+    type: string;
+    value: string;
+  }[];
 };
 
 export type PlanetDocument = HydratedDocument<Planet>;
