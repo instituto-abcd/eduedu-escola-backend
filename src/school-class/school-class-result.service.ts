@@ -35,9 +35,29 @@ export class SchoolClassResultService {
   async getSchoolClassDetailedSummary(
     schoolClassId: string,
   ): Promise<SchoolClassDetailedSummaryDto[]> {
-    const result: SchoolClassDetailedSummaryDto[] = [];
+    const students = await this.getStudentsWithExamResults(schoolClassId);
+    const studentIds = students.map((item) => item.id);
+    const studentExams = await this.getStudentExams(studentIds);
 
-    const students = await this.prisma.student.findMany({
+    const schoolClass = await this.getSchoolClassWithSchoolYear(schoolClassId);
+    const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
+      schoolClass.schoolGrade,
+    );
+
+    const axisList = ['ES', 'EA', 'LC'];
+
+    return axisList.map((axisCode) =>
+      this.createExamResultDetail(
+        students,
+        studentExams,
+        axisCode,
+        schoolGradeYear,
+      ),
+    );
+  }
+
+  private async getStudentsWithExamResults(schoolClassId: string) {
+    return this.prisma.student.findMany({
       where: {
         schoolClasses: {
           some: {
@@ -50,98 +70,91 @@ export class SchoolClassResultService {
         examResults: true,
       },
     });
+  }
 
-    const studentIds = students.map((item) => item.id);
-    const studentExams = await this.studentExamModel.find({
+  private async getStudentExams(studentIds: string[]) {
+    return this.studentExamModel.find({
       studentId: { $in: studentIds },
-      lastExam: true,
+      current: true,
     });
+  }
 
-    const schoolClass = await this.prisma.schoolClass.findFirst({
+  private async getSchoolClassWithSchoolYear(schoolClassId: string) {
+    return this.prisma.schoolClass.findFirst({
       where: { id: schoolClassId },
       include: {
         schoolYear: true,
       },
     });
+  }
 
-    const schoolGradeYear = Object.keys(SchoolGradeEnum).indexOf(
-      schoolClass.schoolGrade,
+  private createExamResultDetail(
+    students: any[],
+    studentExams: any[],
+    axisCode: string,
+    schoolGradeYear: number,
+  ): SchoolClassDetailedSummaryDto {
+    const studentsParsed = students.map((student) =>
+      this.parseStudent(student, studentExams, axisCode, schoolGradeYear),
     );
 
-    const axisList = ['ES', 'EA', 'LC'];
-    axisList.forEach((axisCode) => {
-      const studentsParsed: any[] = students.map((student: any) => {
-        const studentExam = studentExams.find(
-          (item) => item.studentId == student.id,
-        );
-        const studentExamResult = student.examResults.find(
-          (item) =>
-            item.studentExamId == studentExam.id && item.axisCode == axisCode,
-        );
-        const classificationText =
-          this.performanceResultUtilsService.getStudentClassificationText(
-            schoolGradeYear,
-            axisCode,
-            studentExamResult ? studentExamResult.level : '1',
-          );
-        student.classification = classificationText;
-        student.examDate = studentExamResult
-          ? studentExamResult.examDate
-          : undefined;
-        student.percent = studentExamResult
-          ? this.round(studentExamResult.percent)
-          : 0;
-        return student;
-      });
+    const examResultDetail = new SchoolClassDetailedSummaryDto();
+    examResultDetail.axisCode = axisCode;
+    examResultDetail.axisName = this.mapAxisCodeToLabel(axisCode);
 
-      const examResultDetail = new SchoolClassDetailedSummaryDto();
-      examResultDetail.axisCode = axisCode;
-      examResultDetail.axisName = this.mapAxisCodeToLabel(axisCode);
-
-      examResultDetail.veryLow = new ClassificationDetailedSummaryDto();
-      examResultDetail.veryLow.students = studentsParsed
-        .filter((student: any) => student.classification == 'Muito abaixo')
-        .map((student) => {
-          return {
-            studentId: student.id,
-            name: student.name,
-            lastExamDate: student.examDate,
-            percent: student.percent,
-          };
-        });
-      examResultDetail.veryLow.count = examResultDetail.veryLow.students.length;
-
-      examResultDetail.below = new ClassificationDetailedSummaryDto();
-      examResultDetail.below.students = studentsParsed
-        .filter((student: any) => student.classification == 'Abaixo')
-        .map((student) => {
-          return {
-            studentId: student.id,
-            name: student.name,
-            lastExamDate: student.examDate,
-            percent: student.percent,
-          };
-        });
-      examResultDetail.below.count = examResultDetail.below.students.length;
-
-      examResultDetail.expected = new ClassificationDetailedSummaryDto();
-      examResultDetail.expected.students = studentsParsed
-        .filter((student: any) => student.classification == 'Esperado')
-        .map((student) => {
-          return {
-            studentId: student.id,
-            name: student.name,
-            lastExamDate: student.examDate,
-            percent: student.percent,
-          };
-        });
-      examResultDetail.expected.count =
-        examResultDetail.expected.students.length;
-
-      result.push(examResultDetail);
+    const classifications = ['Muito abaixo', 'Abaixo', 'Esperado'];
+    classifications.forEach((classification) => {
+      examResultDetail[classification.toLowerCase()] =
+        this.setClassificationDetail(studentsParsed, classification);
     });
 
-    return result;
+    return examResultDetail;
+  }
+
+  private parseStudent(
+    student: any,
+    studentExams: any[],
+    axisCode: string,
+    schoolGradeYear: number,
+  ) {
+    const studentExam = studentExams.find(
+      (item) => item.studentId == student.id,
+    );
+    const studentExamResult = student.examResults.find(
+      (item) => item.examId == studentExam?.examId && item.axisCode == axisCode,
+    );
+
+    return {
+      id: student.id,
+      name: student.name,
+      classification:
+        this.performanceResultUtilsService.getStudentClassificationText(
+          schoolGradeYear,
+          axisCode,
+          studentExamResult?.level || '1',
+        ),
+      examDate: studentExamResult?.examDate,
+      percent: studentExamResult ? this.round(studentExamResult.percent) : 0,
+    };
+  }
+
+  private setClassificationDetail(
+    studentsParsed: any[],
+    classification: string,
+  ): ClassificationDetailedSummaryDto {
+    const detail = new ClassificationDetailedSummaryDto();
+    detail.students = studentsParsed
+      .filter((student) => student.classification == classification)
+      .map((student) => ({
+        studentId: student.id,
+        name: student.name,
+        lastExamDate: student.examDate,
+        percent: student.percent,
+      }));
+
+    detail.count = detail.students.length;
+
+    return detail;
   }
 
   async getSchoolClassPlanetResultDetail(
