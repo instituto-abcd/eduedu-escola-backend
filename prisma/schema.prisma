@@ -262,7 +262,7 @@ model DashboardSchoolClass {
 model DashboardPerformance {
   id                     String                @id @default(uuid())
   axis                   String
-  percentage             String
+  result                 Decimal
   type                   String
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @updatedAt
