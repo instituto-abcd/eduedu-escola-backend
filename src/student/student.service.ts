@@ -1776,12 +1776,15 @@ export class StudentService {
   ): Promise<AnswersPlanetResponseDto> {
     const planet = await this.planetModel.findOne({ id: planetId });
 
-    const exam = await this.getExamByStudentIdAndPlanet(studentId, planetId);
+    const studentExam = await this.studentExamModel.findOne({
+      studentId: studentId,
+      lastExam: true,
+    });
     const stars = await this.calculateStars(studentId, planetId);
 
     await this.saveStudentPlanetResult(
       studentId,
-      exam.examId,
+      studentExam.id,
       planetId,
       planet.title,
       planet.axis_code,
@@ -1811,7 +1814,8 @@ export class StudentService {
 
     return this.prisma.studentPlanetResult.upsert({
       where: {
-        planetId_studentId: {
+        studentExamId_planetId_studentId: {
+          studentExamId: studentExamId,
           planetId: planetId,
           studentId: studentId,
         },
@@ -1829,24 +1833,6 @@ export class StudentService {
         student: { connect: { id: studentId } },
       },
     });
-  }
-
-  private async getExamByStudentIdAndPlanet(
-    studentId: string,
-    planetId: string,
-  ): Promise<StudentExam> {
-    const filter = {
-      studentId,
-      'planetTrack.planetId': planetId,
-    };
-
-    const exam = await this.studentExamModel.findOne(filter);
-
-    if (!exam) {
-      throw new Error('Document not found');
-    }
-
-    return exam;
   }
 
   private async calculateStars(studentId: string, planetId: string) {

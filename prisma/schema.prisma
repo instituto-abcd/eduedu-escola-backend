@@ -125,7 +125,7 @@ model StudentPlanetResult {
   student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId     String
 
-  @@id([planetId, studentId])
+  @@id([studentExamId, planetId, studentId])
 }
 
 // Model for User

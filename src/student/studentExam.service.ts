@@ -28,9 +28,7 @@ export class StudentExamService {
   async getPlanetTrack(studentId: string): Promise<PlanetTrackDto> {
     try {
       const studentExam = await this.studentExamModel
-        .findOne({ studentId, current: true })
-        .select('studentId examId examDate current planetTrack examPerformed')
-        .exec();
+        .findOne({ studentId, lastExam: true });
 
       if (studentExam) {
         studentExam.planetTrack = studentExam.planetTrack.sort((a: any, b: any) => {
