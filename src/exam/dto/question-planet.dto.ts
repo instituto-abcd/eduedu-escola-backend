@@ -62,6 +62,9 @@ export class QuestionPlanentDto {
 
   @ApiProperty({ type: [Object] })
   options: any[]; // You can replace 'any' with a more specific type if needed
+
+  @ApiProperty({ type: [Object] })
+  rules: any[]; // You can replace 'any' with a more specific type if needed
 }
 
 export class PlanetDto {

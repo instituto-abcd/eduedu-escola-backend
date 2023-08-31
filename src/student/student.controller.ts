@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
@@ -186,6 +187,17 @@ export class StudentController {
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
     return this.studentExamService.getPlanetTrack(studentId);
+  }
+
+  @Put('/:id/release-planets')
+  @ApiResponse({
+    status: 200,
+    description: 'Status da operação'
+  })
+  async releasePlanets(
+    @Param('id') studentId: string,
+  ): Promise<PlanetTrackDto> {
+    return this.studentService.releasePlanets(studentId);
   }
 
   @Get('/:id/awards')

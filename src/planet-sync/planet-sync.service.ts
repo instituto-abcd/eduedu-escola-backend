@@ -134,7 +134,9 @@ export class PlanetSyncService {
             placeholder: titleOrigin.placeholder,
             type: titleOrigin.type
           };
-        })
+        }),
+
+        rules: questionOrigin.rules,
       };
       return question;
     });
