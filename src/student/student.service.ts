@@ -38,6 +38,7 @@ import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-req
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 import { StudentAwardService } from './studentAward.service';
+import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
 
 @Injectable()
 export class StudentService {
@@ -45,6 +46,7 @@ export class StudentService {
     private readonly prisma: PrismaService,
     private readonly dashboard: DashboardService,
     private readonly studentAward: StudentAwardService,
+    private readonly studentPlanetExecution: StudentPlanetExecutionService,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
     @InjectModel(StudentExam.name)
@@ -1722,10 +1724,12 @@ export class StudentService {
     planetId: string,
     answersPlanet: AnswersPlanet,
   ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
-    const questionAnswered = await this.getQuestionByPlanetId(
+    let questionAnswered = await this.getQuestionByPlanetId(
       planetId,
       answersPlanet.questionId,
     );
+
+    questionAnswered = this.studentPlanetExecution.handleCustomQuestion(questionAnswered);
 
     const skipVerify = questionAnswered.options.every((option) => {
       return option.position === null && !option.isCorrect;
