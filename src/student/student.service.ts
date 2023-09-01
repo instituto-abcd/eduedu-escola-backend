@@ -1837,8 +1837,7 @@ export class StudentService {
 
   private async calculateStars(studentId: string, planetId: string) {
     const studentExam = await this.studentExamModel
-      .findOne({ studentId })
-      .exec();
+      .findOne({ studentId, lastExam: true });
 
     if (!studentExam) {
       throw new NotFoundException(
@@ -1943,6 +1942,7 @@ export class StudentService {
       const filter = {
         studentId,
         'planetTrack.planetId': planetId,
+        lastExam: true,
       };
 
       const update = {
@@ -1971,7 +1971,7 @@ export class StudentService {
 
   async verifyAnswerPlanet(
     question: QuestionPlanentDto,
-    answeredValue: OptionAnswer[],
+    answerOptions: OptionAnswer[],
   ): Promise<boolean> {
     try {
 
@@ -1984,7 +1984,7 @@ export class StudentService {
       );
 
       if (!question.orderedAnswer) {
-        for (const answeredOption of answeredValue) {
+        for (const answeredOption of answerOptions) {
           return correctOptions.every((option) => {
             return (
               option.sound_url === answeredOption.sound_url &&
@@ -1995,9 +1995,10 @@ export class StudentService {
           });
         }
       } else {
-        return answeredValue.every(
-          (option) => option.position === option.positionAnswer,
-        );
+        return question.options.every((option) => {
+          const answeredOption = answerOptions.find((item) => item.description == option.description);
+          return answeredOption != undefined && answeredOption.positionAnswer == option.position;
+        })
       }
 
       return true;
