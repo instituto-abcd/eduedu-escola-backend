@@ -21,7 +21,8 @@ export class StudentPlanetExecutionService {
   private handleQuestionAnswered_MODEL19(
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
-    let targets = questionAnswered.titles.find((item) => item.type == 'TEXT').description.split(' ');
+    let targets = questionAnswered.titles
+      .find((item) => item.type == 'TEXT' && item.description.includes(' ')).description.split(' ');
 
     questionAnswered.options.forEach((option) => {
       let rule = questionAnswered.rules.find((item) => item.name == 'verify').value;
