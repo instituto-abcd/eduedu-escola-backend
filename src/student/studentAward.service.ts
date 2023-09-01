@@ -113,7 +113,7 @@ export class StudentAwardService {
     }
 
     private async getStudentExamResults(studentId: string, axisCode: string): Promise<StudentExamResult> {
-        const studentExam = await this.studentExamModel.findOne({ studentId: studentId, current: true });
+        const studentExam = await this.studentExamModel.findOne({ studentId: studentId, lastExam: true });
 
         let currentExamId = studentExam.id;
         let studentExamResult = await this.prisma.studentExamResult.findFirst({

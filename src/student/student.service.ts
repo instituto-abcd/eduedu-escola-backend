@@ -1837,8 +1837,7 @@ export class StudentService {
 
   private async calculateStars(studentId: string, planetId: string) {
     const studentExam = await this.studentExamModel
-      .findOne({ studentId })
-      .exec();
+      .findOne({ studentId, lastExam: true });
 
     if (!studentExam) {
       throw new NotFoundException(
@@ -1943,6 +1942,7 @@ export class StudentService {
       const filter = {
         studentId,
         'planetTrack.planetId': planetId,
+        lastExam: true,
       };
 
       const update = {
