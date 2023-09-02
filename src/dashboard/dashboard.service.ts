@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, SchoolGradeEnum } from '@prisma/client';
+import { DashboardPerformance, Prisma, SchoolGradeEnum } from '@prisma/client';
 import {
   DashboardDto,
   ExamPerformanceDto,
@@ -197,6 +197,47 @@ export class DashboardService {
       await this.prisma.dashboardSchoolClass.create({
         data,
       });
+
+      const performance: Prisma.DashboardPerformanceCreateManyInput[] = [];
+
+      const axisCode = ['ES', 'EA', 'LS'];
+      if (grade !== SchoolGradeEnum.CHILDREN) {
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'EXAM',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'PLANET',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+      } else {
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'EXAM',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'PLANET',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+      }
+
+      await this.prisma.dashboardPerformance.createMany({
+        data: performance,
+      });
     } catch (error) {
       this.logger.log('Error creating school class:', error);
     }
@@ -375,6 +416,98 @@ export class DashboardService {
       }
     } catch (error) {
       this.logger.log('Error updating dashboard data:', error);
+    }
+  }
+
+  async updateDashboardPerformance(studentId: string, type: string) {
+    const schoolClass = await this.prisma.schoolClassStudent.findFirst({
+      where: {
+        studentId,
+      },
+    });
+
+    if (!schoolClass) {
+      return;
+    }
+
+    const studentIds = await this.prisma.schoolClassStudent.findMany({
+      where: {
+        schoolClassId: schoolClass.schoolClassId,
+      },
+      select: {
+        studentId: true,
+      },
+    });
+
+    const examResults = await this.prisma.studentExamResult.findMany({
+      where: {
+        studentId: {
+          in: studentIds.map((entry) => entry.studentId),
+        },
+      },
+      select: {
+        axisCode: true,
+        percent: true,
+      },
+    });
+
+    const axisResults = {};
+
+    examResults.forEach((result) => {
+      if (!axisResults[result.axisCode]) {
+        axisResults[result.axisCode] = {
+          totalPercentage: 0,
+          count: 0,
+        };
+      }
+      axisResults[result.axisCode].totalPercentage += Number(result.percent);
+      axisResults[result.axisCode].count++;
+    });
+
+    const updateOrCreatePerformance = async (
+      axisCode,
+      schoolClassId,
+      totalPercentage: number,
+      type: string,
+    ) => {
+      const existingRecord = await this.prisma.dashboardPerformance.findFirst({
+        where: {
+          axis: axisCode,
+          dashboardSchoolClassId: schoolClassId,
+          type,
+        },
+      });
+
+      const data = {
+        axis: axisCode,
+        type: 'EXAM',
+        result: totalPercentage,
+        dashboardSchoolClassId: schoolClassId,
+      };
+
+      if (existingRecord) {
+        await this.prisma.dashboardPerformance.update({
+          where: { id: existingRecord.id },
+          data: {
+            result: totalPercentage,
+          },
+        });
+      } else {
+        await this.prisma.dashboardPerformance.create({
+          data,
+        });
+      }
+    };
+
+    for (const axisCode in axisResults) {
+      const axisInfo = axisResults[axisCode];
+      const totalPercentage = axisInfo.totalPercentage / axisInfo.count;
+      await updateOrCreatePerformance(
+        axisCode,
+        schoolClass.schoolClassId,
+        totalPercentage,
+        type,
+      );
     }
   }
 
