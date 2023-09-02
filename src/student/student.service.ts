@@ -1822,6 +1822,7 @@ export class StudentService {
     );
 
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
+    await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
     return { planetCompleted: true };
   }

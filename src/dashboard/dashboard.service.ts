@@ -464,7 +464,7 @@ export class DashboardService {
       axisResults[result.axisCode].count++;
     });
 
-    const updateOrCreatePerformance = async (
+    const updateOrCreatePerformanceExam = async (
       axisCode,
       schoolClassId,
       totalPercentage: number,
@@ -502,10 +502,102 @@ export class DashboardService {
     for (const axisCode in axisResults) {
       const axisInfo = axisResults[axisCode];
       const totalPercentage = axisInfo.totalPercentage / axisInfo.count;
-      await updateOrCreatePerformance(
+      await updateOrCreatePerformanceExam(
         axisCode,
         schoolClass.schoolClassId,
         totalPercentage,
+        type,
+      );
+    }
+  }
+
+  async updateDashboardPerformancePlanet(studentId: string, type: string) {
+    const schoolClass = await this.prisma.schoolClassStudent.findFirst({
+      where: {
+        studentId,
+      },
+    });
+
+    if (!schoolClass) {
+      return;
+    }
+
+    const studentIds = await this.prisma.schoolClassStudent.findMany({
+      where: {
+        schoolClassId: schoolClass.schoolClassId,
+      },
+      select: {
+        studentId: true,
+      },
+    });
+
+    const planetResult = await this.prisma.studentPlanetResult.findMany({
+      where: {
+        studentId: {
+          in: studentIds.map((entry) => entry.studentId),
+        },
+      },
+      select: {
+        axisCode: true,
+        stars: true,
+      },
+    });
+
+    const axisResults = {};
+
+    planetResult.forEach((result) => {
+      if (!axisResults[result.axisCode]) {
+        axisResults[result.axisCode] = {
+          averageStars: 0,
+          count: 0,
+        };
+      }
+      axisResults[result.axisCode].averageStars += Number(result.stars);
+      axisResults[result.axisCode].count++;
+    });
+
+    const updateOrCreatePerformance = async (
+      axisCode,
+      schoolClassId,
+      averageStars: number,
+      type: string,
+    ) => {
+      const existingRecord = await this.prisma.dashboardPerformance.findFirst({
+        where: {
+          axis: axisCode,
+          dashboardSchoolClassId: schoolClassId,
+          type,
+        },
+      });
+
+      const data = {
+        axis: axisCode,
+        type: 'PLANET',
+        result: averageStars,
+        dashboardSchoolClassId: schoolClassId,
+      };
+
+      if (existingRecord) {
+        await this.prisma.dashboardPerformance.update({
+          where: { id: existingRecord.id },
+          data: {
+            result: averageStars,
+          },
+        });
+      } else {
+        await this.prisma.dashboardPerformance.create({
+          data,
+        });
+      }
+    };
+
+    for (const axisCode in axisResults) {
+      const axisInfo = axisResults[axisCode];
+      const averageStars = axisInfo.averageStars / axisInfo.count;
+      await updateOrCreatePerformance(
+        axisCode,
+        schoolClass.schoolClassId,
+        averageStars,
         type,
       );
     }
