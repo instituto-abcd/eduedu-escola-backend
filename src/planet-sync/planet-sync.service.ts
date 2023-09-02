@@ -105,6 +105,9 @@ export class PlanetSyncService {
     planet.questions = planetOrigin.questions.map((questionOrigin) => {
       var question: Question = {
         orderedAnswer: questionOrigin.options.length > 0 && questionOrigin.options.every(o => !o.isCorrect),
+        multiplesAnswer: questionOrigin.options.length > 0 &&
+          questionOrigin.options.some(o => !o.isCorrect) &&
+          questionOrigin.options.filter((option) => option.isCorrect).length > 1,
         level: questionOrigin.level,
         id: questionOrigin.id,
         model_id: questionOrigin.model_id,

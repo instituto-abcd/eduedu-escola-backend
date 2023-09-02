@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type Question = {
   orderedAnswer: boolean;
+  multiplesAnswer: boolean;
   level: number;
   id: string;
   model_id: string;
