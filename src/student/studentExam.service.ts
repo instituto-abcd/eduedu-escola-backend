@@ -93,9 +93,7 @@ export class StudentExamService {
   async getExamPerformedStatusByStudentId(studentId: string): Promise<boolean> {
     try {
       const result = await this.studentExamModel
-        .findOne({ studentId, current: true })
-        .select('examPerformed')
-        .exec();
+        .findOne({ studentId, current: true });
 
       console.log('Result:', result);
 
