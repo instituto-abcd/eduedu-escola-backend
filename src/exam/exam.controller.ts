@@ -1,18 +1,17 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ExamService } from './exam.service';
 import {
-  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { SyncExamResponse } from './dto/sync-success.dto';
-import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+// import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @Controller('exam')
 @ApiTags('Prova')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+// @ApiBearerAuth()
+// @UseGuards(JwtAuthGuard)
 export class ExamController {
   constructor(private readonly examService: ExamService) {}
 
