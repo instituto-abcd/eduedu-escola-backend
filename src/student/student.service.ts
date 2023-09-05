@@ -197,8 +197,10 @@ export class StudentService {
 
       // Obter os resultados da última prova executada de aluno e retornar abaixo (cfo, sea, lct)
       const studentIds = students.map((item) => item.id);
-      const currentStudentExams = await this.studentExamModel
-        .find({ studentId: { $in: studentIds }, lastExam: true });
+      const currentStudentExams = await this.studentExamModel.find({
+        studentId: { $in: studentIds },
+        lastExam: true,
+      });
       const currentStudentExamIds = currentStudentExams.map((item) => item.id);
 
       const studentExamResults = await this.prisma.studentExamResult.findMany({
@@ -230,9 +232,18 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfoResult.length > 0 ? Math.round(+cfo).toString().concat('%') : '-',
-          sea: seaResult.length > 0 ? Math.round(+sea).toString().concat('%') : '-',
-          lct: lctResult.length > 0 ? Math.round(+lct).toString().concat('%') : '-',
+          cfo:
+            cfoResult.length > 0
+              ? Math.round(+cfo).toString().concat('%')
+              : '-',
+          sea:
+            seaResult.length > 0
+              ? Math.round(+sea).toString().concat('%')
+              : '-',
+          lct:
+            lctResult.length > 0
+              ? Math.round(+lct).toString().concat('%')
+              : '-',
           status: student.status,
         };
       });
@@ -336,8 +347,7 @@ export class StudentService {
       },
     });
 
-
-    let studentExam = await this.studentExamModel.findOne({
+    const studentExam = await this.studentExamModel.findOne({
       id,
       current: true,
     });
@@ -495,6 +505,7 @@ export class StudentService {
     const questionsByAxisCode = await this.getQuestionsByAxisCode(
       axisCode,
       schoolGradeYear,
+      studentId,
     );
 
     if (questionsByAxisCode == null) {
@@ -515,6 +526,7 @@ export class StudentService {
   async getQuestionsByAxisCode(
     axisCode: string,
     schoolGradeYear: number,
+    studentId: string,
   ): Promise<QuestionDto> {
     try {
       const exam = await this.examModel.findOne({
@@ -525,6 +537,16 @@ export class StudentService {
 
       if (!exam) {
         throw new EduException('QUESTION_NOT_FOUND');
+      }
+
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        examId: exam.id,
+      });
+
+      if (studentExam.examPerformed == false && studentExam.current == true) {
+        studentExam.answers = [];
+        await studentExam.save();
       }
 
       // Filtra as questões pelo axis_code e pela category 'A'
@@ -580,7 +602,7 @@ export class StudentService {
         axisCode: axis_code,
         studentId: studentId,
         resume: '',
-        examDate: studentExam.examDate
+        examDate: studentExam.examDate,
       };
       studentExamResult.resume = this.getStudentAxisResume(
         studentExamResult.level,
@@ -660,34 +682,36 @@ export class StudentService {
     return Object.keys(SchoolGradeEnum).indexOf(schoolGradeYear);
   }
 
-  async releasePlanets(
-    studentId: string
-  ): Promise<any>  {
+  async releasePlanets(studentId: string): Promise<any> {
     // Obtém studentexam com a execução de prova atual
-    let studentExam = await this.studentExamModel.findOne({
+    const studentExam = await this.studentExamModel.findOne({
       studentId: studentId,
-      lastExam: true });
+      lastExam: true,
+    });
 
     let counter = 1;
-    let nextAvaiableDate = new Date();
+    const nextAvaiableDate = new Date();
     nextAvaiableDate.setHours(0, 0, 0, 0);
 
-    let plantTrackToUpdate = studentExam.planetTrack;
+    const plantTrackToUpdate = studentExam.planetTrack;
 
     studentExam.planetTrack
       .filter((item) => item.availableAt > new Date())
       .forEach((item) => {
-        item.availableAt = new Date(nextAvaiableDate.toISOString());;
-        
-        if (counter == 2) { // 2 = quantidade de planetas que está sendo liberada
+        item.availableAt = new Date(nextAvaiableDate.toISOString());
+
+        if (counter == 2) {
+          // 2 = quantidade de planetas que está sendo liberada
           nextAvaiableDate.setDate(nextAvaiableDate.getDate() + 1);
           counter = 1;
         } else {
           counter++;
         }
       });
-    
-    studentExam.planetTrack = plantTrackToUpdate.sort((a,b) => a.order - b.order);
+
+    studentExam.planetTrack = plantTrackToUpdate.sort(
+      (a, b) => a.order - b.order,
+    );
 
     await studentExam.save();
   }
@@ -725,7 +749,7 @@ export class StudentService {
 
     // Ordenando planetas que possuem planeta agregado primeiro
     planets = planets.sort((a: any, b: any) => {
-      return a.position - b.position
+      return a.position - b.position;
     });
 
     // Aplicando lógica de ordenação da trilha de planetas
@@ -746,13 +770,15 @@ export class StudentService {
   }
 
   private setPlanetTrackAvailability(planetTrack: Planet[]) {
-    let nextAvaiableDate = new Date();
+    const nextAvaiableDate = new Date();
     nextAvaiableDate.setHours(0, 0, 0, 0);
 
     for (let index = 0; index < planetTrack.length; index += 2) {
-      planetTrack[index].availableAt = new Date(nextAvaiableDate.toISOString());;
-      if (index+1 < planetTrack.length) {
-        planetTrack[index+1].availableAt = new Date(nextAvaiableDate.toISOString());
+      planetTrack[index].availableAt = new Date(nextAvaiableDate.toISOString());
+      if (index + 1 < planetTrack.length) {
+        planetTrack[index + 1].availableAt = new Date(
+          nextAvaiableDate.toISOString(),
+        );
         nextAvaiableDate.setDate(nextAvaiableDate.getDate() + 1);
       }
     }
@@ -876,10 +902,15 @@ export class StudentService {
         current: true,
       });
       const lastAnswer = studentExam.answers
-        .filter((item) => item.axis_code == axisCode && item.autoAssignedAnswer == false)
-        .sort((a, b) => (b.order - a.order || b.category.localeCompare(a.category)))[0];
+        .filter(
+          (item) =>
+            item.axis_code == axisCode && item.autoAssignedAnswer == false,
+        )
+        .sort(
+          (a, b) => b.order - a.order || b.category.localeCompare(a.category),
+        )[0];
 
-      let schoolGradeYear = await this.getSchoolGradeYear(studentId);
+      const schoolGradeYear = await this.getSchoolGradeYear(studentId);
 
       if (lastAnswer == null) {
         if (schoolGradeYear > 0) {
@@ -1117,10 +1148,10 @@ export class StudentService {
   ): Promise<number> {
     try {
       const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
-      const axisCode =
-        schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
-
-      const axisCodes = axisCode === 'ES' ? ['ES', 'EA', 'LC'] : ['EA', 'LC'];
+      const axisCodes =
+        schoolGradeEnum === SchoolGradeEnum.CHILDREN
+          ? ['ES', 'EA', 'LC']
+          : ['EA', 'LC'];
 
       const totalQuestionPerAxisAggregate = await this.examModel
         .aggregate([
@@ -1200,7 +1231,7 @@ export class StudentService {
     answeredOptions: OptionsAnswers[],
     isCorrect: boolean,
     lastQuestion: boolean,
-    autoAssignedAnswer: boolean = false,
+    autoAssignedAnswer = false,
   ): Promise<boolean> {
     try {
       let studentExam = await this.studentExamModel.findOne({
@@ -1243,7 +1274,7 @@ export class StudentService {
           school_year: question.school_year,
           order: question.order,
           category: question.category,
-          autoAssignedAnswer: autoAssignedAnswer
+          autoAssignedAnswer: autoAssignedAnswer,
         });
       }
 
@@ -1464,9 +1495,12 @@ export class StudentService {
 
     if (axis_code == 'EA' && schoolGradeYear > 0) {
       // - Buscar todas as respostas do eixo EA (Eixo anterior). Se basear no método assignWrongAnswersToRemainingAxisQuestions();
-      const studentExam = await this.studentExamModel.findOne({studentId: studentId, current: true});
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        current: true,
+      });
       const previousAxisAnswers = studentExam.answers.filter((item) => {
-        return item.axis_code == 'EA'
+        return item.axis_code == 'EA';
       });
 
       // - Se todas as respostas estiverem corretas (A ou B são consideradas como corretas):
@@ -1488,13 +1522,15 @@ export class StudentService {
 
       if (allAnswersAreCorrect) {
         const exam = await this.examModel.findOne({ status: 'ACTIVE' });
-        let nextAxisQuestions = exam.questions.filter((question) => {
-          return question.axis_code == 'ES' &&
-            question.category == 'A' &&
-            question.school_year <= schoolGradeYear
-        }).sort(
-          (a, b) => a.order - b.order,
-        );
+        const nextAxisQuestions = exam.questions
+          .filter((question) => {
+            return (
+              question.axis_code == 'ES' &&
+              question.category == 'A' &&
+              question.school_year <= schoolGradeYear
+            );
+          })
+          .sort((a, b) => a.order - b.order);
 
         if (nextAxisQuestions.length > 0) {
           for (const question of nextAxisQuestions) {
@@ -1537,14 +1573,18 @@ export class StudentService {
 
       await studentExam.save();
 
-      let oldStudentExams = (await this.studentExamModel.find({
-        studentId: studentId,
-      })).filter((item) => item.id != studentExam.id);
+      const oldStudentExams = (
+        await this.studentExamModel.find({
+          studentId: studentId,
+        })
+      ).filter((item) => item.id != studentExam.id);
 
       for (let index = 0; index < oldStudentExams.length; index++) {
         oldStudentExams[index].lastExam = false;
         await oldStudentExams[index].save();
       }
+
+      await this.dashboard.updateDashboardPerformance(studentId, 'EXAM');
 
       return { examCompleted: true };
     } catch (error) {
@@ -1562,15 +1602,16 @@ export class StudentService {
     schoolGradeYear: number,
   ): Promise<boolean> {
     try {
-
       const exam = await this.examModel.findOne({ status: 'ACTIVE' });
-      let remainingQuestions = exam.questions.filter((question) => {
-        return question.axis_code == axisCode &&
-          question.order > order &&
-          question.school_year <= schoolGradeYear
-      }).sort(
-        (a, b) => a.order - b.order,
-      );
+      const remainingQuestions = exam.questions
+        .filter((question) => {
+          return (
+            question.axis_code == axisCode &&
+            question.order > order &&
+            question.school_year <= schoolGradeYear
+          );
+        })
+        .sort((a, b) => a.order - b.order);
 
       if (remainingQuestions.length > 0) {
         for (const question of remainingQuestions) {
@@ -1729,7 +1770,8 @@ export class StudentService {
       answersPlanet.questionId,
     );
 
-    questionAnswered = this.studentPlanetExecution.handleCustomQuestion(questionAnswered);
+    questionAnswered =
+      this.studentPlanetExecution.handleCustomQuestion(questionAnswered);
 
     const skipVerify = questionAnswered.options.every((option) => {
       return option.position === null && !option.isCorrect;
@@ -1792,6 +1834,7 @@ export class StudentService {
     );
 
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
+    await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
     return { planetCompleted: true };
   }
@@ -1836,8 +1879,10 @@ export class StudentService {
   }
 
   private async calculateStars(studentId: string, planetId: string) {
-    const studentExam = await this.studentExamModel
-      .findOne({ studentId, lastExam: true });
+    const studentExam = await this.studentExamModel.findOne({
+      studentId,
+      lastExam: true,
+    });
 
     if (!studentExam) {
       throw new NotFoundException(
@@ -1974,9 +2019,8 @@ export class StudentService {
     answerOptions: OptionAnswer[],
   ): Promise<boolean> {
     try {
-
       if (question.options.every((item) => item.isCorrect)) {
-        return true
+        return true;
       }
 
       const correctOptions = question.options.filter(
@@ -1996,9 +2040,14 @@ export class StudentService {
         }
       } else {
         return question.options.every((option) => {
-          const answeredOption = answerOptions.find((item) => item.description == option.description);
-          return answeredOption != undefined && answeredOption.positionAnswer == option.position;
-        })
+          const answeredOption = answerOptions.find(
+            (item) => item.description == option.description,
+          );
+          return (
+            answeredOption != undefined &&
+            answeredOption.positionAnswer == option.position
+          );
+        });
       }
 
       return true;

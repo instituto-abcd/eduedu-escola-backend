@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, SchoolGradeEnum } from '@prisma/client';
+import { Dashboard, DashboardPerformance, Prisma, SchoolGradeEnum } from '@prisma/client';
 import {
   DashboardDto,
   ExamPerformanceDto,
@@ -197,6 +197,47 @@ export class DashboardService {
       await this.prisma.dashboardSchoolClass.create({
         data,
       });
+
+      const performance: Prisma.DashboardPerformanceCreateManyInput[] = [];
+
+      const axisCode = ['ES', 'EA', 'LS'];
+      if (grade !== SchoolGradeEnum.CHILDREN) {
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'EXAM',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'PLANET',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+      } else {
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'EXAM',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+
+        axisCode.forEach((axis) => {
+          performance.push({
+            axis,
+            type: 'PLANET',
+            dashboardSchoolClassId: schoolClassId,
+          });
+        });
+      }
+
+      await this.prisma.dashboardPerformance.createMany({
+        data: performance,
+      });
     } catch (error) {
       this.logger.log('Error creating school class:', error);
     }
@@ -375,6 +416,254 @@ export class DashboardService {
       }
     } catch (error) {
       this.logger.log('Error updating dashboard data:', error);
+    }
+  }
+
+  async updateDashboardPerformance(studentId: string, type: string) {
+    const schoolClassStudent = await this.prisma.schoolClassStudent.findFirst({
+      where: {
+        studentId,
+        active: true,
+      },
+      include: {
+        schoolClass: {
+          include: {
+            schoolYear: true
+          }
+        }
+      }
+    });
+
+    if (!schoolClassStudent) {
+      return;
+    }
+
+    const studentIds = await this.prisma.schoolClassStudent.findMany({
+      where: {
+        schoolClassId: schoolClassStudent.schoolClassId,
+      },
+      select: {
+        studentId: true,
+      },
+    });
+
+    const examResults = await this.prisma.studentExamResult.findMany({
+      where: {
+        studentId: {
+          in: studentIds.map((entry) => entry.studentId),
+        },
+      },
+      select: {
+        axisCode: true,
+        percent: true,
+      },
+    });
+
+    const axisResults = {};
+
+    examResults.forEach((result) => {
+      if (!axisResults[result.axisCode]) {
+        axisResults[result.axisCode] = {
+          totalPercentage: 0,
+          count: 0,
+        };
+      }
+      axisResults[result.axisCode].totalPercentage += Number(result.percent);
+      axisResults[result.axisCode].count++;
+    });
+
+    const updateOrCreatePerformanceExam = async (
+      axisCode,
+      schoolClassId,
+      totalPercentage: number,
+      type: string,
+    ) => {
+      const existingRecord = await this.prisma.dashboardPerformance.findFirst({
+        where: {
+          axis: axisCode,
+          dashboardSchoolClassId: schoolClassId,
+          type,
+        },
+      });
+
+      const data = {
+        axis: axisCode,
+        type: 'EXAM',
+        result: totalPercentage,
+        dashboardSchoolClassId: schoolClassId,
+      };
+
+      if (existingRecord) {
+        await this.prisma.dashboardPerformance.update({
+          where: { id: existingRecord.id },
+          data: {
+            result: totalPercentage,
+          },
+        });
+      } else {
+        await this.prisma.dashboardPerformance.create({
+          data,
+        });
+      }
+    };
+
+    const dashboard = await this.prisma.dashboard.findFirst({
+      where: {
+        schoolYear: {
+          equals: schoolClassStudent.schoolClass.schoolYear.name,
+        },
+      },
+      include: {
+        dashboardSchoolGrades: {
+          include: {
+            dashboardSchoolClass: {
+              include: {
+                dashboardPerformances: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const dashboardSchoolClass = dashboard.dashboardSchoolGrades
+      .filter((item) => item.name == schoolClassStudent.schoolClass.schoolGrade)
+      .reduce((schoolClass, grade) => [ ...schoolClass, ...grade.dashboardSchoolClass ], [])
+      .find((item) => item.name == schoolClassStudent.schoolClass.name);
+
+    for (const axisCode in axisResults) {
+      const axisInfo = axisResults[axisCode];
+      const totalPercentage = axisInfo.totalPercentage / axisInfo.count;
+      await updateOrCreatePerformanceExam(
+        axisCode,
+        dashboardSchoolClass.id,
+        totalPercentage,
+        type,
+      );
+    }
+  }
+
+  async updateDashboardPerformancePlanet(studentId: string, type: string) {
+    const schoolClassStudent = await this.prisma.schoolClassStudent.findFirst({
+      where: {
+        studentId,
+        active: true,
+      },
+      include: {
+        schoolClass: {
+          include: {
+            schoolYear: true
+          }
+        }
+      }
+    });
+
+    if (!schoolClassStudent) {
+      return;
+    }
+
+    const studentIds = await this.prisma.schoolClassStudent.findMany({
+      where: {
+        schoolClassId: schoolClassStudent.schoolClassId,
+      },
+      select: {
+        studentId: true,
+      },
+    });
+
+    const planetResult = await this.prisma.studentPlanetResult.findMany({
+      where: {
+        studentId: {
+          in: studentIds.map((entry) => entry.studentId),
+        },
+      },
+      select: {
+        axisCode: true,
+        stars: true,
+      },
+    });
+
+    const axisResults = {};
+
+    planetResult.forEach((result) => {
+      if (!axisResults[result.axisCode]) {
+        axisResults[result.axisCode] = {
+          averageStars: 0,
+          count: 0,
+        };
+      }
+      axisResults[result.axisCode].averageStars += Number(result.stars);
+      axisResults[result.axisCode].count++;
+    });
+
+    const updateOrCreatePerformance = async (
+      axisCode,
+      schoolClassId,
+      averageStars: number,
+      type: string,
+    ) => {
+      const existingRecord = await this.prisma.dashboardPerformance.findFirst({
+        where: {
+          axis: axisCode,
+          dashboardSchoolClassId: schoolClassId,
+          type,
+        },
+      });
+
+      const data = {
+        axis: axisCode,
+        type: 'PLANET',
+        result: averageStars,
+        dashboardSchoolClassId: schoolClassId,
+      };
+
+      if (existingRecord) {
+        await this.prisma.dashboardPerformance.update({
+          where: { id: existingRecord.id },
+          data: {
+            result: averageStars,
+          },
+        });
+      } else {
+        await this.prisma.dashboardPerformance.create({
+          data,
+        });
+      }
+    };
+
+    const dashboard = await this.prisma.dashboard.findFirst({
+      where: {
+        schoolYear: {
+          equals: schoolClassStudent.schoolClass.schoolYear.name,
+        },
+      },
+      include: {
+        dashboardSchoolGrades: {
+          include: {
+            dashboardSchoolClass: {
+              include: {
+                dashboardPerformances: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const dashboardSchoolClass = dashboard.dashboardSchoolGrades
+      .filter((item) => item.name == schoolClassStudent.schoolClass.schoolGrade)
+      .reduce((schoolClass, grade) => [ ...schoolClass, ...grade.dashboardSchoolClass ], [])
+      .find((item) => item.name == schoolClassStudent.schoolClass.name);
+
+    for (const axisCode in axisResults) {
+      const axisInfo = axisResults[axisCode];
+      const averageStars = axisInfo.averageStars / axisInfo.count;
+      await updateOrCreatePerformance(
+        axisCode,
+        dashboardSchoolClass.id,
+        averageStars,
+        type,
+      );
     }
   }
 

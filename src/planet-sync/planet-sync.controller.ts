@@ -7,12 +7,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+// import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Sincronizar Planetas')
 @Controller('planet-sync')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+// @ApiBearerAuth()
+// @UseGuards(JwtAuthGuard)
 export class PlanetSyncController {
   constructor(private readonly planetSyncService: PlanetSyncService) {}
 

@@ -152,7 +152,11 @@ export class SchoolClassService {
         where,
         skip,
         take: pageSize,
-        include: { schoolYear: true, students: true, users: { include: { user: true } } },
+        include: {
+          schoolYear: true,
+          students: true,
+          users: { include: { user: true } },
+        },
       });
 
       const totalPages = Math.ceil(totalCount / pageSize);
@@ -183,7 +187,7 @@ export class SchoolClassService {
             id: user.user.id,
             name: user.user.name,
           })),
-          studentsCount: schoolClass.students.length
+          studentsCount: schoolClass.students.length,
         }),
       );
 
@@ -204,7 +208,7 @@ export class SchoolClassService {
           schoolClass: {
             include: {
               schoolYear: true,
-              students: true
+              students: true,
             },
           },
           user: true,
@@ -241,7 +245,7 @@ export class SchoolClassService {
   ): Promise<CreateSchoolClassResponseDto> {
     const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
-    const existingSchoolClass = await this.validateSchoolClassExists(id);
+    await this.validateSchoolClassExists(id);
     await this.updateClassData(id, schoolClassData);
     if (teacherIds != null) {
       await this.handleUserSchoolClassUpdates(id, teacherIds);
@@ -284,17 +288,26 @@ export class SchoolClassService {
   private async handleUserSchoolClassUpdates(id: string, teacherIds: string[]) {
     const existingUserIds = await this.getExistingUserIdsForClass(id);
 
-    const newUserSchoolClasses = teacherIds
+    const teachersToAdd = teacherIds
       .filter((teacherId) => !existingUserIds.includes(teacherId))
-      .map((teacherId) => ({
-        userId: teacherId,
-        schoolClassId: id,
-      }));
+      .map((teacherId) => ({ userId: teacherId, schoolClassId: id }));
 
-    if (newUserSchoolClasses.length > 0) {
+    const teachersToRemove = existingUserIds.filter(
+      (teacherId) => !teacherIds.includes(teacherId),
+    );
+
+    if (teachersToAdd.length > 0) {
       await this.prismaService.userSchoolClass.createMany({
-        data: newUserSchoolClasses,
+        data: teachersToAdd,
       });
+    }
+
+    if (teachersToRemove.length > 0) {
+      for (const teacherId of teachersToRemove) {
+        await this.prismaService.userSchoolClass.deleteMany({
+          where: { userId: teacherId, schoolClassId: id },
+        });
+      }
     }
   }
 
