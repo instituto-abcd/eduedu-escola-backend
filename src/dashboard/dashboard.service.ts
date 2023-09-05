@@ -544,19 +544,27 @@ export class DashboardService {
   }
 
   async updateDashboardPerformancePlanet(studentId: string, type: string) {
-    const schoolClass = await this.prisma.schoolClassStudent.findFirst({
+    const schoolClassStudent = await this.prisma.schoolClassStudent.findFirst({
       where: {
         studentId,
+        active: true,
       },
+      include: {
+        schoolClass: {
+          include: {
+            schoolYear: true
+          }
+        }
+      }
     });
 
-    if (!schoolClass) {
+    if (!schoolClassStudent) {
       return;
     }
 
     const studentIds = await this.prisma.schoolClassStudent.findMany({
       where: {
-        schoolClassId: schoolClass.schoolClassId,
+        schoolClassId: schoolClassStudent.schoolClassId,
       },
       select: {
         studentId: true,
@@ -623,12 +631,36 @@ export class DashboardService {
       }
     };
 
+    const dashboard = await this.prisma.dashboard.findFirst({
+      where: {
+        schoolYear: {
+          equals: schoolClassStudent.schoolClass.schoolYear.name,
+        },
+      },
+      include: {
+        dashboardSchoolGrades: {
+          include: {
+            dashboardSchoolClass: {
+              include: {
+                dashboardPerformances: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const dashboardSchoolClass = dashboard.dashboardSchoolGrades
+      .filter((item) => item.name == schoolClassStudent.schoolClass.schoolGrade)
+      .reduce((schoolClass, grade) => [ ...schoolClass, ...grade.dashboardSchoolClass ], [])
+      .find((item) => item.name == schoolClassStudent.schoolClass.name);
+
     for (const axisCode in axisResults) {
       const axisInfo = axisResults[axisCode];
       const averageStars = axisInfo.averageStars / axisInfo.count;
       await updateOrCreatePerformance(
         axisCode,
-        schoolClass.schoolClassId,
+        dashboardSchoolClass.id,
         averageStars,
         type,
       );
