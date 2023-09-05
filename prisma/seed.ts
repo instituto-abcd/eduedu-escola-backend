@@ -172,7 +172,7 @@ async function main() {
     });
     await prismaClient.dashboardSchoolClass.create({
       data: {
-        name: 'Turma do Barulho',
+        name: 'Infantil',
         studentsCounter: 1,
         dashboardGradeId: dashboardSchoolGradeId,
       }
