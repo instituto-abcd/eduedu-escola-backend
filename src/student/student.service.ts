@@ -505,6 +505,7 @@ export class StudentService {
     const questionsByAxisCode = await this.getQuestionsByAxisCode(
       axisCode,
       schoolGradeYear,
+      studentId,
     );
 
     if (questionsByAxisCode == null) {
@@ -525,6 +526,7 @@ export class StudentService {
   async getQuestionsByAxisCode(
     axisCode: string,
     schoolGradeYear: number,
+    studentId: string,
   ): Promise<QuestionDto> {
     try {
       const exam = await this.examModel.findOne({
@@ -535,6 +537,16 @@ export class StudentService {
 
       if (!exam) {
         throw new EduException('QUESTION_NOT_FOUND');
+      }
+
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        examId: exam.id,
+      });
+
+      if (studentExam.examPerformed == false && studentExam.current == true) {
+        studentExam.answers = [];
+        await studentExam.save();
       }
 
       // Filtra as questões pelo axis_code e pela category 'A'
@@ -1136,10 +1148,10 @@ export class StudentService {
   ): Promise<number> {
     try {
       const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
-      const axisCode =
-        schoolGradeEnum === SchoolGradeEnum.CHILDREN ? 'ES' : 'EA';
-
-      const axisCodes = axisCode === 'ES' ? ['ES', 'EA', 'LC'] : ['EA', 'LC'];
+      const axisCodes =
+        schoolGradeEnum === SchoolGradeEnum.CHILDREN
+          ? ['ES', 'EA', 'LC']
+          : ['EA', 'LC'];
 
       const totalQuestionPerAxisAggregate = await this.examModel
         .aggregate([
@@ -1867,8 +1879,10 @@ export class StudentService {
   }
 
   private async calculateStars(studentId: string, planetId: string) {
-    const studentExam = await this.studentExamModel
-      .findOne({ studentId, lastExam: true });
+    const studentExam = await this.studentExamModel.findOne({
+      studentId,
+      lastExam: true,
+    });
 
     if (!studentExam) {
       throw new NotFoundException(
@@ -2026,9 +2040,14 @@ export class StudentService {
         }
       } else {
         return question.options.every((option) => {
-          const answeredOption = answerOptions.find((item) => item.description == option.description);
-          return answeredOption != undefined && answeredOption.positionAnswer == option.position;
-        })
+          const answeredOption = answerOptions.find(
+            (item) => item.description == option.description,
+          );
+          return (
+            answeredOption != undefined &&
+            answeredOption.positionAnswer == option.position
+          );
+        });
       }
 
       return true;
