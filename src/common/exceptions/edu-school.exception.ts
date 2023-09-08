@@ -251,11 +251,11 @@ export class EduException extends HttpException {
   @ApiProperty()
   readonly message: string;
 
-  constructor(errorCode: keyof typeof ErrorDetails) {
+  constructor(errorCode: keyof typeof ErrorDetails, errorMessage: string = undefined) {
     super(
       {
         code: errorCode,
-        message: ErrorDetails[errorCode].message,
+        message: errorMessage ?? ErrorDetails[errorCode].message,
       },
       ErrorDetails[errorCode].status,
     );
