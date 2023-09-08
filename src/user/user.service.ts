@@ -425,6 +425,11 @@ export class UserService {
     if (!isPasswordValid) {
       throw new EduException('INVALID_PASSWORD');
     }
+    
+    const isPasswordStrong = this.validationUtilsService.isPasswordStrong(newPassword);
+    if (!isPasswordStrong) {
+      throw new EduException('WEAK_PASSWORD');
+    }
 
     const hashedPassword = await this.bcryptService.hashPassword(newPassword);
 

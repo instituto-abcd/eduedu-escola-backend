@@ -10,12 +10,14 @@ import { ResetPasswordResponseDto } from './dto/response/reset-password-response
 import { DateApiService } from '../common/services/date-api.service';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { EmailService } from 'src/email/email.service';
+import { ValidationUtilsService } from 'src/common/utils/validation-utils.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly validationUtilsService: ValidationUtilsService,
     private readonly externalApiService: DateApiService,
     private readonly bcryptService: BcryptService,
     private readonly emailService: EmailService,
@@ -99,6 +101,11 @@ export class AuthService {
         where: { id: authToken.id },
       });
       throw new EduException('TOKEN_EXPIRED');
+    }
+
+    const isPasswordStrong = this.validationUtilsService.isPasswordStrong(password);
+    if (!isPasswordStrong) {
+      throw new EduException('WEAK_PASSWORD');
     }
 
     const hashedPassword = await this.bcryptService.hashPassword(password);

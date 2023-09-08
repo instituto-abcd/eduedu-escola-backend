@@ -232,6 +232,15 @@ export const ErrorDetails = {
   KIDS_WITHOUT_PLANETS: {
     message: 'A criança não possui esse planeta.',
     status: HttpStatus.NOT_FOUND,
+  },
+  WEAK_PASSWORD: {
+    message: `A senha deve atender os seguintes requisitos:
+    - Ter pelo menos 1 letra maiúscula
+    - Ter pelo menos 1 letra minúscula
+    - Ter pelo menos 1 número
+    - Ter pelo menos 1 caractere especial
+    - Ter pelo menos 6 dígitos`,
+    status: HttpStatus.BAD_REQUEST
   }
 };
 

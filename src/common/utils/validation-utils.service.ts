@@ -59,4 +59,20 @@ export class ValidationUtilsService {
     const validProfiles = Object.values(Profile);
     return validProfiles.includes(profile as Profile);
   }
+
+  isPasswordStrong(password: string) {
+    let passwordMeetsLength = password.length >= 6;
+    let passwordMeetsHasUpperCase = /[A-Z]+/.test(password);
+    let passwordMeetsHasLowerCase = /[a-z]+/.test(password);
+    let passwordMeetsHasDigit = /[0-9]+/.test(password);
+    let passwordMeetsHasSpecialChar = /[^A-Za-z0-9]+/.test(password);
+
+    const isPasswordStrong = passwordMeetsLength &&
+                             passwordMeetsHasUpperCase &&
+                             passwordMeetsHasLowerCase &&
+                             passwordMeetsHasDigit &&
+                             passwordMeetsHasSpecialChar;
+
+    return isPasswordStrong;
+  }
 }
