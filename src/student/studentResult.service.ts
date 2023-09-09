@@ -140,7 +140,7 @@ export class StudentResultService {
     axisName: string,
   ): Promise<StudentPlanetResultDetailDto> {
     const studentPlanetResult = await this.prisma.studentPlanetResult.findMany({
-      where: { studentId: studentExam.studentId, axisCode: axisCode },
+      where: { studentId: studentExam.studentId, axisCode: axisCode, studentExamId: studentExam.id },
     });
 
     const planetResultDetail = new StudentPlanetResultDetailDto();
