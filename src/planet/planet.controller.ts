@@ -22,19 +22,17 @@ export class PlanetController {
     return this.planetService.findAll();
   }
 
-  @Get(":id/questions")
+  @Get(':id/questions')
   @ApiResponse({
     status: 201,
     description: 'Retorna as questões de planetas',
     type: PlanetDto,
   })
-  findPlanetQuestions(
-    @Param('id') planetId: string,
-  ): Promise<Question[]> {
+  findPlanetQuestions(@Param('id') planetId: string): Promise<Question[]> {
     return this.planetService.findPlanetQuestions(planetId);
   }
 
-  @Get(":id/questions/:questionId")
+  @Get(':id/questions/:questionId')
   @ApiResponse({
     status: 201,
     description: 'Retorna as questões de planetas',
