@@ -32,7 +32,7 @@ export class ReportService {
 
     const studentExams = await this.studentExamModel.findOne({
       studentId: studentId,
-      examPerformed: true,
+      lastExam: true,
     });
 
     const planetsPerformance =
