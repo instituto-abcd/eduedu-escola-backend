@@ -25,9 +25,7 @@ import { StudentPlanetExecutionService } from './studentPlanetExecution.service'
       { name: Planet.name, schema: PlanetSchema },
     ]),
   ],
-  exports: [
-    PerformanceResultUtilsService,
-  ],
+  exports: [PerformanceResultUtilsService, StudentResultService],
   controllers: [StudentController],
   providers: [
     StudentService,

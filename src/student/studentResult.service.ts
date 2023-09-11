@@ -34,7 +34,7 @@ export class StudentResultService {
       lastExam: true,
     });
 
-    let studentExamId = studentExam ? studentExam.id : "";
+    const studentExamId = studentExam ? studentExam.id : '';
 
     const studentExamResults = await this.prisma.studentExamResult.findMany({
       where: { studentId: studentId, studentExamId: studentExamId },
@@ -85,7 +85,9 @@ export class StudentResultService {
         axisCode: axisCode,
         axisName: this.mapAxisCodeToLabel(axisCode),
         percent: round(+percent),
-        description: studentExamResult ? `${round(+percent)}% ${classificationText}` : '-',
+        description: studentExamResult
+          ? `${round(+percent)}% ${classificationText}`
+          : '-',
         color: classificationColor,
       });
 
@@ -140,7 +142,11 @@ export class StudentResultService {
     axisName: string,
   ): Promise<StudentPlanetResultDetailDto> {
     const studentPlanetResult = await this.prisma.studentPlanetResult.findMany({
-      where: { studentId: studentExam.studentId, axisCode: axisCode, studentExamId: studentExam.id },
+      where: {
+        studentId: studentExam.studentId,
+        axisCode: axisCode,
+        studentExamId: studentExam.id,
+      },
     });
 
     const planetResultDetail = new StudentPlanetResultDetailDto();
