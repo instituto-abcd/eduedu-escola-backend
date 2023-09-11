@@ -62,7 +62,7 @@ export class ValidationUtilsService {
 
   isPasswordStrong(password: string): [boolean, string] {
     let passwordMeetsLength = password.length >= 6;
-    let passwordMeetsHasLetter = /^[A-Za-z\s]*$/.test(password);
+    let passwordMeetsHasLetter = /[a-zA-Z]/.test(password);
     let passwordMeetsHasDigit = /[0-9]+/.test(password);
 
     const isPasswordStrong = passwordMeetsLength &&
