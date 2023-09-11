@@ -539,10 +539,20 @@ export class StudentService {
         throw new EduException('QUESTION_NOT_FOUND');
       }
 
-      const studentExam = await this.studentExamModel.findOne({
+      let studentExam = await this.studentExamModel.findOne({
         studentId: studentId,
         examId: exam.id,
+        current: true,
       });
+
+      if (!studentExam) {
+        await this.createExamStudant(studentId);
+        studentExam = await this.studentExamModel.findOne({
+          studentId: studentId,
+          examId: exam.id,
+          current: true,
+        });
+      }
 
       if (studentExam.examPerformed == false && studentExam.current == true) {
         studentExam.answers = [];
@@ -578,6 +588,7 @@ export class StudentService {
         orderedAnswer: firstQuestion.orderedAnswer,
       };
     } catch (error) {
+      console.log(error);
       throw new EduException('DATABASE_ERROR');
     }
   }
