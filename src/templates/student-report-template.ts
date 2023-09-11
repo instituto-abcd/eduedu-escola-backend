@@ -176,22 +176,33 @@ export const exportStudentReport = (chartData: any[], planetChart: any[]) => `
                     type: 'line',
                     data: chartData,
                     options: {
+                        aspectRatio: 4,
                         responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        stacked: false,
+                        plugins: {
+                            title: {
+                                display: false,
+                            },
+                            legend: {
+                                display: false,
+                            }
+                        },
                         scales: {
-                            x: {
+                            y: {
+                                type: 'linear',
                                 display: true,
-                                title: {
-                                    display: true,
-                                    text: 'X-axis Label'
+                                position: 'left',
+                                min: 0,
+                                max: 100,
+                                ticks: {
+                                  stepSize: 20,
                                 }
                             },
-                            y: {
-                                display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Y-axis Label'
-                                }
-                            }
+                          },
                         }
                     }
                 });
@@ -205,22 +216,32 @@ export const exportStudentReport = (chartData: any[], planetChart: any[]) => `
                     type: 'line',
                     data: planetChart,
                     options: {
+                        aspectRatio: 4,
                         responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        stacked: false,
+                        plugins: {
+                            title: {
+                                display: false,
+                            },
+                            legend: {
+                                display: false,
+                            }
+                        },
                         scales: {
-                            x: {
+                            y: {
+                                type: 'linear',
                                 display: true,
-                                title: {
-                                    display: true,
-                                    text: 'X-axis Label'
+                                position: 'left',
+                                min: 0,
+                                max: 5,
+                                ticks: {
+                                  stepSize: 1,
                                 }
                             },
-                            y: {
-                                display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Y-axis Label'
-                                }
-                            }
                         }
                     }
                 });

@@ -45,6 +45,34 @@ export class ReportService {
       studentId,
     );
 
+    chart.datasets?.forEach((element) => {
+      if (element.label == 'Consciência Fonológica') {
+        element.backgroundColor = '#66d9e8';
+        element.borderColor = '#66d9e8';
+      } else if (element.label == 'Sistema de Escrita Alfabética') {
+        element.backgroundColor = '#d0bfff';
+        element.borderColor = '#d0bfff';
+      } else {
+        element.backgroundColor = '#ffc078';
+        element.borderColor = '#ffc078';
+      }
+      element.yAxisID = 'y';
+    });
+
+    chart.planetChart?.forEach((element) => {
+      if (element.label == 'Consciência Fonológica') {
+        element.backgroundColor = '#66d9e8';
+        element.borderColor = '#66d9e8';
+      } else if (element.label == 'Sistema de Escrita Alfabética') {
+        element.backgroundColor = '#d0bfff';
+        element.borderColor = '#d0bfff';
+      } else {
+        element.backgroundColor = '#ffc078';
+        element.borderColor = '#ffc078';
+      }
+      element.yAxisID = 'y';
+    });
+
     // Renderize o conteúdo do relatório usando o modelo Mustache
     const content = exportStudentReport(chart, planetChart);
     const html = mustache.render(content, {
