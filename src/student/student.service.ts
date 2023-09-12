@@ -1158,12 +1158,6 @@ export class StudentService {
     schoolGradeYear: number,
   ): Promise<number> {
     try {
-      const schoolGradeEnum = await this.getSchoolGradeByStudentId(studentId);
-      const axisCodes =
-        schoolGradeEnum === SchoolGradeEnum.CHILDREN
-          ? ['ES', 'EA', 'LC']
-          : ['EA', 'LC'];
-
       const totalQuestionPerAxisAggregate = await this.examModel
         .aggregate([
           {
@@ -1175,7 +1169,6 @@ export class StudentService {
                     as: 'question',
                     cond: {
                       $and: [
-                        { $in: ['$$question.axis_code', axisCodes] },
                         { $lte: ['$$question.school_year', schoolGradeYear] },
                       ],
                     },
@@ -1190,43 +1183,19 @@ export class StudentService {
       const totalQuestionPerAxis =
         totalQuestionPerAxisAggregate[0]?.questionCount || 0;
 
-      const totalQuestionsAnsweredAxisAggregate =
-        await this.studentExamModel.aggregate([
-          {
-            $match: {
-              studentId: studentId,
-              'answers.axis_code': { $in: axisCodes },
-            },
-          },
-          {
-            $project: {
-              correctAnswersCount: {
-                $size: {
-                  $filter: {
-                    input: '$answers',
-                    as: 'answer',
-                    cond: {
-                      $and: [
-                        { $in: ['$$answer.axis_code', axisCodes] },
-                        // { $lte: ['questions.school_year', schoolGradeYear] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        ]);
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        current: true,
+      });
 
-      const totalQuestionsAnsweredAxis =
-        totalQuestionsAnsweredAxisAggregate[0]?.correctAnswersCount || 0;
+      const totalQuestionsAnswered = studentExam.answers.length;
 
       if (totalQuestionPerAxis === 0) {
         return 0;
       }
 
       const percentage =
-        (totalQuestionsAnsweredAxis / totalQuestionPerAxis) * 100;
+        (totalQuestionsAnswered / totalQuestionPerAxis) * 100;
       return parseFloat(percentage.toFixed(2));
     } catch (error) {
       console.error('Error in recoverProgress:', error);

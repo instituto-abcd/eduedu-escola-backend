@@ -33,6 +33,10 @@ import {
 } from './student/schemas/studentExam.schema';
 import { PlanetModule } from './planet/planet.module';
 import { SchoolClassResultService } from './school-class/school-class-result.service';
+import { ReportModule } from './report/report.module';
+import { ReportService } from "./report/report.service";
+import { StudentService } from "./student/student.service";
+import { StudentResultService } from "./student/studentResult.service";
 
 @Module({
   imports: [
@@ -67,6 +71,7 @@ import { SchoolClassResultService } from './school-class/school-class-result.ser
     AwardsModule,
     ExamModule,
     PlanetModule,
+    ReportModule,
   ],
   providers: [
     PrismaService,

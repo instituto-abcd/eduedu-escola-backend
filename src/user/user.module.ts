@@ -11,6 +11,9 @@ import { EmailService } from 'src/email/email.service';
 
 @Module({
   controllers: [UserController],
+  exports: [
+    ValidationUtilsService,
+  ],
   providers: [
     UserService,
     PrismaService,

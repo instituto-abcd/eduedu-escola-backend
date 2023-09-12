@@ -59,4 +59,26 @@ export class ValidationUtilsService {
     const validProfiles = Object.values(Profile);
     return validProfiles.includes(profile as Profile);
   }
+
+  isPasswordStrong(password: string): [boolean, string] {
+    let passwordMeetsLength = password.length >= 6;
+    let passwordMeetsHasLetter = /[a-zA-Z]/.test(password);
+    let passwordMeetsHasDigit = /[0-9]+/.test(password);
+
+    const isPasswordStrong = passwordMeetsLength &&
+                             passwordMeetsHasLetter &&
+                             passwordMeetsHasDigit;
+
+    let message = '';
+
+    if (!isPasswordStrong) {
+      message += 'A senha deve atender os seguintes requisitos:<br>';
+      message += !passwordMeetsLength ? '- Ter pelo menos 6 dígitos<br>' : '';
+      message += !passwordMeetsHasLetter ? '- Ter pelo menos 1 letra<br>' : '';
+      message += !passwordMeetsHasDigit ? '- Ter pelo menos 1 número<br>' : '';
+      message += '<br>';
+    }
+
+    return [isPasswordStrong, message];
+  }
 }
