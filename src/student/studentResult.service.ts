@@ -199,7 +199,7 @@ export class StudentResultService {
     const uniqueDates = [
       ...new Set(studentResults.map((result) => result.lastExecution)),
     ];
-    uniqueDates.sort();
+    uniqueDates.sort((a,b) => a.getTime() - b.getTime());;
 
     const chartDatasets: ChartDatasetDto[] = [];
 
@@ -259,7 +259,7 @@ export class StudentResultService {
     const uniqueDates = [
       ...new Set(studentResults.map((result) => result.examDate)),
     ];
-    uniqueDates.sort();
+    uniqueDates.sort((a,b) => a.getTime() - b.getTime());
 
     const chartDatasets: ChartDatasetDto[] = [];
 
