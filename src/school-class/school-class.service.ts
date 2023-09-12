@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSchoolClassDto } from './dto/create-school-class.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
@@ -88,59 +88,87 @@ export class SchoolClassService {
   }
 
   async findAll(
-    pageNumber: number,
-    pageSize: number,
-    filters: any,
+    pageNumber = 1,
+    pageSize = 10,
+    filters: any = {},
   ): Promise<PaginationResponse<SchoolClassResponseDto>> {
-    if (
-      !Number.isInteger(pageNumber) ||
-      pageNumber <= 0 ||
-      !Number.isInteger(pageSize) ||
-      pageSize <= 0
-    ) {
-      throw new EduException('INVALID_PAGINATION_PARAMETERS');
-    }
-
-    const skip = (pageNumber - 1) * pageSize;
-
-    const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } =
-      filters || {};
-
     try {
-      const where: Prisma.SchoolClassWhereInput = {};
-
-      if (name !== undefined) {
-        where.name = { equals: name };
+      if (!Number.isInteger(pageNumber) || pageNumber <= 0) {
+        throw new EduException('INVALID_PAGINATION_PARAMETERS');
       }
 
-      if (schoolGrade !== undefined) {
+      if (!Number.isInteger(pageSize) || pageSize <= 0) {
+        throw new EduException('INVALID_PAGINATION_PARAMETERS');
+      }
+
+      const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } =
+        filters;
+
+      const where: Prisma.SchoolClassWhereInput = {};
+
+      if (name) {
+        where.name = { contains: name };
+      }
+
+      if (schoolGrade) {
         where.schoolGrade = { equals: schoolGrade };
       }
 
-      if (schoolPeriod !== undefined) {
+      if (schoolPeriod) {
         where.schoolPeriod = { equals: schoolPeriod };
       }
 
-      if (schoolYearName !== undefined) {
+      if (schoolYearName) {
         const schoolYear = await this.prismaService.schoolYear.findFirst({
           where: { name: Number(schoolYearName) },
           select: { id: true },
         });
 
-        if (schoolYear !== null) {
+        if (schoolYear) {
           where.schoolYearId = schoolYear.id;
+        } else {
+          return {
+            items: [],
+            pagination: {
+              totalItems: 0,
+              pageSize,
+              pageNumber,
+              totalPages: 0,
+              previousPage: 0,
+              nextPage: 0,
+              lastPage: 0,
+              hasPreviousPage: false,
+              hasNextPage: false,
+            },
+          };
         }
       }
 
-      if (teacherName !== undefined) {
+      if (teacherName) {
         const teachers = await this.prismaService.user.findMany({
-          where: { name: teacherName },
+          where: { name: { contains: teacherName } }, // Corresponder parcialmente ao nome
           select: { id: true },
         });
 
         if (teachers.length > 0) {
           const teacherIds = teachers.map((teacher) => teacher.id);
           where.users = { some: { userId: { in: teacherIds } } };
+        } else {
+          // Se nenhum professor for encontrado, não há correspondência, então podemos retornar vazio
+          return {
+            items: [],
+            pagination: {
+              totalItems: 0,
+              pageSize,
+              pageNumber,
+              totalPages: 0,
+              previousPage: 0,
+              nextPage: 0,
+              lastPage: 0,
+              hasPreviousPage: false,
+              hasNextPage: false,
+            },
+          };
         }
       }
 
@@ -150,7 +178,7 @@ export class SchoolClassService {
 
       const schoolClasses = await this.prismaService.schoolClass.findMany({
         where,
-        skip,
+        skip: (pageNumber - 1) * pageSize,
         take: pageSize,
         include: {
           schoolYear: true,
@@ -161,20 +189,8 @@ export class SchoolClassService {
 
       const totalPages = Math.ceil(totalCount / pageSize);
 
-      const pagination: PaginationInfo = {
-        totalItems: totalCount,
-        pageSize,
-        pageNumber,
-        totalPages,
-        previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
-        nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
-        lastPage: totalPages,
-        hasPreviousPage: pageNumber > 1,
-        hasNextPage: pageNumber < totalPages,
-      };
-
-      const responseSchoolClasses: SchoolClassResponseDto[] = schoolClasses.map(
-        (schoolClass) => ({
+      return {
+        items: schoolClasses.map((schoolClass) => ({
           id: schoolClass.id,
           name: schoolClass.name,
           schoolGrade: schoolClass.schoolGrade,
@@ -188,15 +204,21 @@ export class SchoolClassService {
             name: user.user.name,
           })),
           studentsCount: schoolClass.students.length,
-        }),
-      );
-
-      return {
-        items: responseSchoolClasses,
-        pagination,
+        })),
+        pagination: {
+          totalItems: totalCount,
+          pageSize,
+          pageNumber,
+          totalPages,
+          previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
+          nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
+          lastPage: totalPages,
+          hasPreviousPage: pageNumber > 1,
+          hasNextPage: pageNumber < totalPages,
+        },
       };
     } catch (error) {
-      throw new EduException('DATABASE_ERROR');
+      throw new NotFoundException('Turmas não encontradas');
     }
   }
 
