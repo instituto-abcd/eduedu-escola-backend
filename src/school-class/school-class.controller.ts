@@ -53,8 +53,6 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
@@ -69,6 +67,7 @@ export class SchoolClassController {
     type: SchoolClassResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
+  @ApiBearerAuth()
   async create(
     @Body() createSchoolClassDto: CreateSchoolClassDto,
     @SchoolId() schoolId: string,
@@ -77,6 +76,7 @@ export class SchoolClassController {
   }
 
   @Get('all')
+  @ApiBearerAuth()
   async findAll(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
@@ -100,6 +100,7 @@ export class SchoolClassController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Turma encontrada com sucesso',
@@ -107,11 +108,13 @@ export class SchoolClassController {
   })
   @ApiNotFoundResponse({ description: 'Turma não encontrada' })
   @ApiOperation({ summary: 'Obter turma por ID' })
+  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string): Promise<SchoolClassResponseDto> {
     return this.schoolClassService.findOne(id);
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Turma atualizada com sucesso',
@@ -120,6 +123,8 @@ export class SchoolClassController {
   @ApiNotFoundResponse({ description: 'Turma não encontrada' })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
   @ApiOperation({ summary: 'Atualizar turma por ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateSchoolClassRequestDto,
@@ -134,6 +139,8 @@ export class SchoolClassController {
     type: DeleteSchoolClassResponseDto,
   })
   @ApiOperation({ summary: 'Excluir turmas' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async remove(
     @Body() requestDto: DeleteSchoolClassRequestDto,
   ): Promise<DeleteSchoolClassResponseDto> {
@@ -147,6 +154,8 @@ export class SchoolClassController {
   @ApiOperation({ summary: 'Adicionar alunos por meio de uma planilha' })
   @ApiResponse({ status: 201, description: 'Alunos adicionados com sucesso' })
   @ApiResponse({ status: 400, description: 'Erro na validação da planilha' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async addStudentsFromSpreadsheet(
     @Param('id') schoolClassId: string,
     @UploadedFile() file: Express.Multer.File,
@@ -199,6 +208,8 @@ export class SchoolClassController {
     type: PaginationResponse,
   })
   @Get(':id/students')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   studentsByClass(
     @Param('id') id: string,
     @Query('page-number') page?: string,
@@ -220,6 +231,8 @@ export class SchoolClassController {
     description: 'Alunos movimentados com sucesso',
   })
   @Post(':destinationId/students')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   addStudentsToClass(
     @Param('destinationId') destinationId: string,
     @Body() data: AddStudentsToClassDto,
@@ -236,6 +249,8 @@ export class SchoolClassController {
   @ApiOperation({
     summary: 'Atualizar campo reserved de um aluno em uma turma',
   })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async updateStudentReserved(
     @Param('id') schoolClassId: string,
     @Param('studentId') studentId: string,
@@ -254,6 +269,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/planets-chart')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async getPlanetsChart(
     @Param('id') id: string,
   ): Promise<ChartStudentResponse> {
@@ -266,6 +283,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/exams-chart')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async getChartByExamsForSchoolClass(
     @Param('id') id: string,
   ): Promise<ChartStudentResponse> {
@@ -278,6 +297,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/planets-performance')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async getPlanetsPerformance(
     @Param('id') id: string,
   ): Promise<SchoolClassPlanetResultDetailDto[]> {
@@ -290,6 +311,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/exams-performance')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async getExamsPerformance(
     @Param('id') id: string,
   ): Promise<SchoolClassDetailedSummaryDto[]> {
@@ -302,6 +325,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/exams-performance-students')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async examsPerformanceStudents(
     @Param('id') id: string,
   ): Promise<ExamPerformanceResponse[]> {
@@ -314,6 +339,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/planets-performance-students')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async schoolClassPerformancePlanets(
     @Param('id') id: string,
   ): Promise<PlanetsPerformanceResponse[]> {
@@ -329,6 +356,8 @@ export class SchoolClassController {
   })
   @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
   @Get(':id/ideal-students')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async getAllStudentsIdealAxis(
     @Param('id') id: string,
   ): Promise<IdealStudentsDto[]> {
