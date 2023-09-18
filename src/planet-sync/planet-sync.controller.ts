@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
 import {
@@ -38,5 +38,16 @@ export class PlanetSyncController {
   })
   syncAll() {
     return this.planetSyncService.syncAll();
+  }
+
+  @Get('test-stream')
+  @ApiOperation({
+    summary: 'Teste Stream',
+  })
+  @ApiResponse({
+    status: 200,
+  })
+  testStream() {
+    return this.planetSyncService.testStream();
   }
 }
