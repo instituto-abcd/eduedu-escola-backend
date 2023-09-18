@@ -1,4 +1,4 @@
-import { Injectable, StreamableFile } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Planet, Question } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
@@ -17,7 +17,8 @@ export class PlanetSyncService {
 
   async testStream() {
     // IMAGEM
-    let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/vg28uAm0odQKMPsBhjXT?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=NLU%2BA%2FSf4%2FQ7TlphzB0taCqCy4pL2oujW4Lz8Gx3qqGpFSJFqhperPEMM2VxUJ98%2FX5btOZR%2F1WScQvSBxDCCx9%2F%2B2NxOsRggCFRdxmgcOr2zmouPlArcMMsoxLXql%2FlBLnLi9IvYveOP4WttOFxaQeYk54uBX%2FqmzHAxWNpnYa66e0iPUbWIC1UE5l5B8%2BtXPALYZTjh5ePiPiA2SqHGvQReVrSAmwWZkU3B6cqzDmvp4WBhVu85%2BdBFjZYjEI2vX22YEvz%2BLLKJrJodLvLsU97DtIj%2FlQiv1Okg8b3c8SEbg4d7dV%2ByXHJDqJgqG3%2B2Fl%2BEuzBNqDoj1%2FJLwZQzQ%3D%3D';
+    const fileURL =
+      'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/vg28uAm0odQKMPsBhjXT?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=NLU%2BA%2FSf4%2FQ7TlphzB0taCqCy4pL2oujW4Lz8Gx3qqGpFSJFqhperPEMM2VxUJ98%2FX5btOZR%2F1WScQvSBxDCCx9%2F%2B2NxOsRggCFRdxmgcOr2zmouPlArcMMsoxLXql%2FlBLnLi9IvYveOP4WttOFxaQeYk54uBX%2FqmzHAxWNpnYa66e0iPUbWIC1UE5l5B8%2BtXPALYZTjh5ePiPiA2SqHGvQReVrSAmwWZkU3B6cqzDmvp4WBhVu85%2BdBFjZYjEI2vX22YEvz%2BLLKJrJodLvLsU97DtIj%2FlQiv1Okg8b3c8SEbg4d7dV%2ByXHJDqJgqG3%2B2Fl%2BEuzBNqDoj1%2FJLwZQzQ%3D%3D';
 
     // AUDIO
     // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/FgZqLCLkzMBc4oN1fvHv?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=nKtVKWfRXKebJiCGnWWXQDkm6q0Gsn8qqkYhgwJrTItL1gzzMQs0K9tVcATwcxAcLTeXHj4Obpqe7YIFxPUzkQNY%2F%2B82mTqht8%2BHPGNkdSvnvs9IYKE%2BOPaoOl9vM4CV2p65HN%2BDUsXRpkMI7XQhDG2oaLf9nYVJ%2FF%2F0CaYxGiVAhhKK%2BHCQ68Y2U%2FX2qYIq8fVEj4Pbd%2BHL80q1U9UUp%2FD3Os5D4wRJjtx4aQ2QmG5K1J1Pje097jFqmI8LjwzMGXqe6AJQ1yJNa09iC8UHO4EwBKHotCKM18bIuKhzLHHvem%2FP%2Fq9XRbfEUO62p2cE%2FFpEiaZ2MZ7Y5Xi%2FGfiQ%2Fw%3D%3D';
@@ -25,21 +26,24 @@ export class PlanetSyncService {
     // VIDEO
     // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/perKz89Omy5jUrgjjtMk?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216290576&Signature=i4TJaTSit3lhNO5W%2B98eW5DuEFozOvJHlRm4mGaF201R3XINc7jSI054bsDjrX8CYmOXSdhkt%2Fl8DyE7MQUCAtLNxIVmqtBnNdDfo2EvwqKXDAwdPFWh5CVXIBIGTLyN9wQatg3G7S5YDvrc0nsh0N6kIkLnfa2FHFfhyAaXORgzGjxz9yoxg1GPp0bRk0qCTJwW%2BowwJV1lrskgu4JdJdWzaZDFAKEZQ%2FW75uZ6yUQRsnpGi5lb%2BYghZ4%2BI0wZIrLk%2F3iiVlWiUYMIhsxbHdTPdZEK%2FdqGFxuZDkBMu6i0znoqVcEwUpAZa5cJISa1Zup2uK7rwkS6QWtTzSMKfvQ%3D%3D'
 
-    let fileStream: any = {};
-    fileStream = got.stream(fileURL);
-
-    let file = await got(fileURL);
-    let fileExtension = this.getFileExtension(file);
+    const file = await got(fileURL);
+    const fileExtension = this.getFileExtension(file);
 
     return fileExtension;
   }
 
-  private getFileExtension(file: any): string {
-    let fileExtension =
-      file.rawHeaders.includes('image/svg+xml') ? '.svg' :
-      file.rawHeaders.includes('audio/mpeg') ? '.mp3' :
-      file.rawHeaders.includes('video/mp4') ? '.mp4' : '';
-    return fileExtension;
+  private getFileExtension(response: any): string {
+    const contentType = response.headers['content-type'];
+    if (contentType) {
+      if (contentType.includes('image/svg+xml')) {
+        return '.svg';
+      } else if (contentType.includes('audio/mpeg')) {
+        return '.mp3';
+      } else if (contentType.includes('video/mp4')) {
+        return '.mp4';
+      }
+    }
+    return '';
   }
 
   async syncAll() {
@@ -217,57 +221,60 @@ export class PlanetSyncService {
     id: string | null,
     url: string | null,
   ): Promise<string | null> {
-    if (url === null) {
-      return null;
-    }
-
-    const serverUrl = process.env.FILE_SERVER_URL;
-    const fileServerPort = process.env.FILE_SERVER_PORT;
-
-    if (!serverUrl || !fileServerPort) {
-      return null;
-    }
-
-    const fileServerUrl = `${serverUrl}:${fileServerPort}`;
-    const fileExtension = await this.getExtensionFromUrl(url);
-
-    if (fileExtension === null) {
-      return null;
-    }
-
-    return `${fileServerUrl}/${id}.${fileExtension}`;
-  }
-
-  async getExtensionFromUrl(url: string): Promise<{ extension: string }> {
     try {
-      const response = await axios.get(url, {
-        responseType: 'arraybuffer',
-        timeout: 50000,
-      });
-
-      const contentType = response.headers['content-type'];
-
-      if (contentType) {
-        // Determine the file extension based on content type
-        const fileExtension = mime.extension(contentType);
-
-        if (fileExtension) {
-          return { extension: fileExtension };
-        } else {
-          console.log('Could not determine file extension');
-        }
-      } else {
-        console.log('Content-Type header not found in response');
+      if (url === null || url === undefined) {
+        return '';
       }
 
-      // Return a default value or throw an exception if needed
-      return { extension: 'unknown' }; // Replace 'unknown' with your desired default extension
-    } catch (error) {
-      console.log('Error fetching URL: ', url);
-      console.error(error); // Log the error for debugging
+      const serverUrl = process.env.FILE_SERVER_URL;
+      const fileServerPort = process.env.FILE_SERVER_PORT;
 
-      // Handle the error appropriately, e.g., throw an exception
-      throw error;
+      if (!serverUrl || !fileServerPort) {
+        return null;
+      }
+
+      const fileServerUrl = `${serverUrl}:${fileServerPort}`;
+
+      const maxConcurrentRequests = 5;
+      const requests = [];
+
+      for (let i = 0; i < maxConcurrentRequests; i++) {
+        requests.push(this.fetchFile(fileServerUrl, id, url));
+      }
+
+      const responses = await Promise.all(requests);
+
+      for (const response of responses) {
+        if (response !== null) {
+          return response;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  private async fetchFile(
+    fileServerUrl: string,
+    id: string | null,
+    url: string,
+  ): Promise<string | null> {
+    try {
+      const response = await got(url);
+
+      if (response.statusCode === 200) {
+        const fileExtension = this.getFileExtension(response);
+        return `${fileServerUrl}/${id}${fileExtension}`;
+      } else {
+        console.error(`Request failed with status code ${response.statusCode}`);
+        return null;
+      }
+    } catch (e) {
+      console.error(e);
+      return null;
     }
   }
 
