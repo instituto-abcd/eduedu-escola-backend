@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, StreamableFile } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Planet, Question } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
 import { Model } from 'mongoose';
 import { FirestoreService } from './firestore.service';
 import { PlanetSync } from './schemas/sync-list.schema';
+import axios from 'axios';
+import mime from 'mime-types'; // Import the 'mime-types' library
 
 @Injectable()
 export class PlanetSyncService {
@@ -22,13 +24,19 @@ export class PlanetSyncService {
     });
 
     const mutation = await this.planetModel.bulkWrite(
-      planetsToPersist.map((planet) => ({
-        updateOne: {
-          filter: { id: planet.id },
-          update: planet,
-          upsert: true,
-        },
-      })),
+      await Promise.all(
+        planetsToPersist.map(async (planetPromise) => {
+          const planet = await planetPromise;
+
+          return {
+            updateOne: {
+              filter: { id: planet.id },
+              update: planet,
+              upsert: true,
+            },
+          };
+        }),
+      ),
     );
 
     return {
@@ -64,8 +72,10 @@ export class PlanetSyncService {
       return this.parsePlanetOriginToPlanet(planetOrigin);
     });
 
+    const resolvedPlanets = await Promise.all(planetsToPersist);
+
     const mutation = await this.planetModel.bulkWrite(
-      planetsToPersist.map((planet) => ({
+      resolvedPlanets.map((planet) => ({
         updateOne: {
           filter: { id: planet.id },
           update: planet,
@@ -88,9 +98,15 @@ export class PlanetSyncService {
     };
   }
 
-  private parsePlanetOriginToPlanet(planetOrigin: PlanetOrigin): Planet {
-    var planet = new Planet();
-    planet.avatar_url = planetOrigin.avatar_url;
+  private async parsePlanetOriginToPlanet(
+    planetOrigin: PlanetOrigin,
+  ): Promise<Planet> {
+    const planet = new Planet();
+    planet.avatar_id = planetOrigin?.avatar?.replace(/^planets\//, '');
+    planet.avatar_url = await this.recoverFileURL(
+      planet.avatar_id,
+      planet.avatar_url,
+    );
     planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
     planet.domain_code = planetOrigin.domain_code;
     planet.enable = planetOrigin.enable;
@@ -102,59 +118,141 @@ export class PlanetSyncService {
     planet.title = planetOrigin.title;
     planet.updated_at = planetOrigin.updated_at;
 
-    planet.questions = planetOrigin.questions.map((questionOrigin) => {
-      var question: Question = {
-        orderedAnswer: questionOrigin.options.length > 0 && questionOrigin.options.every(o => !o.isCorrect),
-        multiplesAnswer: questionOrigin.options.length > 0 &&
-          questionOrigin.options.some(o => !o.isCorrect) &&
-          questionOrigin.options.filter((option) => option.isCorrect).length > 1,
-        level: questionOrigin.level,
-        id: questionOrigin.id,
-        model_id: questionOrigin.model_id,
-        description: questionOrigin.description,
-        planet_id: questionOrigin.planet_id,
-        position: questionOrigin.position,
-        status: questionOrigin.status,
-        title: questionOrigin.title,
-        bncc: questionOrigin.bncc,
-        updated_at: questionOrigin.updated_at,
+    planet.questions = await Promise.all(
+      planetOrigin.questions.map(async (questionOrigin) => {
+        const question: Question = {
+          orderedAnswer:
+            questionOrigin.options.length > 0 &&
+            questionOrigin.options.every((o) => !o.isCorrect),
+          multiplesAnswer:
+            questionOrigin.options.length > 0 &&
+            questionOrigin.options.some((o) => !o.isCorrect) &&
+            questionOrigin.options.filter((option) => option.isCorrect).length >
+              1,
+          level: questionOrigin.level,
+          id: questionOrigin.id,
+          model_id: questionOrigin.model_id,
+          description: questionOrigin.description,
+          planet_id: questionOrigin.planet_id,
+          position: questionOrigin.position,
+          status: questionOrigin.status,
+          title: questionOrigin.title,
+          bncc: questionOrigin.bncc,
+          updated_at: questionOrigin.updated_at,
 
-        options: questionOrigin.options.map((optionOrigin) => {
-          return {
-            sound_url: optionOrigin.sound_url,
-            image_url: optionOrigin.image_url,
-            description: optionOrigin.description,
-            position: optionOrigin.position,
-            isCorrect: optionOrigin.isCorrect
-          };
-        }),
+          options: await Promise.all(
+            questionOrigin.options.map(async (optionOrigin) => {
+              return {
+                sound_id: optionOrigin.sound_id,
+                image_id: optionOrigin.image_id,
+                sound_url: await this.recoverFileURL(
+                  optionOrigin.sound_id,
+                  optionOrigin.sound_url,
+                ),
+                image_url: await this.recoverFileURL(
+                  optionOrigin.image_id,
+                  optionOrigin.image_url,
+                ),
+                description: optionOrigin.description,
+                position: optionOrigin.position,
+                isCorrect: optionOrigin.isCorrect,
+              };
+            }),
+          ),
 
-        titles: questionOrigin.titles.map((titleOrigin) => {
-          return {
-            file_url: titleOrigin.file_url,
-            description: titleOrigin.description,
-            position: titleOrigin.position,
-            placeholder: titleOrigin.placeholder,
-            type: titleOrigin.type
-          };
-        }),
+          titles: await Promise.all(
+            questionOrigin.titles.map(async (titleOrigin) => {
+              const file_url = await this.recoverFileURL(
+                titleOrigin.file_id,
+                titleOrigin.file_url,
+              );
 
-        rules: questionOrigin.rules,
-      };
-      return question;
-    });
+              return {
+                file_id: titleOrigin.file_id,
+                file_url,
+                description: titleOrigin.description,
+                position: titleOrigin.position,
+                placeholder: titleOrigin.placeholder,
+                type: titleOrigin.type,
+              };
+            }),
+          ),
+
+          rules: questionOrigin.rules,
+        };
+        return question;
+      }),
+    );
 
     return planet;
+  }
+
+  private async recoverFileURL(
+    id: string | null,
+    url: string | null,
+  ): Promise<string | null> {
+    if (url === null) {
+      return null;
+    }
+
+    const serverUrl = process.env.FILE_SERVER_URL;
+    const fileServerPort = process.env.FILE_SERVER_PORT;
+
+    if (!serverUrl || !fileServerPort) {
+      return null;
+    }
+
+    const fileServerUrl = `${serverUrl}:${fileServerPort}`;
+    const fileExtension = await this.getExtensionFromUrl(url);
+
+    if (fileExtension === null) {
+      return null;
+    }
+
+    return `${fileServerUrl}/${id}.${fileExtension}`;
+  }
+
+  async getExtensionFromUrl(url: string): Promise<{ extension: string }> {
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 50000,
+      });
+
+      const contentType = response.headers['content-type'];
+
+      if (contentType) {
+        // Determine the file extension based on content type
+        const fileExtension = mime.extension(contentType);
+
+        if (fileExtension) {
+          return { extension: fileExtension };
+        } else {
+          console.log('Could not determine file extension');
+        }
+      } else {
+        console.log('Content-Type header not found in response');
+      }
+
+      // Return a default value or throw an exception if needed
+      return { extension: 'unknown' }; // Replace 'unknown' with your desired default extension
+    } catch (error) {
+      console.log('Error fetching URL: ', url);
+      console.error(error); // Log the error for debugging
+
+      // Handle the error appropriately, e.g., throw an exception
+      throw error;
+    }
   }
 
   private getAxisCode(axis_id: string): string {
     switch (axis_id) {
       case '8CbEeTJCWQnP6iPKXq0d':
-        return 'LC'
+        return 'LC';
       case 'xmgpLoYPvA02n2zSQqaB':
-        return 'EA'
+        return 'EA';
       case 'LNrgxvkhlGc3M4Ekm4Tz':
-        return 'ES'
+        return 'ES';
       default:
         break;
     }
