@@ -4,13 +4,10 @@ import { firebaseApp } from './firebase.service';
 
 @Injectable()
 export class StorageService {
-  private storage: admin.storage.Storage;
 
   private bucketNames: string[] = [];
 
   constructor() {
-    this.storage = firebaseApp.storage();
-
     this.bucketNames.push('assets');
     this.bucketNames.push('planets');
     this.bucketNames.push('exam/audio');
@@ -35,6 +32,23 @@ export class StorageService {
         // Do Nothing
       }
     };
+  }
+
+  async handleFile(bucketName: string, fileName: string) {
+    const bucket = admin.storage().bucket();
+
+    try {
+      const [metadata] = await bucket.file(`${bucketName}/${fileName}`).getMetadata();
+      const contentType = metadata.contentType;
+      const fileExtension = contentType.split('/').pop();
+      if (fileExtension) {
+        return '.' + fileExtension.replace('+xml', '').replace('mpeg', 'mp3');
+      } else {
+        return null;
+      }
+    } catch (error) {
+      // Do Nothing
+    }
   }
 
 }

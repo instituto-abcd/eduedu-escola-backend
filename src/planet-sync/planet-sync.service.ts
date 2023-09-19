@@ -1,18 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Planet } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
 import { Model } from 'mongoose';
 import { FirestoreService } from './firestore.service';
 import { PlanetSync } from './schemas/sync-list.schema';
-import got from 'got';
 import { StorageService } from './storage.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { InjectQueue, Process, Processor } from '@nestjs/bull';
+import { Queue, Job } from 'bull';
 
 @Injectable()
 export class PlanetSyncService {
+
   constructor(
     @InjectModel(Planet.name) private planetModel: Model<Planet>,
     @InjectModel(PlanetSync.name) private planetSyncModel: Model<PlanetSync>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @InjectQueue('planet-sync') private readonly planetSyncQueue: Queue,
     private readonly firestoreService: FirestoreService,
     private readonly storageService: StorageService,
   ) {}
@@ -21,62 +27,81 @@ export class PlanetSyncService {
     // IMAGEM
     // const fileURL =
     //   'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/vg28uAm0odQKMPsBhjXT?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=NLU%2BA%2FSf4%2FQ7TlphzB0taCqCy4pL2oujW4Lz8Gx3qqGpFSJFqhperPEMM2VxUJ98%2FX5btOZR%2F1WScQvSBxDCCx9%2F%2B2NxOsRggCFRdxmgcOr2zmouPlArcMMsoxLXql%2FlBLnLi9IvYveOP4WttOFxaQeYk54uBX%2FqmzHAxWNpnYa66e0iPUbWIC1UE5l5B8%2BtXPALYZTjh5ePiPiA2SqHGvQReVrSAmwWZkU3B6cqzDmvp4WBhVu85%2BdBFjZYjEI2vX22YEvz%2BLLKJrJodLvLsU97DtIj%2FlQiv1Okg8b3c8SEbg4d7dV%2ByXHJDqJgqG3%2B2Fl%2BEuzBNqDoj1%2FJLwZQzQ%3D%3D';
-    let imageId = '18ae9482-ab11-4481-833b-d8e8e0033aca'
-    let imageExtension = await this.storageService.getFileExtensionByFileName(imageId);
-    console.log(imageExtension);
+    // let imageId = '18ae9482-ab11-4481-833b-d8e8e0033aca'
+    // let imageExtension = await this.storageService.getFileExtensionByFileName_(imageId);
+    // console.log(imageExtension);
 
     // AUDIO
     // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/EOnQLGZQTWbdv2YRiSkz?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216284791&Signature=kYF2BteGA8uuGbvwWdZUGpxKqi4F%2FlPQmN%2FGW3rDz1AiQ1elfks7Bzkt4sIPaRs3%2BBfBnB%2FhhMMFqv4qVu43H202rBxoMgGDmzFK4FD4zSoqL5kRtryVh4%2FlU5Be0AU%2BYEHYnf1hAqN94q6LIuZjVvNfnc4qSMMskpHvCMLn2xdnj5WIzGLNQB89XuthKNZhj0JIXRQZ3ZUmREsqrkyESq2tNCTnXKF0WeYsm%2FbD%2FF5soyU2Nk%2FykTANvGH%2Fv8iOMYICBV39jcirFNLemElA44oxuRQZK4J7CW57ju6z1m8VggSnPIuZlG8uMZ7IaFaiofI1PVQNrs3m1D%2BIl6Lecw%3D%3D';
-    let audioId = 'EOnQLGZQTWbdv2YRiSkz';
-    let audioExtension = await this.storageService.getFileExtensionByFileName(audioId);
-    console.log(audioExtension);
+    // let audioId = 'EOnQLGZQTWbdv2YRiSkz';
+    // let audioExtension = await this.storageService.getFileExtensionByFileName_(audioId);
+    // console.log(audioExtension);
 
     // VIDEO
     // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/HJsTc7PHj4skb3CR3IR5?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216284791&Signature=PGJpid%2F%2B%2FZr%2FZVi%2BpQBVh6VE%2FpRe%2B0QtuqnkfDPHoY3fBu%2FePfz3ZIGjrj5ydMCJHshRedwDiAyQIcROgBqbQ8sjNcCtTUkN7oYLwntO4B3HB6Rq7C9bFNJXMxMAl36AMiweBthNik7I%2B8AujaI9hARD%2FC2h4kcUNxs%2BnRo4ESWTDp9cPEj5Px5VNt6HXnojibEhCVus2oi%2B9SwhQN6dzulx4FNjQit6ayPUpNvMlcrwrlbWVXFTLzRL6RzOrUwqj9QO8cVND6WncAQsE147PPdUMf4f0uft0DEhC19hrzQR6gvjKokPENEldwrPVUjtISrtR2djN%2BVpab6RRHxsfA%3D%3D'
-    let videoId = 'HJsTc7PHj4skb3CR3IR5';
-    let videoExtension = await this.storageService.getFileExtensionByFileName(videoId);
-    console.log(videoExtension);
+    // let videoId = 'HJsTc7PHj4skb3CR3IR5';
+    // let videoExtension = await this.storageService.getFileExtensionByFileName_(videoId);
+    // console.log(videoExtension);
+
+    let planetAvatarId = '01xX94qpgGv9PBxUSOdN';
+    let planetAvatarExtension = await this.storageService.handleFile('planets', planetAvatarId);
+
+    let assetFileId = '00zPfsrj2f6uUqeeTO1K';
+    let assetFileExtension = await this.storageService.handleFile('assets', assetFileId);
 
     return true;
   }
 
-  private getFileExtension(response: any): string {
-    const contentType = response.headers['content-type'];
-    if (contentType) {
-      if (contentType.includes('image/svg+xml')) {
-        return '.svg';
-      } else if (contentType.includes('audio/mpeg')) {
-        return '.mp3';
-      } else if (contentType.includes('video/mp4')) {
-        return '.mp4';
-      }
-    }
-    return '';
-  }
+  async getPlanetSyncStatus(): Promise<any> {
 
-  async syncAll() {
-    let planetsFromFirestore = await this.firestoreService.getPlanets();
-
-    let planetsToPersist = [];
-    for (let index = 0; index < planetsFromFirestore.length; index++) {
-      let processedPlanet = await this.parsePlanetOriginToPlanet(planetsFromFirestore[index]);
-      planetsToPersist.push(processedPlanet);
+    let totalPlanets = await this.cacheManager.get('planet-sync-total-planets');
+    if (totalPlanets == null) {
+      totalPlanets = await this.firestoreService.getTotalPlanetsCount();
+      await this.cacheManager.set('planet-sync-total-planets', totalPlanets, 360000);
     }
 
-    const mutation = await this.planetModel.bulkWrite(
-      planetsToPersist.map((planet) => ({
-        updateOne: {
-          filter: { id: planet.id },
-          update: planet,
-          upsert: true,
-        },
-      })),
-    );
+    let planetSyncCurrentStart = (await this.cacheManager.get('planet-sync-current-start')) as Date;
+    let duration = "00:00:00";
+    if (planetSyncCurrentStart != null) {
+      duration = this.convertMsToTime(new Date().getTime() - planetSyncCurrentStart.getTime());
+    }
+
+    let syncedPlanets = await this.planetModel.countDocuments();
+    let percent = (syncedPlanets / +totalPlanets) * 100;
 
     return {
-      success: mutation.isOk(),
-      planetsSynced: mutation.upsertedCount,
-      planetsUpdated: mutation.modifiedCount,
+      totalPlanets,
+      syncedPlanets,
+      percent,
+      duration
+    };
+  }
+
+  async enqueueSyncAll() {
+    this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
+  }
+
+  async handleSyncAll() {
+    await this.cacheManager.set('planet-sync-current-start', new Date(), 0);
+
+    let planetsFromFirestore = await this.firestoreService.getPlanets();
+
+    let planetsInsertedOrUpdated = [];
+    for (let index = 0; index < planetsFromFirestore.length; index++) {
+      let planet = await this.parsePlanetOriginToPlanet(planetsFromFirestore[index]);
+
+      await this.planetModel.findOneAndUpdate(
+        { id: planet.id },
+        planet,
+        { upsert: true, new: true }
+      ).exec();
+
+      planetsInsertedOrUpdated.push(planet);
+    }
+
+    return {
+      success: true,
+      planetsSynced: planetsInsertedOrUpdated.length,
     };
   }
 
@@ -141,6 +166,7 @@ export class PlanetSyncService {
       planet.avatar_url = await this.recoverFileURL(
         planet.avatar_id,
         planetOrigin?.avatar_url,
+        'planets'
       );
       planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
       planet.domain_code = planetOrigin.domain_code;
@@ -188,10 +214,12 @@ export class PlanetSyncService {
             sound_url: await this.recoverFileURL(
               optionOrigin.sound_id,
               optionOrigin.sound_url,
+              'assets'
             ),
             image_url: await this.recoverFileURL(
               optionOrigin.image_id,
               optionOrigin.image_url,
+              'assets'
             ),
             description: optionOrigin.description,
             position: optionOrigin.position,
@@ -208,6 +236,7 @@ export class PlanetSyncService {
             file_url: await this.recoverFileURL(
               titleOrigin.file_id,
               titleOrigin.file_url,
+              'assets'
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
@@ -234,35 +263,15 @@ export class PlanetSyncService {
   private async recoverFileURL(
     id: string | null,
     url: string | null,
+    bucket: string,
   ): Promise<string | null> {
     if (url === null || url === undefined) {
       return '';
     }
 
+    const fileExtension = await this.storageService.handleFile(bucket, id);
     const fileServerUrl = process.env.FILE_SERVER_URL;
-    const fileExtension = await this.storageService.getFileExtensionByFileName(id);
     return `${fileServerUrl}/${id}${fileExtension}`;
-  }
-
-  private async fetchFile(
-    fileServerUrl: string,
-    id: string | null,
-    url: string,
-  ): Promise<string | null> {
-    try {
-      const response = await got(url);
-
-      if (response.statusCode === 200) {
-        const fileExtension = this.getFileExtension(response);
-        return `${fileServerUrl}/${id}${fileExtension}`;
-      } else {
-        console.error(`Request failed with status code ${response.statusCode}`);
-        return null;
-      }
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
   }
 
   private getAxisCode(axis_id: string): string {
@@ -276,5 +285,33 @@ export class PlanetSyncService {
       default:
         break;
     }
+  }
+
+  private padTo2Digits(num: number) {
+    return num.toString().padStart(2, '0');
+  }
+  
+  private convertMsToTime(milliseconds: number) {
+    let seconds = Math.floor(milliseconds / 1000);
+    let minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+  
+    seconds = seconds % 60;
+    minutes = minutes % 60;
+  
+    return `${this.padTo2Digits(hours)}:${this.padTo2Digits(minutes)}:${this.padTo2Digits(
+      seconds,
+    )}`;
+  }
+}
+
+@Processor('planet-sync')
+export class PlanetSyncProcessor {
+
+  constructor(private readonly planetSyncService: PlanetSyncService) {}
+
+  @Process('planet-job')
+  async processPlanetSync(job: Job) {
+    await this.planetSyncService.handleSyncAll();
   }
 }

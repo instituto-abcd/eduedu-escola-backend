@@ -34,9 +34,8 @@ import {
 import { PlanetModule } from './planet/planet.module';
 import { SchoolClassResultService } from './school-class/school-class-result.service';
 import { ReportModule } from './report/report.module';
-import { ReportService } from "./report/report.service";
-import { StudentService } from "./student/student.service";
-import { StudentResultService } from "./student/studentResult.service";
+import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
@@ -56,6 +55,13 @@ import { StudentResultService } from "./student/studentResult.service";
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
     ]),
+    BullModule.forRoot({
+      redis: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
+    CacheModule.register({ isGlobal: true }),
     UserModule,
     SchoolYearModule,
     AuthModule,
