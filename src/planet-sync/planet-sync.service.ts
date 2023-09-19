@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Planet, Question } from './schemas/planet.schema';
+import { Planet } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
 import { Model } from 'mongoose';
 import { FirestoreService } from './firestore.service';
 import { PlanetSync } from './schemas/sync-list.schema';
 import got from 'got';
+import { StorageService } from './storage.service';
 
 @Injectable()
 export class PlanetSyncService {
@@ -13,23 +14,30 @@ export class PlanetSyncService {
     @InjectModel(Planet.name) private planetModel: Model<Planet>,
     @InjectModel(PlanetSync.name) private planetSyncModel: Model<PlanetSync>,
     private readonly firestoreService: FirestoreService,
+    private readonly storageService: StorageService,
   ) {}
 
   async testStream() {
     // IMAGEM
-    const fileURL =
-      'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/vg28uAm0odQKMPsBhjXT?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=NLU%2BA%2FSf4%2FQ7TlphzB0taCqCy4pL2oujW4Lz8Gx3qqGpFSJFqhperPEMM2VxUJ98%2FX5btOZR%2F1WScQvSBxDCCx9%2F%2B2NxOsRggCFRdxmgcOr2zmouPlArcMMsoxLXql%2FlBLnLi9IvYveOP4WttOFxaQeYk54uBX%2FqmzHAxWNpnYa66e0iPUbWIC1UE5l5B8%2BtXPALYZTjh5ePiPiA2SqHGvQReVrSAmwWZkU3B6cqzDmvp4WBhVu85%2BdBFjZYjEI2vX22YEvz%2BLLKJrJodLvLsU97DtIj%2FlQiv1Okg8b3c8SEbg4d7dV%2ByXHJDqJgqG3%2B2Fl%2BEuzBNqDoj1%2FJLwZQzQ%3D%3D';
+    // const fileURL =
+    //   'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/vg28uAm0odQKMPsBhjXT?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=NLU%2BA%2FSf4%2FQ7TlphzB0taCqCy4pL2oujW4Lz8Gx3qqGpFSJFqhperPEMM2VxUJ98%2FX5btOZR%2F1WScQvSBxDCCx9%2F%2B2NxOsRggCFRdxmgcOr2zmouPlArcMMsoxLXql%2FlBLnLi9IvYveOP4WttOFxaQeYk54uBX%2FqmzHAxWNpnYa66e0iPUbWIC1UE5l5B8%2BtXPALYZTjh5ePiPiA2SqHGvQReVrSAmwWZkU3B6cqzDmvp4WBhVu85%2BdBFjZYjEI2vX22YEvz%2BLLKJrJodLvLsU97DtIj%2FlQiv1Okg8b3c8SEbg4d7dV%2ByXHJDqJgqG3%2B2Fl%2BEuzBNqDoj1%2FJLwZQzQ%3D%3D';
+    let imageId = '18ae9482-ab11-4481-833b-d8e8e0033aca'
+    let imageExtension = await this.storageService.getFileExtensionByFileName(imageId);
+    console.log(imageExtension);
 
     // AUDIO
-    // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/FgZqLCLkzMBc4oN1fvHv?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216274109&Signature=nKtVKWfRXKebJiCGnWWXQDkm6q0Gsn8qqkYhgwJrTItL1gzzMQs0K9tVcATwcxAcLTeXHj4Obpqe7YIFxPUzkQNY%2F%2B82mTqht8%2BHPGNkdSvnvs9IYKE%2BOPaoOl9vM4CV2p65HN%2BDUsXRpkMI7XQhDG2oaLf9nYVJ%2FF%2F0CaYxGiVAhhKK%2BHCQ68Y2U%2FX2qYIq8fVEj4Pbd%2BHL80q1U9UUp%2FD3Os5D4wRJjtx4aQ2QmG5K1J1Pje097jFqmI8LjwzMGXqe6AJQ1yJNa09iC8UHO4EwBKHotCKM18bIuKhzLHHvem%2FP%2Fq9XRbfEUO62p2cE%2FFpEiaZ2MZ7Y5Xi%2FGfiQ%2Fw%3D%3D';
+    // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/EOnQLGZQTWbdv2YRiSkz?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216284791&Signature=kYF2BteGA8uuGbvwWdZUGpxKqi4F%2FlPQmN%2FGW3rDz1AiQ1elfks7Bzkt4sIPaRs3%2BBfBnB%2FhhMMFqv4qVu43H202rBxoMgGDmzFK4FD4zSoqL5kRtryVh4%2FlU5Be0AU%2BYEHYnf1hAqN94q6LIuZjVvNfnc4qSMMskpHvCMLn2xdnj5WIzGLNQB89XuthKNZhj0JIXRQZ3ZUmREsqrkyESq2tNCTnXKF0WeYsm%2FbD%2FF5soyU2Nk%2FykTANvGH%2Fv8iOMYICBV39jcirFNLemElA44oxuRQZK4J7CW57ju6z1m8VggSnPIuZlG8uMZ7IaFaiofI1PVQNrs3m1D%2BIl6Lecw%3D%3D';
+    let audioId = 'EOnQLGZQTWbdv2YRiSkz';
+    let audioExtension = await this.storageService.getFileExtensionByFileName(audioId);
+    console.log(audioExtension);
 
     // VIDEO
-    // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/perKz89Omy5jUrgjjtMk?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216290576&Signature=i4TJaTSit3lhNO5W%2B98eW5DuEFozOvJHlRm4mGaF201R3XINc7jSI054bsDjrX8CYmOXSdhkt%2Fl8DyE7MQUCAtLNxIVmqtBnNdDfo2EvwqKXDAwdPFWh5CVXIBIGTLyN9wQatg3G7S5YDvrc0nsh0N6kIkLnfa2FHFfhyAaXORgzGjxz9yoxg1GPp0bRk0qCTJwW%2BowwJV1lrskgu4JdJdWzaZDFAKEZQ%2FW75uZ6yUQRsnpGi5lb%2BYghZ4%2BI0wZIrLk%2F3iiVlWiUYMIhsxbHdTPdZEK%2FdqGFxuZDkBMu6i0znoqVcEwUpAZa5cJISa1Zup2uK7rwkS6QWtTzSMKfvQ%3D%3D'
+    // let fileURL = 'https://storage.googleapis.com/eduedu-escola-hub---stg.appspot.com/assets/HJsTc7PHj4skb3CR3IR5?GoogleAccessId=firebase-adminsdk-tv4j7%40eduedu-escola-hub---stg.iam.gserviceaccount.com&Expires=33216284791&Signature=PGJpid%2F%2B%2FZr%2FZVi%2BpQBVh6VE%2FpRe%2B0QtuqnkfDPHoY3fBu%2FePfz3ZIGjrj5ydMCJHshRedwDiAyQIcROgBqbQ8sjNcCtTUkN7oYLwntO4B3HB6Rq7C9bFNJXMxMAl36AMiweBthNik7I%2B8AujaI9hARD%2FC2h4kcUNxs%2BnRo4ESWTDp9cPEj5Px5VNt6HXnojibEhCVus2oi%2B9SwhQN6dzulx4FNjQit6ayPUpNvMlcrwrlbWVXFTLzRL6RzOrUwqj9QO8cVND6WncAQsE147PPdUMf4f0uft0DEhC19hrzQR6gvjKokPENEldwrPVUjtISrtR2djN%2BVpab6RRHxsfA%3D%3D'
+    let videoId = 'HJsTc7PHj4skb3CR3IR5';
+    let videoExtension = await this.storageService.getFileExtensionByFileName(videoId);
+    console.log(videoExtension);
 
-    const file = await got(fileURL);
-    const fileExtension = this.getFileExtension(file);
-
-    return fileExtension;
+    return true;
   }
 
   private getFileExtension(response: any): string {
@@ -47,26 +55,22 @@ export class PlanetSyncService {
   }
 
   async syncAll() {
-    const planetsFromFirestore = await this.firestoreService.getPlanets();
+    let planetsFromFirestore = await this.firestoreService.getPlanets();
 
-    const planetsToPersist = planetsFromFirestore.map((planetOrigin) => {
-      return this.parsePlanetOriginToPlanet(planetOrigin);
-    });
+    let planetsToPersist = [];
+    for (let index = 0; index < planetsFromFirestore.length; index++) {
+      let processedPlanet = await this.parsePlanetOriginToPlanet(planetsFromFirestore[index]);
+      planetsToPersist.push(processedPlanet);
+    }
 
     const mutation = await this.planetModel.bulkWrite(
-      await Promise.all(
-        planetsToPersist.map(async (planetPromise) => {
-          const planet = await planetPromise;
-
-          return {
-            updateOne: {
-              filter: { id: planet.id },
-              update: planet,
-              upsert: true,
-            },
-          };
-        }),
-      ),
+      planetsToPersist.map((planet) => ({
+        updateOne: {
+          filter: { id: planet.id },
+          update: planet,
+          upsert: true,
+        },
+      })),
     );
 
     return {
@@ -131,26 +135,28 @@ export class PlanetSyncService {
   private async parsePlanetOriginToPlanet(
     planetOrigin: PlanetOrigin,
   ): Promise<Planet> {
-    const planet = new Planet();
-    planet.avatar_id = planetOrigin?.avatar?.replace(/^planets\//, '');
-    planet.avatar_url = await this.recoverFileURL(
-      planet.avatar_id,
-      planet.avatar_url,
-    );
-    planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
-    planet.domain_code = planetOrigin.domain_code;
-    planet.enable = planetOrigin.enable;
-    planet.id = planetOrigin.id;
-    planet.level = planetOrigin.level;
-    planet.next_planet_id = planetOrigin.next_bundle_id;
-    planet.position = planetOrigin.position;
-    planet.status = planetOrigin.status;
-    planet.title = planetOrigin.title;
-    planet.updated_at = planetOrigin.updated_at;
+    try {
+      const planet = new Planet();
+      planet.avatar_id = planetOrigin?.avatar?.replace(/^planets\//, '');
+      planet.avatar_url = await this.recoverFileURL(
+        planet.avatar_id,
+        planetOrigin?.avatar_url,
+      );
+      planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
+      planet.domain_code = planetOrigin.domain_code;
+      planet.enable = planetOrigin.enable;
+      planet.id = planetOrigin.id;
+      planet.level = planetOrigin.level;
+      planet.next_planet_id = planetOrigin.next_bundle_id;
+      planet.position = planetOrigin.position;
+      planet.status = planetOrigin.status;
+      planet.title = planetOrigin.title;
+      planet.updated_at = planetOrigin.updated_at;
+      planet.questions = [];
 
-    planet.questions = await Promise.all(
-      planetOrigin.questions.map(async (questionOrigin) => {
-        const question: Question = {
+      for (let index = 0; index < planetOrigin.questions.length; index++) {
+        const questionOrigin = planetOrigin.questions[index];
+        const question = {
           orderedAnswer:
             questionOrigin.options.length > 0 &&
             questionOrigin.options.every((o) => !o.isCorrect),
@@ -169,92 +175,73 @@ export class PlanetSyncService {
           title: questionOrigin.title,
           bncc: questionOrigin.bncc,
           updated_at: questionOrigin.updated_at,
+          options: [],
+          titles: [],
+          rules: questionOrigin.rules
+        } as any;
 
-          options: await Promise.all(
-            questionOrigin.options.map(async (optionOrigin) => {
-              return {
-                sound_id: optionOrigin.sound_id,
-                image_id: optionOrigin.image_id,
-                sound_url: await this.recoverFileURL(
-                  optionOrigin.sound_id,
-                  optionOrigin.sound_url,
-                ),
-                image_url: await this.recoverFileURL(
-                  optionOrigin.image_id,
-                  optionOrigin.image_url,
-                ),
-                description: optionOrigin.description,
-                position: optionOrigin.position,
-                isCorrect: optionOrigin.isCorrect,
-              };
-            }),
-          ),
+        for (let optionIndex = 0; optionIndex < questionOrigin.options.length; optionIndex++) {
+          const optionOrigin = questionOrigin.options[optionIndex];
+          const option = {
+            sound_id: optionOrigin.sound_id,
+            image_id: optionOrigin.image_id,
+            sound_url: await this.recoverFileURL(
+              optionOrigin.sound_id,
+              optionOrigin.sound_url,
+            ),
+            image_url: await this.recoverFileURL(
+              optionOrigin.image_id,
+              optionOrigin.image_url,
+            ),
+            description: optionOrigin.description,
+            position: optionOrigin.position,
+            isCorrect: optionOrigin.isCorrect,
+          } as any;
+          
+          question.options.push(option);
+        }
 
-          titles: await Promise.all(
-            questionOrigin.titles.map(async (titleOrigin) => {
-              const file_url = await this.recoverFileURL(
-                titleOrigin.file_id,
-                titleOrigin.file_url,
-              );
+        for (let titleIndex = 0; titleIndex < questionOrigin.titles.length; titleIndex++) {
+          const titleOrigin = questionOrigin.titles[titleIndex];
+          const title = {
+            file_id: titleOrigin.file_id,
+            file_url: await this.recoverFileURL(
+              titleOrigin.file_id,
+              titleOrigin.file_url,
+            ),
+            description: titleOrigin.description,
+            position: titleOrigin.position,
+            placeholder: titleOrigin.placeholder,
+            type: titleOrigin.type,
+          } as any;
 
-              return {
-                file_id: titleOrigin.file_id,
-                file_url,
-                description: titleOrigin.description,
-                position: titleOrigin.position,
-                placeholder: titleOrigin.placeholder,
-                type: titleOrigin.type,
-              };
-            }),
-          ),
+          question.titles.push(title);
+        }
 
-          rules: questionOrigin.rules,
-        };
-        return question;
-      }),
-    );
+        planet.questions.push(question);
+      }
 
-    return planet;
+      console.log(`- Planet ${planet.title} Synced`);
+
+      return planet;
+    } catch (error) {
+      console.log(`- ERROR: Planet ${planetOrigin.title}`);
+      console.log(error);
+      throw error;
+    }
   }
 
   private async recoverFileURL(
     id: string | null,
     url: string | null,
   ): Promise<string | null> {
-    try {
-      if (url === null || url === undefined) {
-        return '';
-      }
-
-      const serverUrl = process.env.FILE_SERVER_URL;
-      const fileServerPort = process.env.FILE_SERVER_PORT;
-
-      if (!serverUrl || !fileServerPort) {
-        return null;
-      }
-
-      const fileServerUrl = `${serverUrl}:${fileServerPort}`;
-
-      const maxConcurrentRequests = 5;
-      const requests = [];
-
-      for (let i = 0; i < maxConcurrentRequests; i++) {
-        requests.push(this.fetchFile(fileServerUrl, id, url));
-      }
-
-      const responses = await Promise.all(requests);
-
-      for (const response of responses) {
-        if (response !== null) {
-          return response;
-        }
-      }
-
-      return null;
-    } catch (e) {
-      console.error(e);
-      return null;
+    if (url === null || url === undefined) {
+      return '';
     }
+
+    const fileServerUrl = process.env.FILE_SERVER_URL;
+    const fileExtension = await this.storageService.getFileExtensionByFileName(id);
+    return `${fileServerUrl}/${id}${fileExtension}`;
   }
 
   private async fetchFile(
