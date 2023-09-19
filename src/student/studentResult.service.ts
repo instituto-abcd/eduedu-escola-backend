@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { StudentExam, StudentExamDocument } from './schemas/studentExam.schema';
+import {
+  Planet,
+  StudentExam,
+  StudentExamDocument,
+} from './schemas/studentExam.schema';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
@@ -10,6 +14,9 @@ import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 import { StudentService } from './student.service';
 import { StudentPlanetResult } from '@prisma/client';
 import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
+import { StudentPlanetStarsDto } from './student-planet-stars.dto';
+import { PlanetDocument } from '../planet-sync/schemas/planet.schema';
+import { EduException } from '../common/exceptions/edu-school.exception';
 
 @Injectable()
 export class StudentResultService {
@@ -199,7 +206,7 @@ export class StudentResultService {
     const uniqueDates = [
       ...new Set(studentResults.map((result) => result.lastExecution)),
     ];
-    uniqueDates.sort((a,b) => a.getTime() - b.getTime());;
+    uniqueDates.sort((a, b) => a.getTime() - b.getTime());
 
     const chartDatasets: ChartDatasetDto[] = [];
 
@@ -259,7 +266,7 @@ export class StudentResultService {
     const uniqueDates = [
       ...new Set(studentResults.map((result) => result.examDate)),
     ];
-    uniqueDates.sort((a,b) => a.getTime() - b.getTime());
+    uniqueDates.sort((a, b) => a.getTime() - b.getTime());
 
     const chartDatasets: ChartDatasetDto[] = [];
 
@@ -417,5 +424,32 @@ export class StudentResultService {
     ];
 
     return monthLabels[month];
+  }
+
+  async studentPlanetStars(
+    id: string,
+    planetId: string,
+  ): Promise<StudentPlanetStarsDto> {
+    const planetResult = await this.prisma.studentPlanetResult.findFirst({
+      where: {
+        studentId: id,
+        planetId: planetId,
+      },
+      select: {
+        stars: true,
+        planetName: true,
+      },
+    });
+
+    if (!planetResult) {
+      throw new EduException('PLANET_NOT_FOUND');
+    }
+
+    const stars = planetResult?.stars ?? 0;
+
+    return {
+      stars: Number(stars),
+      planetName: planetResult.planetName,
+    };
   }
 }
