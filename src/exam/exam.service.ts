@@ -75,7 +75,7 @@ export class ExamService {
       return '';
     }
 
-    if (process.env.ASSETS === 'LOCAL') {
+    if (process.env.ASSETS !== 'LOCAL') {
       return url;
     }
 
