@@ -6,4 +6,7 @@ export class AnswersPlanetResponseDto {
 
   @ApiProperty({ description: 'Progresso da Prova', example: 0.51 })
   progress?: number = 0;
+
+  @ApiProperty()
+  previousQuestionIsCorrect: boolean = false;
 }

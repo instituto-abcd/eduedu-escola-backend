@@ -19,6 +19,9 @@ class QuestionTitleDto {
 
 export class QuestionPlanentDto {
   @ApiProperty()
+  previousQuestionIsCorrect: boolean = false;
+
+  @ApiProperty()
   orderedAnswer: boolean;
 
   @ApiProperty()
