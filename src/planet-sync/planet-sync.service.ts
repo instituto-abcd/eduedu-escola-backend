@@ -278,7 +278,7 @@ export class PlanetSyncService {
       return '';
     }
 
-    if (process.env.APP_VERSION === 'main') {
+    if (process.env.ASSETS === 'LOCAL') {
       return url;
     }
 
