@@ -57,13 +57,19 @@ export class PlanetSyncService {
     let totalPlanets = await this.cacheManager.get('planet-sync-total-planets');
     if (totalPlanets == null) {
       totalPlanets = await this.firestoreService.getTotalPlanetsCount();
-      await this.cacheManager.set('planet-sync-total-planets', totalPlanets, 360000);
+      await this.cacheManager.set('planet-sync-total-planets', totalPlanets, 0);
     }
 
     let planetSyncCurrentStart = (await this.cacheManager.get('planet-sync-current-start')) as Date;
+    let planetSyncCurrentEnd = (await this.cacheManager.get('planet-sync-current-end')) as Date;
+    
     let duration = "00:00:00";
     if (planetSyncCurrentStart != null) {
-      duration = this.convertMsToTime(new Date().getTime() - planetSyncCurrentStart.getTime());
+      if (planetSyncCurrentEnd != null) {
+        duration = this.convertMsToTime(planetSyncCurrentEnd.getTime() - planetSyncCurrentStart.getTime());
+      } else {
+        duration = this.convertMsToTime(new Date().getTime() - planetSyncCurrentStart.getTime());
+      }
     }
 
     let syncedPlanets = await this.planetModel.countDocuments();
@@ -82,6 +88,7 @@ export class PlanetSyncService {
   }
 
   async handleSyncAll() {
+    await this.cacheManager.del('planet-sync-current-end');
     await this.cacheManager.set('planet-sync-current-start', new Date(), 0);
 
     let planetsFromFirestore = await this.firestoreService.getPlanets();
@@ -98,6 +105,8 @@ export class PlanetSyncService {
 
       planetsInsertedOrUpdated.push(planet);
     }
+
+    await this.cacheManager.set('planet-sync-current-end', new Date(), 0);
 
     return {
       success: true,
