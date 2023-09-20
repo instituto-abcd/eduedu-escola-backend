@@ -51,10 +51,10 @@ export class ExamService {
         for (let optionIndex = 0; optionIndex < exams[index].questions[questionIndex].options.length; optionIndex++) {
             let image_name = exams[index].questions[questionIndex].options[optionIndex].image_name;
             let original_image_url = exams[index].questions[questionIndex].options[optionIndex].image_url;
-            exams[index].questions[questionIndex].options[optionIndex].image_url = await this.recoverFileURL(image_name, original_image_url, 'exam/image');
+            exams[index].questions[questionIndex].options[optionIndex].image_url = await this.recoverFileURL(image_name, original_image_url);
             let sound_name = exams[index].questions[questionIndex].options[optionIndex].sound_name;
             let original_sound_url = exams[index].questions[questionIndex].options[optionIndex].sound_url;
-            exams[index].questions[questionIndex].options[optionIndex].sound_url = await this.recoverFileURL(sound_name, original_sound_url, 'exam/audio');
+            exams[index].questions[questionIndex].options[optionIndex].sound_url = await this.recoverFileURL(sound_name, original_sound_url);
         }
         for (let titleIndex = 0; titleIndex < exams[index].questions[questionIndex].titles.length; titleIndex++) {
             let file_name = exams[index].questions[questionIndex].titles[titleIndex].file_name;
@@ -67,8 +67,7 @@ export class ExamService {
 
   private async recoverFileURL(
     id: string | null,
-    url: string | null,
-    bucket: string | null = null,
+    url: string | null
   ): Promise<string | null> {
     if (id === null || id === undefined || id == '' ||
         url === null || url === undefined || url == '') {
@@ -79,35 +78,8 @@ export class ExamService {
       return url;
     }
 
-    if (bucket == '' || bucket == null || bucket == undefined) {
-      let bucketNames = [
-        'exam/audio',
-        'exam/image',
-        'exam/video',
-      ];
-  
-      for (let index = 0; index < bucketNames.length; index++) {
-        let bucketName = bucketNames[index];
-
-        let originalFileExtension = id.slice(id.indexOf('.'));
-        const fileExtension = originalFileExtension != undefined &&
-                              originalFileExtension != null &&
-                              originalFileExtension != '' ? originalFileExtension :
-                              await this.storageService.handleFile(bucketName, id);
-
-        if (fileExtension != undefined) {
-          const fileServerUrl = process.env.FILE_SERVER_URL;
-          return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
-        }
-      }
-    } else {
-      let originalFileExtension = id.slice(id.indexOf('.'));
-      const fileExtension = originalFileExtension != undefined &&
-                            originalFileExtension != null &&
-                            originalFileExtension != '' ? originalFileExtension :
-                            await this.storageService.handleFile(bucket, id);
-      const fileServerUrl = process.env.FILE_SERVER_URL;
-      return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
-    }    
+    const fileExtension = await this.storageService.handleFile('exam', id);
+    const fileServerUrl = process.env.FILE_SERVER_URL;
+    return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
   }
 }

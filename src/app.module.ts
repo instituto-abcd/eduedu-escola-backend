@@ -36,6 +36,7 @@ import { SchoolClassResultService } from './school-class/school-class-result.ser
 import { ReportModule } from './report/report.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
+import { FtpModule } from './ftp/ftp.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { BullModule } from '@nestjs/bull';
     ExamModule,
     PlanetModule,
     ReportModule,
+    FtpModule,
   ],
   providers: [
     PrismaService,
