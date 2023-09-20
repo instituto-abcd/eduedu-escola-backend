@@ -50,13 +50,16 @@ export class ExamService {
       for (let questionIndex = 0; questionIndex < exams[index].questions.length; questionIndex++) {
         for (let optionIndex = 0; optionIndex < exams[index].questions[questionIndex].options.length; optionIndex++) {
             let image_name = exams[index].questions[questionIndex].options[optionIndex].image_name;
-            exams[index].questions[questionIndex].options[optionIndex].image_url = await this.recoverFileURL(image_name, 'exam/image');
+            let original_image_url = exams[index].questions[questionIndex].options[optionIndex].image_url;
+            exams[index].questions[questionIndex].options[optionIndex].image_url = await this.recoverFileURL(image_name, original_image_url, 'exam/image');
             let sound_name = exams[index].questions[questionIndex].options[optionIndex].sound_name;
-            exams[index].questions[questionIndex].options[optionIndex].sound_url = await this.recoverFileURL(sound_name, 'exam/audio');
+            let original_sound_url = exams[index].questions[questionIndex].options[optionIndex].sound_url;
+            exams[index].questions[questionIndex].options[optionIndex].sound_url = await this.recoverFileURL(sound_name, original_sound_url, 'exam/audio');
         }
         for (let titleIndex = 0; titleIndex < exams[index].questions[questionIndex].titles.length; titleIndex++) {
             let file_name = exams[index].questions[questionIndex].titles[titleIndex].file_name;
-            exams[index].questions[questionIndex].titles[titleIndex].file_url = await this.recoverFileURL(file_name);
+            let original_file_url = exams[index].questions[questionIndex].titles[titleIndex].file_url;
+            exams[index].questions[questionIndex].titles[titleIndex].file_url = await this.recoverFileURL(file_name, original_file_url);
         }
       }
     }
@@ -64,10 +67,16 @@ export class ExamService {
 
   private async recoverFileURL(
     id: string | null,
+    url: string | null,
     bucket: string | null = null,
   ): Promise<string | null> {
-    if (id === null || id === undefined || id == '') {
+    if (id === null || id === undefined || id == '' ||
+        url === null || url === undefined || url == '') {
       return '';
+    }
+
+    if (process.env.APP_VERSION === 'main') {
+      return url;
     }
 
     if (bucket == '' || bucket == null || bucket == undefined) {

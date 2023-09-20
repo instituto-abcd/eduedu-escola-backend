@@ -274,8 +274,12 @@ export class PlanetSyncService {
     url: string | null,
     bucket: string,
   ): Promise<string | null> {
-    if (url === null || url === undefined) {
+    if (url === null || url === undefined || url == '') {
       return '';
+    }
+
+    if (process.env.APP_VERSION === 'main') {
+      return url;
     }
 
     const fileExtension = await this.storageService.handleFile(bucket, id);
