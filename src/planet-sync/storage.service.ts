@@ -40,4 +40,60 @@ export class StorageService {
     }
   }
 
+  async downloadFiles() {
+    let bucketNames = [
+      'assets',
+      'planets',
+      'exam',
+      'student',
+    ];
+
+    let start = new Date();
+
+    for (let index = 0; index < bucketNames.length; index++) {
+      let bucketName = bucketNames[index];
+      const bucket = admin.storage().bucket();
+
+      let files = (await bucket.getFiles({prefix: bucketName}))[0];
+
+      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+        const extension = files[fileIndex].metadata.contentType.split('/').pop();
+        let fileExtension = '.' + extension.replace('+xml', '').replace('mpeg', 'mp3')
+        
+        let fileName = files[fileIndex].name
+          .replace(`${bucketName}/`, '')
+          .replace('.mp3','').replace('.mp4','').replace('.svg','') + `${fileExtension}`;
+
+        await this.ftpService.uploadFileStream(files[fileIndex].createReadStream(), fileName);
+
+        console.log(fileName);
+      }
+    }
+
+    let finish = new Date();
+
+    console.log('----------------------------');
+    console.log('----------------------------');
+    console.log('Tempo Total: ' + this.convertMsToTime(finish.getTime() - start.getTime()));
+    console.log('----------------------------');
+    console.log('----------------------------');
+  }
+
+  private padTo2Digits(num: number) {
+    return num.toString().padStart(2, '0');
+  }
+  
+  private convertMsToTime(milliseconds: number) {
+    let seconds = Math.floor(milliseconds / 1000);
+    let minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+  
+    seconds = seconds % 60;
+    minutes = minutes % 60;
+  
+    return `${this.padTo2Digits(hours)}:${this.padTo2Digits(minutes)}:${this.padTo2Digits(
+      seconds,
+    )}`;
+  }
+
 }

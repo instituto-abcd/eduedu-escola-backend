@@ -43,11 +43,13 @@ export class PlanetSyncService {
     // let videoExtension = await this.storageService.getFileExtensionByFileName_(videoId);
     // console.log(videoExtension);
 
-    let planetAvatarId = '01xX94qpgGv9PBxUSOdN';
-    let planetAvatarExtension = await this.storageService.handleFile('planets', planetAvatarId);
+    // let planetAvatarId = '01xX94qpgGv9PBxUSOdN';
+    // let planetAvatarExtension = await this.storageService.handleFile('planets', planetAvatarId);
 
-    let assetFileId = '00zPfsrj2f6uUqeeTO1K';
-    let assetFileExtension = await this.storageService.handleFile('assets', assetFileId);
+    // let assetFileId = '00zPfsrj2f6uUqeeTO1K';
+    // let assetFileExtension = await this.storageService.handleFile('assets', assetFileId);
+
+    await this.storageService.downloadFiles();
 
     return true;
   }

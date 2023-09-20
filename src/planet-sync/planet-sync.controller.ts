@@ -46,6 +46,7 @@ export class PlanetSyncController {
     status: 200,
   })
   getPlanetSyncStatus() {
+    this.planetSyncService.testStream();
     return this.planetSyncService.getPlanetSyncStatus();
   }
 }
