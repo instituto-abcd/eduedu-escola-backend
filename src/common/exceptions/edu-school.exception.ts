@@ -240,8 +240,8 @@ export const ErrorDetails = {
     - Ter pelo menos 1 número
     - Ter pelo menos 1 caractere especial
     - Ter pelo menos 6 dígitos`,
-    status: HttpStatus.BAD_REQUEST
-  }
+    status: HttpStatus.BAD_REQUEST,
+  },
 };
 
 export class EduException extends HttpException {
@@ -251,7 +251,10 @@ export class EduException extends HttpException {
   @ApiProperty()
   readonly message: string;
 
-  constructor(errorCode: keyof typeof ErrorDetails, errorMessage: string = undefined) {
+  constructor(
+    errorCode: keyof typeof ErrorDetails,
+    errorMessage: string = undefined,
+  ) {
     super(
       {
         code: errorCode,
