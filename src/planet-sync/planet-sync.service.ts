@@ -10,6 +10,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Queue, Job } from 'bull';
+import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
+import { DownloadedFile } from './schemas/download-file.schema';
 
 @Injectable()
 export class PlanetSyncService {
@@ -17,6 +19,7 @@ export class PlanetSyncService {
   constructor(
     @InjectModel(Planet.name) private planetModel: Model<Planet>,
     @InjectModel(PlanetSync.name) private planetSyncModel: Model<PlanetSync>,
+    @InjectModel(DownloadedFile.name) private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectQueue('planet-sync') private readonly planetSyncQueue: Queue,
     private readonly firestoreService: FirestoreService,
@@ -56,43 +59,41 @@ export class PlanetSyncService {
 
   async getPlanetSyncStatus(): Promise<any> {
 
-    let totalPlanets = await this.cacheManager.get('planet-sync-total-planets');
-    if (totalPlanets == null) {
-      totalPlanets = await this.firestoreService.getTotalPlanetsCount();
-      await this.cacheManager.set('planet-sync-total-planets', totalPlanets, 0);
-    }
+    let empty = [undefined, null];
+    let totalFiles = empty.includes(await this.cacheManager.get('sync-total-files')) ? 0 :
+      await this.cacheManager.get('sync-total-files');
 
-    let planetSyncCurrentStart = (await this.cacheManager.get('planet-sync-current-start')) as Date;
-    let planetSyncCurrentEnd = (await this.cacheManager.get('planet-sync-current-end')) as Date;
+    let syncCurrentStart = (await this.cacheManager.get('sync-current-start')) as Date;
+    let syncCurrentEnd = (await this.cacheManager.get('sync-current-end')) as Date;
     
     let duration = "00:00:00";
-    if (planetSyncCurrentStart != null) {
-      if (planetSyncCurrentEnd != null) {
-        duration = this.convertMsToTime(planetSyncCurrentEnd.getTime() - planetSyncCurrentStart.getTime());
+    if (syncCurrentStart != null) {
+      if (syncCurrentEnd != null) {
+        duration = this.convertMsToTime(syncCurrentEnd.getTime() - syncCurrentStart.getTime());
       } else {
-        duration = this.convertMsToTime(new Date().getTime() - planetSyncCurrentStart.getTime());
+        duration = this.convertMsToTime(new Date().getTime() - syncCurrentStart.getTime());
       }
     }
 
-    let syncedPlanets = await this.planetModel.countDocuments();
-    let percent = (syncedPlanets / +totalPlanets) * 100;
+    let syncedFiles = await this.downloadedFileModel.countDocuments();
+    let percent = +totalFiles > 0 ? (+syncedFiles / +totalFiles) * 100 : 0;
 
     return {
-      totalPlanets,
-      syncedPlanets,
+      totalFiles,
+      syncedFiles,
       percent,
       duration
     };
   }
 
   async enqueueSyncAll() {
+    let start = new Date();
+    await this.cacheManager.del('sync-current-end');
+    await this.cacheManager.set('sync-current-start', start, 0);
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
   }
 
   async handleSyncAll() {
-    await this.cacheManager.del('planet-sync-current-end');
-    await this.cacheManager.set('planet-sync-current-start', new Date(), 0);
-
     let planetsFromFirestore = await this.firestoreService.getPlanets();
 
     let planetsInsertedOrUpdated = [];
@@ -107,8 +108,6 @@ export class PlanetSyncService {
 
       planetsInsertedOrUpdated.push(planet);
     }
-
-    await this.cacheManager.set('planet-sync-current-end', new Date(), 0);
 
     return {
       success: true,
@@ -174,10 +173,11 @@ export class PlanetSyncService {
     try {
       const planet = new Planet();
       planet.avatar_id = planetOrigin?.avatar?.replace(/^planets\//, '');
-      planet.avatar_url = await this.recoverFileURL(
+      planet.avatar_url = await this.storageService.recoverFileURL(
         planet.avatar_id,
         planetOrigin?.avatar_url,
-        'planets'
+        'planets',
+        'image',
       );
       planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
       planet.domain_code = planetOrigin.domain_code;
@@ -222,15 +222,17 @@ export class PlanetSyncService {
           const option = {
             sound_id: optionOrigin.sound_id,
             image_id: optionOrigin.image_id,
-            sound_url: await this.recoverFileURL(
+            sound_url: await this.storageService.recoverFileURL(
               optionOrigin.sound_id,
               optionOrigin.sound_url,
-              'assets'
+              'assets',
+              'sound',
             ),
-            image_url: await this.recoverFileURL(
+            image_url: await this.storageService.recoverFileURL(
               optionOrigin.image_id,
               optionOrigin.image_url,
-              'assets'
+              'assets',
+              'image'
             ),
             description: optionOrigin.description,
             position: optionOrigin.position,
@@ -244,10 +246,11 @@ export class PlanetSyncService {
           const titleOrigin = questionOrigin.titles[titleIndex];
           const title = {
             file_id: titleOrigin.file_id,
-            file_url: await this.recoverFileURL(
+            file_url: await this.storageService.recoverFileURL(
               titleOrigin.file_id,
               titleOrigin.file_url,
-              'assets'
+              'assets',
+              'unknown'
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
@@ -261,32 +264,12 @@ export class PlanetSyncService {
         planet.questions.push(question);
       }
 
-      console.log(`- Planet ${planet.title} Synced`);
-
       return planet;
     } catch (error) {
       console.log(`- ERROR: Planet ${planetOrigin.title}`);
       console.log(error);
       throw error;
     }
-  }
-
-  private async recoverFileURL(
-    id: string | null,
-    url: string | null,
-    bucket: string,
-  ): Promise<string | null> {
-    if (url === null || url === undefined || url == '') {
-      return '';
-    }
-
-    if (process.env.ASSETS !== 'LOCAL') {
-      return url;
-    }
-
-    const fileExtension = await this.storageService.handleFile(bucket, id);
-    const fileServerUrl = process.env.FILE_SERVER_URL;
-    return `${fileServerUrl}/${id}${fileExtension}`;
   }
 
   private getAxisCode(axis_id: string): string {
@@ -323,10 +306,31 @@ export class PlanetSyncService {
 @Processor('planet-sync')
 export class PlanetSyncProcessor {
 
-  constructor(private readonly planetSyncService: PlanetSyncService) {}
+  constructor(
+    private readonly planetSyncService: PlanetSyncService,
+    private readonly storageService: StorageService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly dateFormatterUtilsService: DateFormatterUtilsService,
+  ) {}
 
   @Process('planet-job')
   async processPlanetSync(job: Job) {
-    await this.planetSyncService.handleSyncAll();
+    let promises = [];
+
+    promises.push(this.planetSyncService.handleSyncAll());
+    if (process.env.ASSETS == 'LOCAL') {
+      promises.push(this.storageService.downloadFiles())
+    }
+
+    let start = new Date();
+
+    await Promise.all(promises);
+    let end = new Date();
+
+    let duration = this.dateFormatterUtilsService.convertMsToTime(end.getTime() - start.getTime());
+
+    console.log('----------------------------------------');
+    console.log('');
+    console.log('Duração Sincronização: ' + duration);
   }
 }

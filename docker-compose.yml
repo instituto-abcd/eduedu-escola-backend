@@ -24,6 +24,29 @@ services:
     networks:
       - app-network
   
+  ftp:
+    image: bogem/ftp
+    restart: always
+    ports:
+      - "20:20"
+      - "21:21"
+      - "47400-47470:47400-47470"
+    env_file:
+    - .env
+    volumes:
+      - ./assets-data:/home/vsftpd
+    networks:
+      - app-network
+  
+  file-server:
+    image: nginx:alpine
+    ports:
+      - 8989:80
+    volumes:
+      - ./assets-data:/usr/share/nginx/html
+    networks:
+      - app-network
+  
   redis:
     image: redis:latest
     hostname: localhost

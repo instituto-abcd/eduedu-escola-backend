@@ -9,17 +9,21 @@ import { PlanetSync, PlanetSyncSchema } from './schemas/sync-list.schema';
 import { StorageService } from './storage.service';
 import { BullModule } from '@nestjs/bull';
 import { FtpModule } from 'src/ftp/ftp.module';
+import { UtilsModule } from 'src/common/utils/utils.module';
+import { DownloadedFile, DownloadedFileSchema } from './schemas/download-file.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Planet.name, schema: PlanetSchema },
       { name: PlanetSync.name, schema: PlanetSyncSchema },
+      { name: DownloadedFile.name, schema: DownloadedFileSchema },
     ]),
     BullModule.registerQueueAsync(
       { name: 'planet-sync' },
     ),
     FtpModule,
+    UtilsModule,
   ],
   controllers: [PlanetSyncController],
   providers: [PlanetSyncService, PrismaService, FirestoreService, StorageService, PlanetSyncProcessor ],

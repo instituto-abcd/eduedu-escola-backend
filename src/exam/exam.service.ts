@@ -51,35 +51,38 @@ export class ExamService {
         for (let optionIndex = 0; optionIndex < exams[index].questions[questionIndex].options.length; optionIndex++) {
             let image_name = exams[index].questions[questionIndex].options[optionIndex].image_name;
             let original_image_url = exams[index].questions[questionIndex].options[optionIndex].image_url;
-            exams[index].questions[questionIndex].options[optionIndex].image_url = await this.recoverFileURL(image_name, original_image_url);
+            exams[index].questions[questionIndex].options[optionIndex].image_url =
+              await this.storageService.recoverFileURL(image_name, original_image_url, 'exam', 'image');
             let sound_name = exams[index].questions[questionIndex].options[optionIndex].sound_name;
             let original_sound_url = exams[index].questions[questionIndex].options[optionIndex].sound_url;
-            exams[index].questions[questionIndex].options[optionIndex].sound_url = await this.recoverFileURL(sound_name, original_sound_url);
+            exams[index].questions[questionIndex].options[optionIndex].sound_url =
+              await this.storageService.recoverFileURL(sound_name, original_sound_url, 'exam', 'sound');
         }
         for (let titleIndex = 0; titleIndex < exams[index].questions[questionIndex].titles.length; titleIndex++) {
             let file_name = exams[index].questions[questionIndex].titles[titleIndex].file_name;
             let original_file_url = exams[index].questions[questionIndex].titles[titleIndex].file_url;
-            exams[index].questions[questionIndex].titles[titleIndex].file_url = await this.recoverFileURL(file_name, original_file_url);
+            exams[index].questions[questionIndex].titles[titleIndex].file_url =
+              await this.storageService.recoverFileURL(file_name, original_file_url, 'exam', 'unknown');
         }
       }
     }
   }
 
-  private async recoverFileURL(
-    id: string | null,
-    url: string | null
-  ): Promise<string | null> {
-    if (id === null || id === undefined || id == '' ||
-        url === null || url === undefined || url == '') {
-      return '';
-    }
+  // private async recoverFileURL(
+  //   id: string | null,
+  //   url: string | null
+  // ): Promise<string | null> {
+  //   if (id === null || id === undefined || id == '' ||
+  //       url === null || url === undefined || url == '') {
+  //     return '';
+  //   }
 
-    if (process.env.ASSETS !== 'LOCAL') {
-      return url;
-    }
+  //   if (process.env.ASSETS !== 'LOCAL') {
+  //     return url;
+  //   }
 
-    const fileExtension = await this.storageService.handleFile('exam', id);
-    const fileServerUrl = process.env.FILE_SERVER_URL;
-    return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
-  }
+  //   const fileExtension = await this.storageService.handleFile('exam', id);
+  //   const fileServerUrl = process.env.FILE_SERVER_URL;
+  //   return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
+  // }
 }

@@ -37,6 +37,7 @@ import { ReportModule } from './report/report.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
 import { FtpModule } from './ftp/ftp.module';
+import { UtilsModule } from './common/utils/utils.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { FtpModule } from './ftp/ftp.module';
     PlanetModule,
     ReportModule,
     FtpModule,
+    UtilsModule,
   ],
   providers: [
     PrismaService,
