@@ -60,25 +60,30 @@ export class ValidationUtilsService {
     return validProfiles.includes(profile as Profile);
   }
 
-  isPasswordStrong(password: string): [boolean, string] {
-    let passwordMeetsLength = password.length >= 6;
-    let passwordMeetsHasLetter = /[a-zA-Z]/.test(password);
-    let passwordMeetsHasDigit = /[0-9]+/.test(password);
+  isPasswordStrong(password): [boolean, string] {
+    const hasValidLength = password.length >= 6;
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasDigit = /[0-9]/.test(password);
+    const hasNoSequentialChars = !/(.)\1\1|([a-zA-Z]{3})|([0-9]{3})/.test(
+      password,
+    );
 
-    const isPasswordStrong = passwordMeetsLength &&
-                             passwordMeetsHasLetter &&
-                             passwordMeetsHasDigit;
+    const isStrong =
+      hasValidLength && hasLetter && hasDigit && hasNoSequentialChars;
 
     let message = '';
 
-    if (!isPasswordStrong) {
+    if (!isStrong) {
       message += 'A senha deve atender os seguintes requisitos:<br>';
-      message += !passwordMeetsLength ? '- Ter pelo menos 6 dígitos<br>' : '';
-      message += !passwordMeetsHasLetter ? '- Ter pelo menos 1 letra<br>' : '';
-      message += !passwordMeetsHasDigit ? '- Ter pelo menos 1 número<br>' : '';
+      message += !hasValidLength ? '- Ter pelo menos 6 dígitos<br>' : '';
+      message += !hasLetter ? '- Ter pelo menos 1 letra<br>' : '';
+      message += !hasDigit ? '- Ter pelo menos 1 número<br>' : '';
+      message += !hasNoSequentialChars
+        ? '- Não conter sequências de 3 ou mais caracteres alfabéticos ou numéricos<br>'
+        : '';
       message += '<br>';
     }
 
-    return [isPasswordStrong, message];
+    return [isStrong, message];
   }
 }

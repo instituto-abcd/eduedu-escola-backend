@@ -103,7 +103,8 @@ export class AuthService {
       throw new EduException('TOKEN_EXPIRED');
     }
 
-    const [isPasswordStrong, message] = this.validationUtilsService.isPasswordStrong(password);
+    const [isPasswordStrong, message] =
+      this.validationUtilsService.isPasswordStrong(password);
     if (!isPasswordStrong) {
       throw new EduException('WEAK_PASSWORD', message);
     }
