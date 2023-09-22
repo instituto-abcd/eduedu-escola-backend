@@ -36,7 +36,6 @@ import { SchoolClassResultService } from './school-class/school-class-result.ser
 import { ReportModule } from './report/report.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
-import { FtpModule } from './ftp/ftp.module';
 import { UtilsModule } from './common/utils/utils.module';
 
 @Module({
@@ -54,12 +53,16 @@ import { UtilsModule } from './common/utils/utils.module';
       rootPath: join(__dirname, '..', 'dist', 'templates'),
       serveRoot: '/static',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'assets-data'),
+      serveRoot: '/assets-data',
+    }),
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
     ]),
     BullModule.forRoot({
       redis: {
-        host: 'localhost',
+        host: process.env.REDIS_URL,
         port: 6379,
       },
     }),
@@ -80,7 +83,6 @@ import { UtilsModule } from './common/utils/utils.module';
     ExamModule,
     PlanetModule,
     ReportModule,
-    FtpModule,
     UtilsModule,
   ],
   providers: [

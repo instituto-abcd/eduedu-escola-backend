@@ -94,6 +94,7 @@ export class PlanetSyncService {
   }
 
   async handleSyncAll() {
+    console.log('Planet Sync - Iniciando sincronização de documentos do firestore');
     let planetsFromFirestore = await this.firestoreService.getPlanets();
 
     let planetsInsertedOrUpdated = [];
@@ -109,6 +110,7 @@ export class PlanetSyncService {
       planetsInsertedOrUpdated.push(planet);
     }
 
+    console.log('Planet Sync - Sincronização de documentos do firestore concluída');
     return {
       success: true,
       planetsSynced: planetsInsertedOrUpdated.length,
@@ -315,22 +317,28 @@ export class PlanetSyncProcessor {
 
   @Process('planet-job')
   async processPlanetSync(job: Job) {
-    let promises = [];
+    try {
+      console.log('Planet Sync - Iniciando sincronização');
 
-    promises.push(this.planetSyncService.handleSyncAll());
-    if (process.env.ASSETS == 'LOCAL') {
-      promises.push(this.storageService.downloadFiles())
+      let promises = [];
+
+      promises.push(this.planetSyncService.handleSyncAll());
+      if (process.env.ASSETS == 'LOCAL') {
+        promises.push(this.storageService.downloadFiles())
+      }
+
+      let start = new Date();
+
+      await Promise.all(promises);
+      let end = new Date();
+
+      let duration = this.dateFormatterUtilsService.convertMsToTime(end.getTime() - start.getTime());
+
+      console.log('Planet Sync - Sincronização concluída');
+      console.log('-------------------------------------');
+      console.log('Planet Sync - Duração Sincronização: ' + duration);
+    } catch (error) {
+        console.log(error);
     }
-
-    let start = new Date();
-
-    await Promise.all(promises);
-    let end = new Date();
-
-    let duration = this.dateFormatterUtilsService.convertMsToTime(end.getTime() - start.getTime());
-
-    console.log('----------------------------------------');
-    console.log('');
-    console.log('Duração Sincronização: ' + duration);
   }
 }

@@ -67,22 +67,4 @@ export class ExamService {
       }
     }
   }
-
-  // private async recoverFileURL(
-  //   id: string | null,
-  //   url: string | null
-  // ): Promise<string | null> {
-  //   if (id === null || id === undefined || id == '' ||
-  //       url === null || url === undefined || url == '') {
-  //     return '';
-  //   }
-
-  //   if (process.env.ASSETS !== 'LOCAL') {
-  //     return url;
-  //   }
-
-  //   const fileExtension = await this.storageService.handleFile('exam', id);
-  //   const fileServerUrl = process.env.FILE_SERVER_URL;
-  //   return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
-  // }
 }

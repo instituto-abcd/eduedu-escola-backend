@@ -2,27 +2,18 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { FtpService } from 'src/ftp/ftp.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { Model } from 'mongoose';
+import * as fs from 'fs-extra';
 
 @Injectable()
 export class StorageService {
 
-  private bucketNames: string[] = [];
-
   constructor(
-    private readonly ftpService: FtpService,
     @InjectModel(DownloadedFile.name) private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {
-    this.bucketNames.push('assets');
-    this.bucketNames.push('planets');
-    this.bucketNames.push('exam/audio');
-    this.bucketNames.push('exam/image');
-    this.bucketNames.push('exam/video');
-  }
+  ) { }
 
   async recoverFileURL(
     id: string | null,
@@ -52,10 +43,11 @@ export class StorageService {
     }
 
     const fileServerUrl = process.env.FILE_SERVER_URL;
-    return `${fileServerUrl}/${id}${fileExtension}`;
+    return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
   }
 
   private async getFileExtensionByFileName(bucketName: string, fileName: string) {
+    fileName = fileName.toLowerCase();
     const bucket = admin.storage().bucket();
     try {
       const [metadata] = await bucket.file(`${bucketName}/${fileName}`).getMetadata();
@@ -67,45 +59,28 @@ export class StorageService {
         return null;
       }
     } catch (error) {
-      // Do Nothing
-    }
-  }
-
-  async handleFile(bucketName: string, fileName: string) {
-    const bucket = admin.storage().bucket();
-
-    try {
-      const file = await bucket.file(`${bucketName}/${fileName.toLowerCase()}`);
-      const [metadata] = await file.getMetadata();
-      const contentType = metadata.contentType;
-      const extension = contentType.split('/').pop();
-      if (extension) {
-        let fileExtension = '.' + extension.replace('+xml', '').replace('mpeg', 'mp3')
-        const fullFileName = fileName.toLowerCase().replace('.mp3','').replace('.mp4','').replace('.svg','') + fileExtension;
-
-        await this.ftpService.uploadFileStream(file.createReadStream(), fullFileName);
-
-        return fileExtension;
-      } else {
-        return null;
+      const extensions = [ '.svg', '.mp4', '.mp3' ];
+      for (let index = 0; index < extensions.length; index++) {
+        try {
+          const extension = extensions[index];
+          const [metadata] = await bucket.file(`${bucketName}/${fileName}${extension}`).getMetadata();
+          const contentType = metadata.contentType;
+          const extensao = contentType.split('/').pop();
+          if (extensao) {
+            return '.' + extensao.replace('+xml', '').replace('mpeg', 'mp3');
+          } else {
+            return null;
+          }
+        } catch (error) {
+          // Do Nothing      
+        }
       }
-    } catch (error) {
-      // Do Nothing
     }
-  }
-
-  async getSyncedFilesCount(): Promise<number> {
-    return this.ftpService.countFilesInDirectory('/');
   }
 
   async downloadFiles() {
-    let bucketNames = [
-      'assets',
-      'planets',
-      'exam',
-      'student',
-    ];
-
+    console.log('Planet Sync - Iniciando download dos artefatos');
+    this.createDirectoryInRoot('dist/assets-data');
     const bucket = admin.storage().bucket();
 
     let assetsFiles = (await bucket.getFiles({prefix: 'assets'}))[0];
@@ -122,35 +97,46 @@ export class StorageService {
     await this.cacheManager.set('sync-total-files', allFiles.length, 0);
 
     for (let fileIndex = 0; fileIndex < allFiles.length; fileIndex++) {
-      const extension = allFiles[fileIndex].metadata.contentType.split('/').pop();
-      let fileExtension = '.' + extension.replace('+xml', '').replace('mpeg', 'mp3')
-      
-      let fileName = allFiles[fileIndex].name
-        .replace('assets/', '')
-        .replace('planets/', '')
-        .replace('exam/', '')
-        .replace('student/', '')
-        .replace('.mp3','').replace('.mp4','').replace('.svg','') + `${fileExtension}`;
-      
+
       try {
-        await promiseRetry(() => this.ftpService.uploadFileStream(allFiles[fileIndex].createReadStream(), fileName));
+        const extension = allFiles[fileIndex].metadata.contentType.split('/').pop();
+        let fileExtension = '.' + extension.replace('+xml', '').replace('mpeg', 'mp3')
+        
+        let fileName = allFiles[fileIndex].name
+          .replace('assets/', '')
+          .replace('planets/', '')
+          .replace('exam/', '')
+          .replace('student/', '')
+          .replace('.mp3','').replace('.mp4','').replace('.svg','') + `${fileExtension}`;
+
+        await bucket.file(allFiles[fileIndex].name).download({ destination: `dist/assets-data/${fileName}` });
 
         await this.downloadedFileModel.findOneAndUpdate(
           { fileName },
           { fileName },
           { upsert: true, new: true, setDefaultsOnInsert: true });
-      } catch (error) { }
-      
+
+      } catch (error) {
+        console.log(error);  
+      }
     }
 
     await this.cacheManager.set('sync-current-end', new Date(), 0);
 
+    console.log('Planet Sync - Download dos artefatos concluído');
+
   }
 
-}
+  async createDirectoryInRoot(directoryName: string): Promise<void> {
+    const rootPath = process.cwd();
+    const directoryPath = `${rootPath}/${directoryName}`;
 
-export async function promiseRetry<T>(fn: () => Promise<T>, retries = 5, err?: any): Promise<T> {
-  await new Promise(resolve => setTimeout(resolve, (5 - retries) * 1000));
+    try {
+      await fs.ensureDir(directoryPath);
+      console.log(`Diretório '${directoryName}' criado em ${directoryPath}`);
+    } catch (error) {
+      throw new Error(`Erro ao criar o diretório: ${error}`);
+    }
+  }
 
-  return !retries ? Promise.reject(err) : fn().catch(error => promiseRetry(fn, (retries - 1), error));
 }

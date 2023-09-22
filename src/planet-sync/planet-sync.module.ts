@@ -8,7 +8,6 @@ import { FirestoreService } from './firestore.service';
 import { PlanetSync, PlanetSyncSchema } from './schemas/sync-list.schema';
 import { StorageService } from './storage.service';
 import { BullModule } from '@nestjs/bull';
-import { FtpModule } from 'src/ftp/ftp.module';
 import { UtilsModule } from 'src/common/utils/utils.module';
 import { DownloadedFile, DownloadedFileSchema } from './schemas/download-file.schema';
 
@@ -22,7 +21,6 @@ import { DownloadedFile, DownloadedFileSchema } from './schemas/download-file.sc
     BullModule.registerQueueAsync(
       { name: 'planet-sync' },
     ),
-    FtpModule,
     UtilsModule,
   ],
   controllers: [PlanetSyncController],
