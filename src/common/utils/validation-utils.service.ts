@@ -60,30 +60,70 @@ export class ValidationUtilsService {
     return validProfiles.includes(profile as Profile);
   }
 
-  isPasswordStrong(password): [boolean, string] {
-    const hasValidLength = password.length >= 6;
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasDigit = /[0-9]/.test(password);
-    const hasNoSequentialChars = !/(.)\1\1|([a-zA-Z]{3})|([0-9]{3})/.test(
-      password,
-    );
+  isPasswordStrong(password: string): [boolean, string] {
+    const passwordMeetsLength = password.length >= 6;
+    const passwordMeetsHasLetter = /[A-Za-z]/.test(password);
+    const passwordMeetsHasDigit = /[0-9]/.test(password);
+    const passwordMeetsNoSequentialLetters =
+      !this.hasSequentialLetters(password);
+    const passwordMeetsNoSequentialDigits = !this.hasSequentialDigits(password);
 
-    const isStrong =
-      hasValidLength && hasLetter && hasDigit && hasNoSequentialChars;
+    const isPasswordStrong =
+      passwordMeetsLength &&
+      passwordMeetsHasLetter &&
+      passwordMeetsHasDigit &&
+      passwordMeetsNoSequentialLetters &&
+      passwordMeetsNoSequentialDigits;
 
     let message = '';
 
-    if (!isStrong) {
+    if (!isPasswordStrong) {
       message += 'A senha deve atender os seguintes requisitos:<br>';
-      message += !hasValidLength ? '- Ter pelo menos 6 dígitos<br>' : '';
-      message += !hasLetter ? '- Ter pelo menos 1 letra<br>' : '';
-      message += !hasDigit ? '- Ter pelo menos 1 número<br>' : '';
-      message += !hasNoSequentialChars
-        ? '- Não conter sequências de 3 ou mais caracteres alfabéticos ou numéricos<br>'
+      message += !passwordMeetsLength ? '- Ter pelo menos 6 dígitos<br>' : '';
+      message += !passwordMeetsHasLetter ? '- Ter pelo menos 1 letra<br>' : '';
+      message += !passwordMeetsHasDigit ? '- Ter pelo menos 1 número<br>' : '';
+      message += !passwordMeetsNoSequentialLetters
+        ? '- Não conter sequências de letras consecutivas<br>'
+        : '';
+      message += !passwordMeetsNoSequentialDigits
+        ? '- Não conter sequências de números consecutivos<br>'
         : '';
       message += '<br>';
     }
 
-    return [isStrong, message];
+    return [isPasswordStrong, message];
+  }
+
+  hasSequentialLetters(password: string): boolean {
+    for (let i = 0; i < password.length - 2; i++) {
+      const char1 = password.charCodeAt(i);
+      const char2 = password.charCodeAt(i + 1);
+      const char3 = password.charCodeAt(i + 2);
+
+      if (char2 === char1 + 1 && char3 === char2 + 1) {
+        return true; // Sequência de letras consecutivas encontrada
+      }
+    }
+
+    return false; // Nenhuma sequência encontrada
+  }
+
+  hasSequentialDigits(password: string): boolean {
+    for (let i = 0; i < password.length - 2; i++) {
+      const char1 = password.charCodeAt(i);
+      const char2 = password.charCodeAt(i + 1);
+      const char3 = password.charCodeAt(i + 2);
+
+      if (
+        char1 >= 48 &&
+        char1 <= 57 &&
+        char2 === char1 + 1 &&
+        char3 === char2 + 1
+      ) {
+        return true; // Sequência de números consecutivos encontrada
+      }
+    }
+
+    return false; // Nenhuma sequência encontrada
   }
 }
