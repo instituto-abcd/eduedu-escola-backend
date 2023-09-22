@@ -21,6 +21,12 @@ export class FirestoreService {
     return docs;
   }
 
+  async getTotalPlanetsCount(): Promise<number> {
+    const docRef = this.db.collection('planets');
+    const planetsCount = (await docRef.get()).size;
+    return planetsCount;
+  }
+
   async getPlanet(planetId: string): Promise<PlanetOrigin> {
     const docRef = this.db.collection('planets').doc(planetId);
     const docSnapshot = await docRef.get();

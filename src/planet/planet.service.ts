@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PlanetDto } from './dto/planet.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Planet, PlanetDocument, Question } from 'src/planet-sync/schemas/planet.schema';
+import {
+  Planet,
+  PlanetDocument,
+  Question,
+} from 'src/planet-sync/schemas/planet.schema';
 
 @Injectable()
 export class PlanetService {
-
   constructor(
     @InjectModel(Planet.name)
     private planetModel: Model<PlanetDocument>,
@@ -22,22 +25,21 @@ export class PlanetService {
     questionId: string,
   ): Promise<Question> {
     const planet = await this.planetModel.findOne({
-      id: planetId
+      id: planetId,
     });
 
-    let result = planet.questions.find((question) => question.id == questionId);
+    const result = planet.questions.find(
+      (question) => question.id == questionId,
+    );
 
     return result;
   }
 
-  async findPlanetQuestions(
-    planetId: string,
-  ): Promise<Question[]> {
+  async findPlanetQuestions(planetId: string): Promise<Question[]> {
     const planet = await this.planetModel.findOne({
-      id: planetId
+      id: planetId,
     });
 
     return planet.questions;
   }
-
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
 import {
@@ -11,8 +11,6 @@ import {
 
 @ApiTags('Sincronizar Planetas')
 @Controller('planet-sync')
-// @ApiBearerAuth()
-// @UseGuards(JwtAuthGuard)
 export class PlanetSyncController {
   constructor(private readonly planetSyncService: PlanetSyncService) {}
 
@@ -37,6 +35,17 @@ export class PlanetSyncController {
     type: SyncPlanetResponse,
   })
   syncAll() {
-    return this.planetSyncService.syncAll();
+    return this.planetSyncService.enqueueSyncAll();
+  }
+
+  @Get('sync-status')
+  @ApiOperation({
+    summary: 'Retorna o status da sincronização atual de planetas',
+  })
+  @ApiResponse({
+    status: 200,
+  })
+  getPlanetSyncStatus() {
+    return this.planetSyncService.getPlanetSyncStatus();
   }
 }

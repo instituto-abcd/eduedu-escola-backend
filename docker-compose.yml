@@ -23,6 +23,15 @@ services:
       - 27017:27017
     networks:
       - app-network
+  
+  redis:
+    image: redis:latest
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+        - 6379:6379
+    networks:
+      - app-network
 
 networks:
   app-network:
