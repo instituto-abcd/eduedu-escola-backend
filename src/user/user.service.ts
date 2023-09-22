@@ -68,12 +68,6 @@ export class UserService {
       throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
-    const [isPasswordStrong, message] =
-      this.validationUtilsService.isPasswordStrong(password);
-    if (!isPasswordStrong) {
-      throw new EduException('WEAK_PASSWORD', message);
-    }
-
     const hashedPassword = password
       ? await this.bcryptService.hashPassword(password)
       : null;
