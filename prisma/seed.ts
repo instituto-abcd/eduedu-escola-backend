@@ -54,7 +54,7 @@ async function main() {
     ]
   });
 
-  if (env === 'main') {
+  if (env === 'development') {
 
     var directorId = uuidv4();
     var teacherId = uuidv4();
