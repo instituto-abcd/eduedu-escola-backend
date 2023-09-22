@@ -43,7 +43,7 @@ export class StorageService {
     }
 
     const fileServerUrl = process.env.FILE_SERVER_URL;
-    return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.svg','')}${fileExtension}`;
+    return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.png','').replace('.svg','')}${fileExtension}`;
   }
 
   private async getFileExtensionByFileName(bucketName: string, fileName: string) {
@@ -59,7 +59,7 @@ export class StorageService {
         return null;
       }
     } catch (error) {
-      const extensions = [ '.svg', '.mp4', '.mp3' ];
+      const extensions = [ '.svg', '.mp4', '.mp3', '.png' ];
       for (let index = 0; index < extensions.length; index++) {
         try {
           const extension = extensions[index];
@@ -107,7 +107,7 @@ export class StorageService {
           .replace('planets/', '')
           .replace('exam/', '')
           .replace('student/', '')
-          .replace('.mp3','').replace('.mp4','').replace('.svg','') + `${fileExtension}`;
+          .replace('.mp3','').replace('.mp4','').replace('.png','').replace('.svg','') + `${fileExtension}`;
 
         await bucket.file(allFiles[fileIndex].name).download({ destination: `dist/assets-data/${fileName}` });
 
