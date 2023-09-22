@@ -11,6 +11,7 @@ import {
   PlanetSync,
   PlanetSyncSchema,
 } from 'src/planet-sync/schemas/sync-list.schema';
+import { DownloadedFile, DownloadedFileSchema } from 'src/planet-sync/schemas/download-file.schema';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import {
     MongooseModule.forFeature([
       { name: Planet.name, schema: PlanetSchema },
       { name: PlanetSync.name, schema: PlanetSyncSchema },
+      { name: DownloadedFile.name, schema: DownloadedFileSchema },
     ]),
   ],
   providers: [PlanetSyncService, FirestoreService],

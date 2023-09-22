@@ -34,9 +34,9 @@ import {
 import { PlanetModule } from './planet/planet.module';
 import { SchoolClassResultService } from './school-class/school-class-result.service';
 import { ReportModule } from './report/report.module';
-import { ReportService } from "./report/report.service";
-import { StudentService } from "./student/student.service";
-import { StudentResultService } from "./student/studentResult.service";
+import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bull';
+import { UtilsModule } from './common/utils/utils.module';
 
 @Module({
   imports: [
@@ -53,9 +53,20 @@ import { StudentResultService } from "./student/studentResult.service";
       rootPath: join(__dirname, '..', 'dist', 'templates'),
       serveRoot: '/static',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'assets-data'),
+      serveRoot: '/assets-data',
+    }),
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
     ]),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_URL,
+        port: 6379,
+      },
+    }),
+    CacheModule.register({ isGlobal: true }),
     UserModule,
     SchoolYearModule,
     AuthModule,
@@ -72,6 +83,7 @@ import { StudentResultService } from "./student/studentResult.service";
     ExamModule,
     PlanetModule,
     ReportModule,
+    UtilsModule,
   ],
   providers: [
     PrismaService,

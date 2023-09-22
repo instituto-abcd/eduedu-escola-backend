@@ -425,8 +425,9 @@ export class UserService {
     if (!isPasswordValid) {
       throw new EduException('INVALID_PASSWORD');
     }
-    
-    const [isPasswordStrong, message] = this.validationUtilsService.isPasswordStrong(newPassword);
+
+    const [isPasswordStrong, message] =
+      this.validationUtilsService.isPasswordStrong(newPassword);
     if (!isPasswordStrong) {
       throw new EduException('WEAK_PASSWORD', message);
     }

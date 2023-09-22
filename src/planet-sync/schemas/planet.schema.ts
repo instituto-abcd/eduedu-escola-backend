@@ -15,14 +15,17 @@ export type Question = {
   bncc: string | null;
   updated_at: string;
   options: {
+    sound_id?: string;
     sound_url?: string;
+    image_id?: string;
     image_url?: string;
     description: string;
     position: number;
     isCorrect: boolean;
   }[];
   titles: {
-    file_url: string | null;
+    file_id?: string | null;
+    file_url?: string | null;
     description: string;
     position: number;
     placeholder: string;
@@ -39,6 +42,9 @@ export type PlanetDocument = HydratedDocument<Planet>;
 
 @Schema()
 export class Planet {
+  @Prop()
+  avatar_id: string;
+
   @Prop()
   avatar_url: string;
 

@@ -8,19 +8,21 @@ import {
   Patch,
   Post,
   Put,
-  Query, UseGuards
-} from "@nestjs/common";
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { StudentService } from './student.service';
 import { CreateStudentRequestDto } from './dto/request/create-student-request.dto';
 import { DeleteStudentRequestDto } from './dto/request/delete-student-request.dto';
 import { UpdateStudentRequestDto } from './dto/request/update-student-request.dto';
 import {
-  ApiBadRequestResponse, ApiBearerAuth,
+  ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
-  ApiTags
-} from "@nestjs/swagger";
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   EduException,
   ErrorDetails,
@@ -49,7 +51,8 @@ import { StudentResultService } from './studentResult.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
 import { ChartStudentResponse } from './dto/response/chart-studant-response.dto';
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
-import { JwtAuthGuard } from "../auth/guard/jwt-auth.guard";
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { StudentPlanetStarsDto } from './student-planet-stars.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -195,7 +198,7 @@ export class StudentController {
   @Put('/:id/release-planets')
   @ApiResponse({
     status: 200,
-    description: 'Status da operação'
+    description: 'Status da operação',
   })
   async releasePlanets(
     @Param('id') studentId: string,
@@ -392,5 +395,21 @@ export class StudentController {
     @Param('id') id: string,
   ): Promise<StudentDetailedSummaryDto> {
     return await this.studentResultService.getStudentDetailedSummary(id);
+  }
+
+  @Get(':id/planets/:planetId')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtém as estrelas do aluno no planeta',
+    type: StudentPlanetStarsDto,
+  })
+  @ApiOperation({
+    summary: 'Obtém as estrelas do aluno no planeta',
+  })
+  async studentPlanetStars(
+    @Param('id') id: string,
+    @Param('planetId') planetId: string,
+  ): Promise<StudentPlanetStarsDto> {
+    return await this.studentResultService.studentPlanetStars(id, planetId);
   }
 }

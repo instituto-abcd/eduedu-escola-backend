@@ -17,7 +17,7 @@ export class ReportService {
     private readonly studentResultService: StudentResultService,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
-  ) {}
+  ) { }
 
   async createReportStudent(
     @Res() res: Response,
@@ -25,10 +25,16 @@ export class ReportService {
   ): Promise<void> {
     const fileName = `report.pdf`;
 
-    const chart: any = await this.studentResultService.examsChart(studentId);
-    const planetChart: any = await this.studentResultService.planetsChart(
+    let examChart: any = {};
+    let planetChart: any = {};
+
+    examChart.data = await this.studentResultService.examsChart(studentId);
+    examChart.options = this.getExamChartOptions();
+    
+    planetChart.data = await this.studentResultService.planetsChart(
       studentId,
     );
+    planetChart.options = this.getPlanetChartOptions();
 
     const studentExams = await this.studentExamModel.findOne({
       studentId: studentId,
@@ -45,7 +51,7 @@ export class ReportService {
       studentId,
     );
 
-    chart.datasets?.forEach((element) => {
+    examChart.data.datasets?.forEach((element) => {
       if (element.label == 'Consciência Fonológica') {
         element.backgroundColor = '#66d9e8';
         element.borderColor = '#66d9e8';
@@ -56,10 +62,11 @@ export class ReportService {
         element.backgroundColor = '#ffc078';
         element.borderColor = '#ffc078';
       }
+
       element.yAxisID = 'y';
     });
 
-    chart.planetChart?.forEach((element) => {
+    planetChart.data.datasets?.forEach((element) => {
       if (element.label == 'Consciência Fonológica') {
         element.backgroundColor = '#66d9e8';
         element.borderColor = '#66d9e8';
@@ -74,7 +81,7 @@ export class ReportService {
     });
 
     // Renderize o conteúdo do relatório usando o modelo Mustache
-    const content = exportStudentReport(chart, planetChart);
+    const content = exportStudentReport(examChart, planetChart);
     const html = mustache.render(content, {
       summaries: data.summaries,
       performanceByArea: data.performanceByArea,
@@ -114,4 +121,69 @@ export class ReportService {
       res.status(500).send('Erro ao gerar o PDF');
     }
   }
+
+  private getExamChartOptions() {
+    return {
+      aspectRatio: 4,
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      stacked: false,
+      plugins: {
+        title: {
+          display: false,
+        },
+        legend: {
+          display: false,
+        }
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: 20,
+          }
+        }
+      }
+    };
+  }
+
+  private getPlanetChartOptions() {
+    return {
+      aspectRatio: 4,
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      stacked: false,
+      plugins: {
+        title: {
+          display: false,
+        },
+        legend: {
+          display: false,
+        }
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          min: 0,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+          }
+        }
+      }
+    };
+  }
+
 }

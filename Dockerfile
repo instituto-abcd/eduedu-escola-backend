@@ -15,4 +15,4 @@ RUN yarn prisma generate
 
 RUN FIRESTORE_READ_SERVICEACCOUNT=$FIRESTORE_READ_SERVICEACCOUNT yarn build
 
-CMD [ "node", "dist/src/main.js" ]
+CMD [ "node", "--max-old-space-size=6144", "dist/src/main.js" ]

@@ -1,4 +1,4 @@
-export const exportStudentReport = (chartData: any[], planetChart: any[]) => `
+export const exportStudentReport = (examChart: any, planetChart: any) => `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml/DTD/xhtml1-transitional.dtd">
 <html>
 
@@ -115,7 +115,14 @@ export const exportStudentReport = (chartData: any[], planetChart: any[]) => `
                     <tr>
                         <table class="outer" align="center" style="padding: 10px;">
                             <tr>
-                                <canvas id="examsChart" width="400" height="200"></canvas>
+                                <td>
+                                    <h2>Desempenho do Aluno por Provas</h2>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <canvas id="examsChart" width="400" height="200"></canvas>
+                                </td>
                             </tr>
                         </table>
                     </tr>
@@ -124,7 +131,14 @@ export const exportStudentReport = (chartData: any[], planetChart: any[]) => `
                     <tr>
                         <table class="outer" align="center" style="padding: 10px;">
                             <tr>
-                                <canvas id="planetChart" width="400" height="200"></canvas>
+                                <td>
+                                    <h2>Desempenho do Aluno por Planetas</h2>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <canvas id="planetChart" width="400" height="200"></canvas>
+                                </td>
                             </tr>
                         </table>
                     </tr>
@@ -170,80 +184,23 @@ export const exportStudentReport = (chartData: any[], planetChart: any[]) => `
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const chartData = ${JSON.stringify(chartData)};
+                const examChartData = ${JSON.stringify(examChart.data)};
                 const ctx = document.getElementById('examsChart').getContext('2d');
                 const examsChart = new Chart(ctx, {
                     type: 'line',
-                    data: chartData,
-                    options: {
-                        aspectRatio: 4,
-                        responsive: true,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        stacked: false,
-                        plugins: {
-                            title: {
-                                display: false,
-                            },
-                            legend: {
-                                display: false,
-                            }
-                        },
-                        scales: {
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                min: 0,
-                                max: 100,
-                                ticks: {
-                                  stepSize: 20,
-                                }
-                            },
-                          },
-                        }
-                    }
+                    data: examChartData,
+                    options: ${JSON.stringify(examChart.options)}
                 });
             });
         </script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const planetChart = ${JSON.stringify(planetChart)};
+                const planetChartData = ${JSON.stringify(planetChart.data)};
                 const ctx = document.getElementById('planetChart').getContext('2d');
                 const planetCharts = new Chart(ctx, {
                     type: 'line',
-                    data: planetChart,
-                    options: {
-                        aspectRatio: 4,
-                        responsive: true,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        stacked: false,
-                        plugins: {
-                            title: {
-                                display: false,
-                            },
-                            legend: {
-                                display: false,
-                            }
-                        },
-                        scales: {
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                min: 0,
-                                max: 5,
-                                ticks: {
-                                  stepSize: 1,
-                                }
-                            },
-                        }
-                    }
+                    data: planetChartData,
+                    options: ${JSON.stringify(planetChart.options)}
                 });
             });
         </script>

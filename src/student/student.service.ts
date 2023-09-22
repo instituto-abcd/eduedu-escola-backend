@@ -1194,8 +1194,7 @@ export class StudentService {
         return 0;
       }
 
-      const percentage =
-        (totalQuestionsAnswered / totalQuestionPerAxis) * 100;
+      const percentage = (totalQuestionsAnswered / totalQuestionPerAxis) * 100;
       return parseFloat(percentage.toFixed(2));
     } catch (error) {
       console.error('Error in recoverProgress:', error);
@@ -1762,10 +1761,11 @@ export class StudentService {
       questionAnswered.options.length > 0 &&
       !skipVerify
     ) {
-      answersPlanet.isCorrect = await this.verifyAnswerPlanet(
+      const isCorrect = await this.verifyAnswerPlanet(
         questionAnswered,
         answersPlanet.optionsAnswered,
       );
+      answersPlanet.isCorrect = isCorrect;
 
       await this.saveAnswerPlanet(studentId, planetId, answersPlanet);
 
@@ -1777,6 +1777,7 @@ export class StudentService {
       if (nextQuestion === null || nextQuestion === undefined) {
         return await this.finishPlanet(studentId, planetId);
       }
+      nextQuestion.previousQuestionIsCorrect = isCorrect;
       return nextQuestion;
     } else {
       // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
@@ -1788,6 +1789,7 @@ export class StudentService {
       if (nextQuestion === null || nextQuestion === undefined) {
         return await this.finishPlanet(studentId, planetId);
       }
+      nextQuestion.previousQuestionIsCorrect = true;
       return nextQuestion;
     }
   }
@@ -1816,7 +1818,7 @@ export class StudentService {
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
     await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
-    return { planetCompleted: true };
+    return { planetCompleted: true, previousQuestionIsCorrect: true };
   }
 
   async saveStudentPlanetResult(
