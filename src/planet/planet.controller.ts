@@ -22,6 +22,16 @@ export class PlanetController {
     return this.planetService.findAll();
   }
 
+  @Get('question-models')
+  @ApiResponse({
+    status: 201,
+    description: 'Retorna todos os modelos das questões de todos os planetas',
+    type: PlanetDto,
+  })
+  findPlanetModels(): Promise<any> {
+    return this.planetService.findPlanetModels();
+  }
+
   @Get(':id/questions')
   @ApiResponse({
     status: 201,

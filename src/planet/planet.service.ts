@@ -20,6 +20,19 @@ export class PlanetService {
     return planets;
   }
 
+  async findPlanetModels() : Promise<any> {
+    const planets = await this.planetModel.find();
+    const questions = planets.reduce((question, planet) => [ ...question, ...planet.questions ], []);
+
+    const models = questions.map((question) => {
+      return question.model_id
+    });
+
+    const uniqueModels = models.filter((n, i) => models.indexOf(n) === i);
+
+    return uniqueModels;
+  }
+
   async findPlanetQuestion(
     planetId: string,
     questionId: string,
