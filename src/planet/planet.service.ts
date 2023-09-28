@@ -55,4 +55,32 @@ export class PlanetService {
 
     return planet.questions;
   }
+
+  async findAllPlanetQuestions(
+    modelId: string,
+  ): Promise<Question[]> {
+
+    const aggregationResults: any[] = await this.planetModel
+        .aggregate([
+          {
+            $match: { 'questions.model_id': modelId },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  cond: { $eq: ['$$question.model_id', modelId] },
+                },
+              },
+            },
+          },
+        ])
+        .exec();
+
+    let questions = aggregationResults.reduce((question, result) => [ ...question, ...result.questions ], []);
+
+    return questions;
+  }
 }
