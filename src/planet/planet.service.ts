@@ -74,13 +74,40 @@ export class PlanetService {
                   cond: { $eq: ['$$question.model_id', modelId] },
                 },
               },
+              title: true,
             },
           },
         ])
         .exec();
 
-    let questions = aggregationResults.reduce((question, result) => [ ...question, ...result.questions ], []);
+    let resultQuestions = [];
+    aggregationResults.forEach(result => {
+      let questions = result.questions.map((question) => {
+        let questionFinal = question;
+        questionFinal.planetTitle = result.title;
+        return questionFinal;
+      });
+      resultQuestions.push(...questions);
+    });
 
-    return questions;
+    return resultQuestions;
+  }
+
+  async findAllPlanetModels(
+    planetIds: string[],
+  ): Promise<Question[]> {
+
+    const planets: any[] = await this.planetModel
+        .find({
+          id: { $in: planetIds }
+        }).exec();
+
+    let models = planets
+      .reduce((question, planet) => [ ...question, ...planet.questions ], [])
+      .map((question) => question.model_id);
+
+    const uniqueModels = models.filter((n, i) => models.indexOf(n) === i);
+
+    return uniqueModels;
   }
 }

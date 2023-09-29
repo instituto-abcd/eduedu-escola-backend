@@ -61,7 +61,19 @@ export class PlanetController {
   })
   findAllPlanetQuestion(
     @Query('modelId') modelId: string
-  ): Promise<Question[]> {
+  ): Promise<any[]> {
     return this.planetService.findAllPlanetQuestions(modelId);
+  }
+
+  @Get('/all-models?')
+  @ApiResponse({
+    status: 201,
+    description: 'Retorna os modelos de questão utilizados em planetas',
+    type: PlanetDto,
+  })
+  findAllPlanetModels(
+    @Query('planetId') planetIds: string[]
+  ): Promise<any[]> {
+    return this.planetService.findAllPlanetModels(planetIds);
   }
 }
