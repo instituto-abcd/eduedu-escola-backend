@@ -1777,6 +1777,9 @@ export class StudentService {
       if (nextQuestion === null || nextQuestion === undefined) {
         return await this.finishPlanet(studentId, planetId);
       }
+
+      nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
+      
       nextQuestion.previousQuestionIsCorrect = isCorrect;
       return nextQuestion;
     } else {
@@ -1792,6 +1795,22 @@ export class StudentService {
       nextQuestion.previousQuestionIsCorrect = true;
       return nextQuestion;
     }
+  }
+
+  private applyPlanetQuestionShuffle(planetQuestion: any): any {
+    let modelIdsToShuffle = [
+      "MODEL11",
+      "MODEL13",
+      "MODEL18",
+    ];
+
+    if (modelIdsToShuffle.includes(planetQuestion.model_id)) {
+      planetQuestion.options = this.shuffleOptions(
+        planetQuestion.options,
+      );
+    }
+
+    return planetQuestion.options;
   }
 
   private async finishPlanet(
