@@ -1799,9 +1799,22 @@ export class StudentService {
 
   private applyPlanetQuestionShuffle(planetQuestion: any): any {
     let modelIdsToShuffle = [
+      "MODEL2",
+      "MODEL4",
+      "MODEL5",
+      "MODEL10",
       "MODEL11",
       "MODEL13",
       "MODEL18",
+      "MODEL19",
+      "MODEL24",
+      "MODEL25",
+      "MODEL26",
+      "MODEL28",
+      "MODEL29",
+      "MODEL31",
+      "MODEL32",
+      "MODEL34",
     ];
 
     if (modelIdsToShuffle.includes(planetQuestion.model_id)) {
