@@ -90,7 +90,9 @@ export class PlanetService {
       resultQuestions.push(...questions);
     });
 
-    return resultQuestions;
+    return resultQuestions.sort(
+      (a, b) => a.id.localeCompare(b.id),
+    );
   }
 
   async findAllPlanetModels(
