@@ -203,10 +203,37 @@ export class StudentService {
       });
       const currentStudentExamIds = currentStudentExams.map((item) => item.id);
 
+      const studentExamResultWhere: Prisma.StudentExamResultWhereInput[] = [];
+
+      if (cfo !== undefined) {
+        studentExamResultWhere.push({
+          axisCode: 'ES',
+          percent: { gte: cfo },
+        });
+      }
+
+      if (sea !== undefined) {
+        studentExamResultWhere.push({
+          axisCode: 'EA',
+          percent: { gte: sea },
+        });
+      }
+
+      if (lct !== undefined) {
+        studentExamResultWhere.push({
+          axisCode: 'LC',
+          percent: { gte: lct },
+        });
+      }
+
+      studentExamResultWhere.push({
+        studentId: { in: studentIds },
+        studentExamId: { in: currentStudentExamIds },
+      });
+
       const studentExamResults = await this.prisma.studentExamResult.findMany({
         where: {
-          studentId: { in: studentIds },
-          studentExamId: { in: currentStudentExamIds },
+          AND: studentExamResultWhere,
         },
       });
 
