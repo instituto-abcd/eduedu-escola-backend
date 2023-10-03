@@ -10,6 +10,7 @@ import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.d
 import { UserService } from 'src/user/user.service';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 
 @Injectable()
 export class SettingsService {
@@ -18,6 +19,7 @@ export class SettingsService {
     private readonly bcryptService: BcryptService,
     private readonly userService: UserService,
     private readonly authService: AuthService,
+    private readonly validationUtilsService: ValidationUtilsService,
   ) {}
 
   async getSettingsBySchoolId(schoolId: string): Promise<Settings> {
@@ -187,6 +189,14 @@ export class SettingsService {
     schoolId: string,
     origin: string,
   ): Promise<AuthResponseDto> {
+    const { password } = data;
+
+    const [isPasswordStrong, message] =
+      this.validationUtilsService.isPasswordStrong(password);
+    if (!isPasswordStrong) {
+      throw new EduException('WEAK_PASSWORD', message);
+    }
+
     const result = await this.userService.create(data, schoolId, origin);
 
     const owner = await this.prismaService.user.update({
