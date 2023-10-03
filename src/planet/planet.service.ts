@@ -36,7 +36,9 @@ export class PlanetService {
 
     const uniqueModels = models.filter((n, i) => models.indexOf(n) === i);
 
-    return uniqueModels;
+    return uniqueModels.sort(
+      (a, b) => a.localeCompare(b),
+    );
   }
 
   private async findExamModels(): Promise<any> {
