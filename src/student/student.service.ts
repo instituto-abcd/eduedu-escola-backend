@@ -163,6 +163,33 @@ export class StudentService {
       },
     };
 
+    if (cfo !== undefined || sea !== undefined || lct !== undefined) {
+      where.examResults = {
+        some: {
+          OR: [
+            cfo !== undefined
+              ? {
+                  axisCode: 'ES',
+                  percent: { gte: cfo },
+                }
+              : undefined,
+            sea !== undefined
+              ? {
+                  axisCode: 'EA',
+                  percent: { gte: sea },
+                }
+              : undefined,
+            lct !== undefined
+              ? {
+                  axisCode: 'LC',
+                  percent: { gte: lct },
+                }
+              : undefined,
+          ].filter(Boolean),
+        },
+      };
+    }
+
     try {
       const students = await this.prisma.student.findMany({
         where,
@@ -233,7 +260,7 @@ export class StudentService {
 
       const studentExamResults = await this.prisma.studentExamResult.findMany({
         where: {
-          AND: studentExamResultWhere,
+          OR: studentExamResultWhere,
         },
       });
 
@@ -1806,7 +1833,7 @@ export class StudentService {
       }
 
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
-      
+
       nextQuestion.previousQuestionIsCorrect = isCorrect;
       return nextQuestion;
     } else {
@@ -1825,29 +1852,27 @@ export class StudentService {
   }
 
   private applyPlanetQuestionShuffle(planetQuestion: any): any {
-    let modelIdsToShuffle = [
-      "MODEL2",
-      "MODEL4",
-      "MODEL5",
-      "MODEL10",
-      "MODEL11",
-      "MODEL13",
-      "MODEL18",
-      "MODEL19",
-      "MODEL24",
-      "MODEL25",
-      "MODEL26",
-      "MODEL28",
-      "MODEL29",
-      "MODEL31",
-      "MODEL32",
-      "MODEL34",
+    const modelIdsToShuffle = [
+      'MODEL2',
+      'MODEL4',
+      'MODEL5',
+      'MODEL10',
+      'MODEL11',
+      'MODEL13',
+      'MODEL18',
+      'MODEL19',
+      'MODEL24',
+      'MODEL25',
+      'MODEL26',
+      'MODEL28',
+      'MODEL29',
+      'MODEL31',
+      'MODEL32',
+      'MODEL34',
     ];
 
     if (modelIdsToShuffle.includes(planetQuestion.model_id)) {
-      planetQuestion.options = this.shuffleOptions(
-        planetQuestion.options,
-      );
+      planetQuestion.options = this.shuffleOptions(planetQuestion.options);
     }
 
     return planetQuestion.options;
