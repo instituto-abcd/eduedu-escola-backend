@@ -163,29 +163,33 @@ export class StudentService {
       },
     };
 
-    if (cfo !== undefined || sea !== undefined || lct !== undefined) {
+    const examResultConditions: Prisma.StudentExamResultWhereInput[] = [];
+
+    if (cfo !== undefined) {
+      examResultConditions.push({
+        axisCode: 'ES',
+        percent: { gte: cfo },
+      });
+    }
+
+    if (sea !== undefined) {
+      examResultConditions.push({
+        axisCode: 'EA',
+        percent: { gte: sea },
+      });
+    }
+
+    if (lct !== undefined) {
+      examResultConditions.push({
+        axisCode: 'LC',
+        percent: { gte: lct },
+      });
+    }
+
+    if (examResultConditions.length > 0) {
       where.examResults = {
         some: {
-          OR: [
-            cfo !== undefined
-              ? {
-                  axisCode: 'ES',
-                  percent: { gte: cfo },
-                }
-              : undefined,
-            sea !== undefined
-              ? {
-                  axisCode: 'EA',
-                  percent: { gte: sea },
-                }
-              : undefined,
-            lct !== undefined
-              ? {
-                  axisCode: 'LC',
-                  percent: { gte: lct },
-                }
-              : undefined,
-          ].filter(Boolean),
+          AND: examResultConditions,
         },
       };
     }
@@ -222,7 +226,6 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      // Obter os resultados da última prova executada de aluno e retornar abaixo (cfo, sea, lct)
       const studentIds = students.map((item) => item.id);
       const currentStudentExams = await this.studentExamModel.find({
         studentId: { $in: studentIds },
