@@ -7,12 +7,15 @@ import {
   PlanetDocument,
   Question,
 } from 'src/planet-sync/schemas/planet.schema';
+import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
 
 @Injectable()
 export class PlanetService {
   constructor(
     @InjectModel(Planet.name)
     private planetModel: Model<PlanetDocument>,
+    @InjectModel(Exam.name)
+    private examModel: Model<ExamDocument>,
   ) {}
 
   async findAll(): Promise<PlanetDto[]> {
@@ -24,7 +27,22 @@ export class PlanetService {
     const planets = await this.planetModel.find();
     const questions = planets.reduce((question, planet) => [ ...question, ...planet.questions ], []);
 
-    const models = questions.map((question) => {
+    let models = questions.map((question) => {
+      return question.model_id
+    });
+
+    let examModels = await this.findExamModels();
+    models.push(...examModels);
+
+    const uniqueModels = models.filter((n, i) => models.indexOf(n) === i);
+
+    return uniqueModels;
+  }
+
+  private async findExamModels(): Promise<any> {
+    const exam = await this.examModel.findOne();
+
+    let models = exam.questions.map((question) => {
       return question.model_id
     });
 
@@ -58,7 +76,7 @@ export class PlanetService {
 
   async findAllPlanetQuestions(
     modelId: string,
-  ): Promise<Question[]> {
+  ): Promise<any[]> {
 
     const aggregationResults: any[] = await this.planetModel
         .aggregate([
@@ -84,15 +102,37 @@ export class PlanetService {
     aggregationResults.forEach(result => {
       let questions = result.questions.map((question) => {
         let questionFinal = question;
+        questionFinal.id = question.id.toString();
         questionFinal.planetTitle = result.title;
         return questionFinal;
       });
       resultQuestions.push(...questions);
     });
 
-    return resultQuestions.sort(
+    let finalResult = resultQuestions.sort(
       (a, b) => a.id.localeCompare(b.id),
     );
+
+    let examQuestions = await this.findAllExamQuestions(modelId);
+    finalResult.push(...examQuestions);
+
+    return finalResult;
+  }
+
+  private async findAllExamQuestions(
+    modelId: string,
+  ): Promise<any[]> {
+    const exam = await this.examModel.findOne();
+
+    let examQuestions = exam.questions
+      .filter((question) => question.model_id == modelId)
+      .map((question) => {
+        let questionFinal: any = question;
+        questionFinal.planetTitle = 'Prova';
+        return questionFinal;
+      });
+
+    return examQuestions.sort((a, b) => a.id - b.id);
   }
 
   async findAllPlanetModels(
