@@ -163,6 +163,37 @@ export class StudentService {
       },
     };
 
+    const examResultConditions: Prisma.StudentExamResultWhereInput[] = [];
+
+    if (cfo !== undefined) {
+      examResultConditions.push({
+        axisCode: 'ES',
+        percent: { gte: cfo },
+      });
+    }
+
+    if (sea !== undefined) {
+      examResultConditions.push({
+        axisCode: 'EA',
+        percent: { gte: sea },
+      });
+    }
+
+    if (lct !== undefined) {
+      examResultConditions.push({
+        axisCode: 'LC',
+        percent: { gte: lct },
+      });
+    }
+
+    if (examResultConditions.length > 0) {
+      where.examResults = {
+        some: {
+          AND: examResultConditions,
+        },
+      };
+    }
+
     try {
       const students = await this.prisma.student.findMany({
         where,
@@ -195,7 +226,6 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      // Obter os resultados da última prova executada de aluno e retornar abaixo (cfo, sea, lct)
       const studentIds = students.map((item) => item.id);
       const currentStudentExams = await this.studentExamModel.find({
         studentId: { $in: studentIds },
@@ -203,10 +233,37 @@ export class StudentService {
       });
       const currentStudentExamIds = currentStudentExams.map((item) => item.id);
 
+      const studentExamResultWhere: Prisma.StudentExamResultWhereInput[] = [];
+
+      if (cfo !== undefined) {
+        studentExamResultWhere.push({
+          axisCode: 'ES',
+          percent: { gte: cfo },
+        });
+      }
+
+      if (sea !== undefined) {
+        studentExamResultWhere.push({
+          axisCode: 'EA',
+          percent: { gte: sea },
+        });
+      }
+
+      if (lct !== undefined) {
+        studentExamResultWhere.push({
+          axisCode: 'LC',
+          percent: { gte: lct },
+        });
+      }
+
+      studentExamResultWhere.push({
+        studentId: { in: studentIds },
+        studentExamId: { in: currentStudentExamIds },
+      });
+
       const studentExamResults = await this.prisma.studentExamResult.findMany({
         where: {
-          studentId: { in: studentIds },
-          studentExamId: { in: currentStudentExamIds },
+          OR: studentExamResultWhere,
         },
       });
 
@@ -1779,7 +1836,7 @@ export class StudentService {
       }
 
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
-      
+
       nextQuestion.previousQuestionIsCorrect = isCorrect;
       return nextQuestion;
     } else {
@@ -1798,29 +1855,27 @@ export class StudentService {
   }
 
   private applyPlanetQuestionShuffle(planetQuestion: any): any {
-    let modelIdsToShuffle = [
-      "MODEL2",
-      "MODEL4",
-      "MODEL5",
-      "MODEL10",
-      "MODEL11",
-      "MODEL13",
-      "MODEL18",
-      "MODEL19",
-      "MODEL24",
-      "MODEL25",
-      "MODEL26",
-      "MODEL28",
-      "MODEL29",
-      "MODEL31",
-      "MODEL32",
-      "MODEL34",
+    const modelIdsToShuffle = [
+      'MODEL2',
+      'MODEL4',
+      'MODEL5',
+      'MODEL10',
+      'MODEL11',
+      'MODEL13',
+      'MODEL18',
+      'MODEL19',
+      'MODEL24',
+      'MODEL25',
+      'MODEL26',
+      'MODEL28',
+      'MODEL29',
+      'MODEL31',
+      'MODEL32',
+      'MODEL34',
     ];
 
     if (modelIdsToShuffle.includes(planetQuestion.model_id)) {
-      planetQuestion.options = this.shuffleOptions(
-        planetQuestion.options,
-      );
+      planetQuestion.options = this.shuffleOptions(planetQuestion.options);
     }
 
     return planetQuestion.options;
