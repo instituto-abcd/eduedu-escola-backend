@@ -130,7 +130,7 @@ export class PlanetService {
     modelId: string,
   ): Promise<any[]> {
 
-    let finalResult = await this.cacheManager.get<any[]>('DEBUG_QUESTIONS');
+    let finalResult = await this.cacheManager.get<any[]>(`DEBUG_QUESTIONS_${modelId}`);
 
     if (!finalResult) {
 
@@ -172,7 +172,7 @@ export class PlanetService {
       let examQuestions = await this.findAllExamQuestions(modelId);
       finalResult.push(...examQuestions);
 
-      await this.cacheManager.set('DEBUG_QUESTIONS', finalResult, 0);
+      await this.cacheManager.set(`DEBUG_QUESTIONS_${modelId}`, finalResult, 0);
     }
 
     return finalResult;
