@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PlanetDto } from './dto/planet.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,6 +8,8 @@ import {
   Question,
 } from 'src/planet-sync/schemas/planet.schema';
 import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class PlanetService {
@@ -16,6 +18,7 @@ export class PlanetService {
     private planetModel: Model<PlanetDocument>,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async findAll(): Promise<PlanetDto[]> {
@@ -127,43 +130,50 @@ export class PlanetService {
     modelId: string,
   ): Promise<any[]> {
 
-    const aggregationResults: any[] = await this.planetModel
-        .aggregate([
-          {
-            $match: { 'questions.model_id': modelId },
-          },
-          {
-            $project: {
-              questions: {
-                $filter: {
-                  input: '$questions',
-                  as: 'question',
-                  cond: { $eq: ['$$question.model_id', modelId] },
-                },
-              },
-              title: true,
+    let finalResult = await this.cacheManager.get<any[]>('DEBUG_QUESTIONS');
+
+    if (!finalResult) {
+
+      const aggregationResults: any[] = await this.planetModel
+          .aggregate([
+            {
+              $match: { 'questions.model_id': modelId },
             },
-          },
-        ])
-        .exec();
+            {
+              $project: {
+                questions: {
+                  $filter: {
+                    input: '$questions',
+                    as: 'question',
+                    cond: { $eq: ['$$question.model_id', modelId] },
+                  },
+                },
+                title: true,
+              },
+            },
+          ])
+          .exec();
 
-    let resultQuestions = [];
-    aggregationResults.forEach(result => {
-      let questions = result.questions.map((question) => {
-        let questionFinal = question;
-        questionFinal.id = question.id.toString();
-        questionFinal.planetTitle = result.title;
-        return questionFinal;
+      let resultQuestions = [];
+      aggregationResults.forEach(result => {
+        let questions = result.questions.map((question) => {
+          let questionFinal = question;
+          questionFinal.id = question.id.toString();
+          questionFinal.planetTitle = result.title;
+          return questionFinal;
+        });
+        resultQuestions.push(...questions);
       });
-      resultQuestions.push(...questions);
-    });
 
-    let finalResult = resultQuestions.sort(
-      (a, b) => a.id.localeCompare(b.id),
-    );
+      finalResult = resultQuestions.sort(
+        (a, b) => a.id.localeCompare(b.id),
+      );
 
-    let examQuestions = await this.findAllExamQuestions(modelId);
-    finalResult.push(...examQuestions);
+      let examQuestions = await this.findAllExamQuestions(modelId);
+      finalResult.push(...examQuestions);
+
+      await this.cacheManager.set('DEBUG_QUESTIONS', finalResult, 0);
+    }
 
     return finalResult;
   }
