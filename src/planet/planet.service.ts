@@ -126,6 +126,15 @@ export class PlanetService {
     return planet.questions;
   }
 
+  async resetAllPlanetQuestionsCache() {
+    let models = await this.findPlanetModels();
+
+    for (let index = 0; index < models.length; index++) {
+      const modelId = models[index];
+      await this.cacheManager.del(`DEBUG_QUESTIONS_${modelId}`);
+    }
+  }
+
   async findAllPlanetQuestions(
     modelId: string,
   ): Promise<any[]> {

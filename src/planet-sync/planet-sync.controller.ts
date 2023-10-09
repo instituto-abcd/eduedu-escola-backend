@@ -38,6 +38,19 @@ export class PlanetSyncController {
     return this.planetSyncService.enqueueSyncAll();
   }
 
+  @Post('force-sync-all')
+  @ApiOperation({
+    summary: 'Força Sincronizar planetas do Firestore',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Status da operação',
+    type: SyncPlanetResponse,
+  })
+  forceSyncAll() {
+    return this.planetSyncService.handleSyncAll();
+  }
+
   @Get('sync-status')
   @ApiOperation({
     summary: 'Retorna o status da sincronização atual de planetas',
