@@ -100,7 +100,10 @@ export class StorageService {
       ...studentFiles,
     ];
 
-    await this.cacheManager.set('sync-total-files', allFiles.length, 0);
+    await this.cacheManager.set(
+      'sync-total-files',
+      allFiles.filter(file => file.metadata.contentType != 'application/x-www-form-urlencoded;charset=UTF-8').length,
+      0);
 
     for (const file of allFiles) {
       if (
