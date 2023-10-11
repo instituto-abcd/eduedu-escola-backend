@@ -9,5 +9,6 @@ export class DownloadedFile {
   fileName: string;
 }
 
-export const DownloadedFileSchema = SchemaFactory.createForClass(DownloadedFile);
+export const DownloadedFileSchema =
+  SchemaFactory.createForClass(DownloadedFile);
 DownloadedFileSchema.index({ fileName: 1 }, { unique: true });
