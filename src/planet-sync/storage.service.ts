@@ -6,14 +6,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { Model } from 'mongoose';
 import * as fs from 'fs-extra';
+import * as mime from 'mime-types';
 
 @Injectable()
 export class StorageService {
-
   constructor(
-    @InjectModel(DownloadedFile.name) private downloadedFileModel: Model<DownloadedFile>,
+    @InjectModel(DownloadedFile.name)
+    private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) {}
 
   async recoverFileURL(
     id: string | null,
@@ -21,7 +22,7 @@ export class StorageService {
     bucket: string,
     fileType: string,
   ): Promise<string | null> {
-    if (url === null || url === undefined || url == '') {
+    if (url === null || url === undefined || url === '') {
       return '';
     }
 
@@ -43,37 +44,41 @@ export class StorageService {
     }
 
     const fileServerUrl = process.env.FILE_SERVER_URL;
-    return `${fileServerUrl}/${id.replace('.mp3','').replace('.mp4','').replace('.png','').replace('.svg','')}${fileExtension}`;
+    const [fileName] = id.split('.');
+
+    return `${fileServerUrl}/${fileName}${fileExtension}`;
   }
 
-  private async getFileExtensionByFileName(bucketName: string, fileName: string) {
-    fileName = fileName.toLowerCase();
+  private async getFileExtensionByFileName(
+    bucketName: string,
+    fileName: string,
+  ) {
     const bucket = admin.storage().bucket();
+
     try {
-      const [metadata] = await bucket.file(`${bucketName}/${fileName}`).getMetadata();
+      const file = bucket.file(`${bucketName}/${fileName.toLocaleLowerCase()}`);
+      const [metadata] = await file.getMetadata();
       const contentType = metadata.contentType;
-      const extensao = contentType.split('/').pop();
-      if (extensao) {
-        return '.' + extensao.replace('+xml', '').replace('mpeg', 'mp3');
-      } else {
-        return null;
-      }
+
+      if (contentType === 'application/x-www-form-urlencoded;charset=UTF-8')
+        return;
+
+      const extension = this.getExt(contentType);
+      if (extension) return extension;
+      else return '';
     } catch (error) {
-      const extensions = [ '.svg', '.mp4', '.mp3', '.png' ];
-      for (let index = 0; index < extensions.length; index++) {
+      const extensions = ['.svg', '.mp4', '.mp3', '.png', '.json'];
+      for (const ext of extensions) {
         try {
-          const extension = extensions[index];
-          const [metadata] = await bucket.file(`${bucketName}/${fileName}${extension}`).getMetadata();
+          const [metadata] = await bucket
+            .file(`${bucketName}/${fileName}${ext}`)
+            .getMetadata();
           const contentType = metadata.contentType;
-          const extensao = contentType.split('/').pop();
-          if (extensao) {
-            return '.' + extensao.replace('+xml', '').replace('mpeg', 'mp3');
-          } else {
-            return null;
-          }
-        } catch (error) {
-          // Do Nothing      
-        }
+          const extension = this.getExt(contentType);
+
+          if (extension) return extension;
+          else return '';
+        } catch {}
       }
     }
   }
@@ -83,48 +88,63 @@ export class StorageService {
     this.createDirectoryInRoot('dist/assets-data');
     const bucket = admin.storage().bucket();
 
-    let assetsFiles = (await bucket.getFiles({prefix: 'assets'}))[0];
-    let planetsFiles = (await bucket.getFiles({prefix: 'planets'}))[0];
-    let examFiles = (await bucket.getFiles({prefix: 'exam'}))[0];
-    let studentFiles = (await bucket.getFiles({prefix: 'student'}))[0];
+    const assetsFiles = (await bucket.getFiles({ prefix: 'assets' }))[0];
+    const planetsFiles = (await bucket.getFiles({ prefix: 'planets' }))[0];
+    const examFiles = (await bucket.getFiles({ prefix: 'exam' }))[0];
+    const studentFiles = (await bucket.getFiles({ prefix: 'student' }))[0];
 
-    let allFiles = [];
-    allFiles.push(...assetsFiles);
-    allFiles.push(...planetsFiles);
-    allFiles.push(...examFiles);
-    allFiles.push(...studentFiles);
+    const allFiles = [
+      ...assetsFiles,
+      ...planetsFiles,
+      ...examFiles,
+      ...studentFiles,
+    ];
 
     await this.cacheManager.set('sync-total-files', allFiles.length, 0);
 
-    for (let fileIndex = 0; fileIndex < allFiles.length; fileIndex++) {
+    for (const file of allFiles) {
+      if (
+        file.metadata.contentType ===
+        'application/x-www-form-urlencoded;charset=UTF-8'
+      )
+        continue;
 
-      try {
-        const extension = allFiles[fileIndex].metadata.contentType.split('/').pop();
-        let fileExtension = '.' + extension.replace('+xml', '').replace('mpeg', 'mp3')
-        
-        let fileName = allFiles[fileIndex].name
+      const fileExt = this.getExt(file.metadata.contentType);
+
+      const fileName =
+        file.name
+          .replace(/\.[^/.]+$/, '')
           .replace('assets/', '')
           .replace('planets/', '')
           .replace('exam/', '')
-          .replace('student/', '')
-          .replace('.mp3','').replace('.mp4','').replace('.png','').replace('.svg','') + `${fileExtension}`;
+          .replace('student/', '') + fileExt;
 
-        await bucket.file(allFiles[fileIndex].name).download({ destination: `dist/assets-data/${fileName}` });
+      await bucket
+        .file(file.name)
+        .download({ destination: `dist/assets-data/${fileName}` });
 
-        await this.downloadedFileModel.findOneAndUpdate(
-          { fileName },
-          { fileName },
-          { upsert: true, new: true, setDefaultsOnInsert: true });
-
-      } catch (error) {
-        console.log(error);  
-      }
+      await this.downloadedFileModel.findOneAndUpdate(
+        { fileName },
+        { fileName },
+        { upsert: true, new: true, setDefaultsOnInsert: true },
+      );
     }
 
     await this.cacheManager.set('sync-current-end', new Date(), 0);
 
     console.log('Planet Sync - Download dos artefatos concluído');
+  }
 
+  async getLottie(lottieId: string) {
+    const rootPath = process.cwd();
+    const lottiePath = `${rootPath}/dist/assets-data/${lottieId}.json`;
+
+    try {
+      const lottie = await fs.readJson(lottiePath, { encoding: 'utf-8' });
+      return JSON.stringify(lottie);
+    } catch (error) {
+      throw new Error(`Erro ao ler o arquivo: ${error}`);
+    }
   }
 
   async createDirectoryInRoot(directoryName: string): Promise<void> {
@@ -139,4 +159,17 @@ export class StorageService {
     }
   }
 
+  getExt(contentType: string) {
+    const extension = mime.extension(contentType);
+    if (!extension) throw new Error(`Extensão não encontrada: ${contentType}`);
+
+    const extExceptions = [{ ext: 'mpga', replaceWith: 'mp3' }];
+
+    return (
+      '.' +
+      (extExceptions.some((e) => e.ext === extension)
+        ? extExceptions.find((e) => e.ext === extension)?.replaceWith
+        : extension)
+    );
+  }
 }
