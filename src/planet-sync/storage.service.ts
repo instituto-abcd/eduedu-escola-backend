@@ -102,8 +102,13 @@ export class StorageService {
 
     await this.cacheManager.set(
       'sync-total-files',
-      allFiles.filter(file => file.metadata.contentType != 'application/x-www-form-urlencoded;charset=UTF-8').length,
-      0);
+      allFiles.filter(
+        (file) =>
+          file.metadata.contentType !=
+          'application/x-www-form-urlencoded;charset=UTF-8',
+      ).length,
+      0,
+    );
 
     for (const file of allFiles) {
       if (
@@ -142,12 +147,24 @@ export class StorageService {
     const rootPath = process.cwd();
     const lottiePath = `${rootPath}/dist/assets-data/${lottieId}.json`;
 
+    if (process.env.ASSETS != 'LOCAL') {
+      await this.downloadLottieFile(lottieId);
+    }
+
     try {
       const lottie = await fs.readJson(lottiePath, { encoding: 'utf-8' });
       return JSON.stringify(lottie);
     } catch (error) {
       throw new Error(`Erro ao ler o arquivo: ${error}`);
     }
+  }
+
+  private async downloadLottieFile(lottieId: string): Promise<string> {
+    await this.createDirectoryInRoot('dist/assets-data');
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(`assets/${lottieId}`);
+    await file.download({ destination: `dist/assets-data/${lottieId}.json` });
+    return lottieId;
   }
 
   async createDirectoryInRoot(directoryName: string): Promise<void> {
