@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Dashboard, DashboardPerformance, Prisma, SchoolGradeEnum } from '@prisma/client';
+import {
+  Dashboard,
+  DashboardPerformance,
+  Prisma,
+  SchoolGradeEnum,
+} from '@prisma/client';
 import {
   DashboardDto,
   ExamPerformanceDto,
@@ -54,6 +59,7 @@ export class DashboardService {
           );
 
           return {
+            id: grade.id,
             name: grade.name,
             teachersCounter: grade.teachersCounter,
             schoolClassesCounter: grade.schoolClassesCounter,
@@ -101,6 +107,7 @@ export class DashboardService {
         }));
 
     return {
+      id: schoolClass.id,
       name: schoolClass.name,
       studentsCounter: schoolClass.studentsCounter,
       examPerformance,
@@ -428,10 +435,10 @@ export class DashboardService {
       include: {
         schoolClass: {
           include: {
-            schoolYear: true
-          }
-        }
-      }
+            schoolYear: true,
+          },
+        },
+      },
     });
 
     if (!schoolClassStudent) {
@@ -518,17 +525,20 @@ export class DashboardService {
           include: {
             dashboardSchoolClass: {
               include: {
-                dashboardPerformances: true
-              }
-            }
-          }
-        }
-      }
+                dashboardPerformances: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     const dashboardSchoolClass = dashboard.dashboardSchoolGrades
       .filter((item) => item.name == schoolClassStudent.schoolClass.schoolGrade)
-      .reduce((schoolClass, grade) => [ ...schoolClass, ...grade.dashboardSchoolClass ], [])
+      .reduce(
+        (schoolClass, grade) => [...schoolClass, ...grade.dashboardSchoolClass],
+        [],
+      )
       .find((item) => item.name == schoolClassStudent.schoolClass.name);
 
     for (const axisCode in axisResults) {
@@ -552,10 +562,10 @@ export class DashboardService {
       include: {
         schoolClass: {
           include: {
-            schoolYear: true
-          }
-        }
-      }
+            schoolYear: true,
+          },
+        },
+      },
     });
 
     if (!schoolClassStudent) {
@@ -642,17 +652,20 @@ export class DashboardService {
           include: {
             dashboardSchoolClass: {
               include: {
-                dashboardPerformances: true
-              }
-            }
-          }
-        }
-      }
+                dashboardPerformances: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     const dashboardSchoolClass = dashboard.dashboardSchoolGrades
       .filter((item) => item.name == schoolClassStudent.schoolClass.schoolGrade)
-      .reduce((schoolClass, grade) => [ ...schoolClass, ...grade.dashboardSchoolClass ], [])
+      .reduce(
+        (schoolClass, grade) => [...schoolClass, ...grade.dashboardSchoolClass],
+        [],
+      )
       .find((item) => item.name == schoolClassStudent.schoolClass.name);
 
     for (const axisCode in axisResults) {

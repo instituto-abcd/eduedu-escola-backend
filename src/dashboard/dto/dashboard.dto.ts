@@ -9,6 +9,7 @@ export class PlanetPerformanceDto {
 }
 
 export class SchoolClassDto {
+  id: string;
   name: string;
   studentsCounter: number;
   examPerformance: ExamPerformanceDto[];
@@ -16,6 +17,7 @@ export class SchoolClassDto {
 }
 
 export class SchoolGradeDto {
+  id: string;
   name: string;
   teachersCounter: number;
   schoolClassesCounter: number;
