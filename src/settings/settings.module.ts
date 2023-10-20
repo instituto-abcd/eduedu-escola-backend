@@ -22,6 +22,7 @@ import { EmailService } from 'src/email/email.service';
     DateApiService,
     ValidationUtilsService,
     EmailService,
+    ValidationUtilsService,
   ],
 })
 export class SettingsModule {}

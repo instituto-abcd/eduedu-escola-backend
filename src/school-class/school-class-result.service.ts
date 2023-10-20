@@ -647,60 +647,65 @@ export class SchoolClassResultService {
     return Math.round(value);
   }
 
-  async getAllStudentsIdealAxis(
+  async findIdealStudentsByClassId(
     idSchoolClass: string,
   ): Promise<IdealStudentsDto[]> {
-    try {
-      const schoolClass = await this.prisma.schoolClass.findFirst({
-        where: { id: idSchoolClass },
-      });
+    const idealStudents: IdealStudentsDto[] = [];
 
-      let axisCode = ['ES', 'EA', 'LC'];
-      if (schoolClass.schoolGrade == SchoolGradeEnum.CHILDREN) {
-        axisCode = ['EA', 'LC'];
-      }
+    const schoolClass = await this.prisma.schoolClass.findFirst({
+      where: { id: idSchoolClass },
+    });
 
-      const studentExamResults = await this.prisma.studentExamResult.findMany({
-        where: {
-          axisCode: {
-            in: axisCode,
+    let axisCode = ['ES', 'EA', 'LC'];
+    if (schoolClass.schoolGrade === SchoolGradeEnum.CHILDREN) {
+      axisCode = ['EA', 'LC'];
+    }
+
+    const students = await this.prisma.student.findMany({
+      where: {
+        schoolClasses: {
+          some: {
+            schoolClassId: idSchoolClass,
           },
-          level: 'IDEAL',
-          student: {
-            schoolClasses: {
-              some: {
-                schoolClassId: idSchoolClass,
-              },
+        },
+      },
+      include: {
+        examResults: {
+          where: {
+            axisCode: {
+              in: axisCode,
             },
           },
+          orderBy: {
+            examDate: 'desc',
+          },
+          distinct: ['axisCode'],
         },
-        include: {
-          student: true,
-        },
-        orderBy: {
-          examDate: 'desc',
-        },
-      });
+      },
+    });
 
-      const uniqueStudents = studentExamResults.reduce((acc, result) => {
-        const existingStudent = acc.find(
-          (student) => student.studentId === result.studentId,
+    students.forEach((student) => {
+      if (student.examResults.length === axisCode.length) {
+        const lastExamDates = student.examResults.map(
+          (result) => result.examDate,
         );
-        if (!existingStudent) {
-          acc.push({
-            studentId: result.studentId,
-            name: result.student.name ?? '',
-            lastExamDate: result.examDate,
+
+        const isIdeal = student.examResults.every(
+          (result) => result.level === 'IDEAL',
+        );
+
+        if (isIdeal) {
+          idealStudents.push({
+            studentId: student.id,
+            name: student.name,
+            lastExamDate: new Date(
+              Math.max(...lastExamDates.map((date) => date.getTime())),
+            ),
           });
         }
-        return acc;
-      }, []);
+      }
+    });
 
-      return uniqueStudents;
-    } catch (error) {
-      throw new NotFoundException(
-        `Failed to get students for school class ${idSchoolClass}`,
-      );
-    }
+    return idealStudents;
   }
 }

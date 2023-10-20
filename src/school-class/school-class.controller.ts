@@ -361,6 +361,6 @@ export class SchoolClassController {
   async getAllStudentsIdealAxis(
     @Param('id') id: string,
   ): Promise<IdealStudentsDto[]> {
-    return await this.schoolClassResultService.getAllStudentsIdealAxis(id);
+    return await this.schoolClassResultService.findIdealStudentsByClassId(id);
   }
 }

@@ -9,17 +9,17 @@ import { StorageService } from './storage.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
-import { Queue, Job } from 'bull';
+import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 
 @Injectable()
 export class PlanetSyncService {
-
   constructor(
     @InjectModel(Planet.name) private planetModel: Model<Planet>,
     @InjectModel(PlanetSync.name) private planetSyncModel: Model<PlanetSync>,
-    @InjectModel(DownloadedFile.name) private downloadedFileModel: Model<DownloadedFile>,
+    @InjectModel(DownloadedFile.name)
+    private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectQueue('planet-sync') private readonly planetSyncQueue: Queue,
     private readonly firestoreService: FirestoreService,
@@ -58,59 +58,76 @@ export class PlanetSyncService {
   }
 
   async getPlanetSyncStatus(): Promise<any> {
+    const empty = [undefined, null];
+    const totalFiles = empty.includes(
+      await this.cacheManager.get('sync-total-files'),
+    )
+      ? 0
+      : await this.cacheManager.get('sync-total-files');
 
-    let empty = [undefined, null];
-    let totalFiles = empty.includes(await this.cacheManager.get('sync-total-files')) ? 0 :
-      await this.cacheManager.get('sync-total-files');
+    const syncCurrentStart = (await this.cacheManager.get(
+      'sync-current-start',
+    )) as Date;
+    const syncCurrentEnd = (await this.cacheManager.get(
+      'sync-current-end',
+    )) as Date;
 
-    let syncCurrentStart = (await this.cacheManager.get('sync-current-start')) as Date;
-    let syncCurrentEnd = (await this.cacheManager.get('sync-current-end')) as Date;
-    
-    let duration = "00:00:00";
+    let duration = '00:00:00';
     if (syncCurrentStart != null) {
       if (syncCurrentEnd != null) {
-        duration = this.convertMsToTime(syncCurrentEnd.getTime() - syncCurrentStart.getTime());
+        duration = this.convertMsToTime(
+          syncCurrentEnd.getTime() - syncCurrentStart.getTime(),
+        );
       } else {
-        duration = this.convertMsToTime(new Date().getTime() - syncCurrentStart.getTime());
+        duration = this.convertMsToTime(
+          new Date().getTime() - syncCurrentStart.getTime(),
+        );
       }
     }
 
-    let syncedFiles = await this.downloadedFileModel.countDocuments();
-    let percent = +totalFiles > 0 ? (+syncedFiles / +totalFiles) * 100 : 0;
+    const syncedFiles = await this.downloadedFileModel.countDocuments();
+    const percent = +totalFiles > 0 ? (+syncedFiles / +totalFiles) * 100 : 0;
 
     return {
       totalFiles,
       syncedFiles,
       percent,
-      duration
+      duration,
     };
   }
 
   async enqueueSyncAll() {
-    let start = new Date();
+    const start = new Date();
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
   }
 
   async handleSyncAll() {
-    console.log('Planet Sync - Iniciando sincronização de documentos do firestore');
-    let planetsFromFirestore = await this.firestoreService.getPlanets();
+    console.log(
+      'Planet Sync - Iniciando sincronização de documentos do firestore',
+    );
+    const planetsFromFirestore = await this.firestoreService.getPlanets();
 
-    let planetsInsertedOrUpdated = [];
+    const planetsInsertedOrUpdated = [];
     for (let index = 0; index < planetsFromFirestore.length; index++) {
-      let planet = await this.parsePlanetOriginToPlanet(planetsFromFirestore[index]);
+      const planet = await this.parsePlanetOriginToPlanet(
+        planetsFromFirestore[index],
+      );
 
-      await this.planetModel.findOneAndUpdate(
-        { id: planet.id },
-        planet,
-        { upsert: true, new: true }
-      ).exec();
+      await this.planetModel
+        .findOneAndUpdate({ id: planet.id }, planet, {
+          upsert: true,
+          new: true,
+        })
+        .exec();
 
       planetsInsertedOrUpdated.push(planet);
     }
 
-    console.log('Planet Sync - Sincronização de documentos do firestore concluída');
+    console.log(
+      'Planet Sync - Sincronização de documentos do firestore concluída',
+    );
     return {
       success: true,
       planetsSynced: planetsInsertedOrUpdated.length,
@@ -216,10 +233,14 @@ export class PlanetSyncService {
           updated_at: questionOrigin.updated_at,
           options: [],
           titles: [],
-          rules: questionOrigin.rules
+          rules: questionOrigin.rules,
         } as any;
 
-        for (let optionIndex = 0; optionIndex < questionOrigin.options.length; optionIndex++) {
+        for (
+          let optionIndex = 0;
+          optionIndex < questionOrigin.options.length;
+          optionIndex++
+        ) {
           const optionOrigin = questionOrigin.options[optionIndex];
           const option = {
             sound_id: optionOrigin.sound_id,
@@ -234,17 +255,21 @@ export class PlanetSyncService {
               optionOrigin.image_id,
               optionOrigin.image_url,
               'assets',
-              'image'
+              'image',
             ),
             description: optionOrigin.description,
             position: optionOrigin.position,
             isCorrect: optionOrigin.isCorrect,
           } as any;
-          
+
           question.options.push(option);
         }
 
-        for (let titleIndex = 0; titleIndex < questionOrigin.titles.length; titleIndex++) {
+        for (
+          let titleIndex = 0;
+          titleIndex < questionOrigin.titles.length;
+          titleIndex++
+        ) {
           const titleOrigin = questionOrigin.titles[titleIndex];
           const title = {
             file_id: titleOrigin.file_id,
@@ -252,7 +277,7 @@ export class PlanetSyncService {
               titleOrigin.file_id,
               titleOrigin.file_url,
               'assets',
-              'unknown'
+              'unknown',
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
@@ -290,24 +315,23 @@ export class PlanetSyncService {
   private padTo2Digits(num: number) {
     return num.toString().padStart(2, '0');
   }
-  
+
   private convertMsToTime(milliseconds: number) {
     let seconds = Math.floor(milliseconds / 1000);
     let minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-  
+
     seconds = seconds % 60;
     minutes = minutes % 60;
-  
-    return `${this.padTo2Digits(hours)}:${this.padTo2Digits(minutes)}:${this.padTo2Digits(
-      seconds,
-    )}`;
+
+    return `${this.padTo2Digits(hours)}:${this.padTo2Digits(
+      minutes,
+    )}:${this.padTo2Digits(seconds)}`;
   }
 }
 
 @Processor('planet-sync')
 export class PlanetSyncProcessor {
-
   constructor(
     private readonly planetSyncService: PlanetSyncService,
     private readonly storageService: StorageService,
@@ -316,29 +340,31 @@ export class PlanetSyncProcessor {
   ) {}
 
   @Process('planet-job')
-  async processPlanetSync(job: Job) {
+  async processPlanetSync() {
     try {
       console.log('Planet Sync - Iniciando sincronização');
 
-      let promises = [];
+      const promises = [];
 
       promises.push(this.planetSyncService.handleSyncAll());
       if (process.env.ASSETS == 'LOCAL') {
-        promises.push(this.storageService.downloadFiles())
+        promises.push(this.storageService.downloadFiles());
       }
 
-      let start = new Date();
+      const start = new Date();
 
       await Promise.all(promises);
-      let end = new Date();
+      const end = new Date();
 
-      let duration = this.dateFormatterUtilsService.convertMsToTime(end.getTime() - start.getTime());
+      const duration = this.dateFormatterUtilsService.convertMsToTime(
+        end.getTime() - start.getTime(),
+      );
 
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
       console.log('Planet Sync - Duração Sincronização: ' + duration);
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
   }
 }

@@ -9,7 +9,10 @@ import { PlanetSync, PlanetSyncSchema } from './schemas/sync-list.schema';
 import { StorageService } from './storage.service';
 import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from 'src/common/utils/utils.module';
-import { DownloadedFile, DownloadedFileSchema } from './schemas/download-file.schema';
+import {
+  DownloadedFile,
+  DownloadedFileSchema,
+} from './schemas/download-file.schema';
 
 @Module({
   imports: [
@@ -18,13 +21,17 @@ import { DownloadedFile, DownloadedFileSchema } from './schemas/download-file.sc
       { name: PlanetSync.name, schema: PlanetSyncSchema },
       { name: DownloadedFile.name, schema: DownloadedFileSchema },
     ]),
-    BullModule.registerQueueAsync(
-      { name: 'planet-sync' },
-    ),
+    BullModule.registerQueueAsync({ name: 'planet-sync' }),
     UtilsModule,
   ],
   controllers: [PlanetSyncController],
-  providers: [PlanetSyncService, PrismaService, FirestoreService, StorageService, PlanetSyncProcessor ],
-  exports: [PlanetSyncModule, FirestoreService, StorageService, BullModule ],
+  providers: [
+    PlanetSyncService,
+    PrismaService,
+    FirestoreService,
+    StorageService,
+    PlanetSyncProcessor,
+  ],
+  exports: [PlanetSyncModule, FirestoreService, StorageService, BullModule],
 })
 export class PlanetSyncModule {}
