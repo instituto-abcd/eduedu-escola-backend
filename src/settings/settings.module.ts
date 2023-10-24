@@ -9,6 +9,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 import { DateApiService } from '../common/services/date-api.service';
 import { EmailService } from 'src/email/email.service';
+import { UtilsModule } from '../common/utils/utils.module';
 
 @Module({
   controllers: [SettingsController],
@@ -24,5 +25,6 @@ import { EmailService } from 'src/email/email.service';
     EmailService,
     ValidationUtilsService,
   ],
+  imports: [UtilsModule],
 })
 export class SettingsModule {}

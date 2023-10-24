@@ -1,10 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  Dashboard,
-  DashboardPerformance,
-  Prisma,
-  SchoolGradeEnum,
-} from '@prisma/client';
+import { Prisma, SchoolGradeEnum } from '@prisma/client';
 import {
   DashboardDto,
   ExamPerformanceDto,
@@ -16,12 +11,14 @@ import { EduException } from '../common/exceptions/edu-school.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import { DateApiService } from '../common/services/date-api.service';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly externalApiService: DateApiService,
+    private readonly performanceResultUtilsService: PerformanceResultUtilsService,
   ) {}
 
   private logger = new Logger(DashboardService.name);
@@ -90,12 +87,22 @@ export class DashboardService {
       throw new EduException('INVALID_DATA');
     }
 
+    const schoolClassEntity = await this.prisma.schoolClass.findFirst({
+      where: { id: schoolClass.schoolGrade },
+    });
+
     const examPerformance: ExamPerformanceDto[] =
       schoolClass.dashboardPerformances
         .filter((performance) => performance.type === 'EXAM')
         .map((performance) => ({
           axis: performance.axis,
-          percentage: performance.percentage,
+          percentage: Math.round(performance.result),
+          color:
+            this.performanceResultUtilsService.getStudentClassificationColor(
+              this.mapSchoolGradeToNumeric(schoolClassEntity.schoolGrade),
+              performance.axis,
+              performance.level,
+            ),
         }));
 
     const planetPerformance: PlanetPerformanceDto[] =
@@ -103,7 +110,7 @@ export class DashboardService {
         .filter((performance) => performance.type === 'PLANET')
         .map((performance) => ({
           axis: performance.axis,
-          percentage: performance.percentage,
+          percentage: Math.round(performance.result),
         }));
 
     return {
@@ -113,6 +120,21 @@ export class DashboardService {
       examPerformance,
       planetPerformance,
     };
+  }
+
+  private mapSchoolGradeToNumeric(schoolGradeYear: SchoolGradeEnum): number {
+    switch (schoolGradeYear) {
+      case SchoolGradeEnum.CHILDREN:
+        return 0;
+      case SchoolGradeEnum.FIRST_GRADE:
+        return 1;
+      case SchoolGradeEnum.SECOND_GRADE:
+        return 2;
+      case SchoolGradeEnum.THIRD_GRADE:
+        return 3;
+      default:
+        return 0;
+    }
   }
 
   async createSchoolYear(id: string, schoolYear: number): Promise<void> {
@@ -463,6 +485,7 @@ export class DashboardService {
       select: {
         axisCode: true,
         percent: true,
+        level: true,
       },
     });
 
@@ -477,6 +500,7 @@ export class DashboardService {
       }
       axisResults[result.axisCode].totalPercentage += Number(result.percent);
       axisResults[result.axisCode].count++;
+      axisResults[result.axisCode].level = result.level;
     });
 
     const updateOrCreatePerformanceExam = async (
@@ -484,6 +508,7 @@ export class DashboardService {
       schoolClassId,
       totalPercentage: number,
       type: string,
+      level: string,
     ) => {
       const existingRecord = await this.prisma.dashboardPerformance.findFirst({
         where: {
@@ -498,6 +523,7 @@ export class DashboardService {
         type: 'EXAM',
         result: totalPercentage,
         dashboardSchoolClassId: schoolClassId,
+        level: level,
       };
 
       if (existingRecord) {
@@ -544,12 +570,16 @@ export class DashboardService {
     for (const axisCode in axisResults) {
       const axisInfo = axisResults[axisCode];
       const totalPercentage = axisInfo.totalPercentage / axisInfo.count;
-      await updateOrCreatePerformanceExam(
-        axisCode,
-        dashboardSchoolClass.id,
-        totalPercentage,
-        type,
-      );
+
+      if (dashboardSchoolClass != undefined) {
+        await updateOrCreatePerformanceExam(
+          axisCode,
+          dashboardSchoolClass.id,
+          totalPercentage,
+          type,
+          axisInfo.level,
+        );
+      }
     }
   }
 

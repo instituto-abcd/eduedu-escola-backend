@@ -1,6 +1,7 @@
 export class ExamPerformanceDto {
   axis: string;
   percentage: string;
+  color: string;
 }
 
 export class PlanetPerformanceDto {
