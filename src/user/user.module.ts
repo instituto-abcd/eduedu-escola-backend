@@ -8,12 +8,11 @@ import { AuthService } from 'src/auth/auth.service';
 import { DateApiService } from 'src/common/services/date-api.service';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { EmailService } from 'src/email/email.service';
+import { UtilsModule } from '../common/utils/utils.module';
 
 @Module({
   controllers: [UserController],
-  exports: [
-    ValidationUtilsService,
-  ],
+  exports: [ValidationUtilsService],
   providers: [
     UserService,
     PrismaService,
@@ -24,5 +23,6 @@ import { EmailService } from 'src/email/email.service';
     DashboardService,
     EmailService,
   ],
+  imports: [UtilsModule],
 })
 export class UserModule {}

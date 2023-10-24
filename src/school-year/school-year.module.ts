@@ -4,6 +4,7 @@ import { SchoolYearService } from './school-year.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateApiService } from '../common/services/date-api.service';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { UtilsModule } from '../common/utils/utils.module';
 
 @Module({
   controllers: [SchoolYearController],
@@ -13,5 +14,6 @@ import { DashboardService } from '../dashboard/dashboard.service';
     DateApiService,
     DashboardService,
   ],
+  imports: [UtilsModule],
 })
 export class SchoolYearModule {}
