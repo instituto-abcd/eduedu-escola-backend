@@ -51,6 +51,10 @@ export class SchoolClassResultService {
       },
     });
 
+    if (students.length === 0) {
+      return result; // No students found
+    }
+
     const studentIds = students.map((item) => item.id);
     const studentExams = await this.studentExamModel.find({
       studentId: { $in: studentIds },
@@ -76,7 +80,7 @@ export class SchoolClassResultService {
         );
         const studentExamResult = student.examResults.find(
           (item) =>
-            item.studentExamId == studentExam.id && item.axisCode == axisCode,
+            item.studentExamId == studentExam?.id && item.axisCode == axisCode,
         );
         const classificationText =
           this.performanceResultUtilsService.getStudentClassificationText(
