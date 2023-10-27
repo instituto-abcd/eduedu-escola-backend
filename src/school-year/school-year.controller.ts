@@ -67,11 +67,12 @@ export class SchoolYearController {
     description: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.message,
   })
   async getAllSchoolYears(): Promise<SchoolYearSummary[]> {
-    try {
-      return await this.schoolYearService.findAllSchoolYears();
-    } catch (error) {
-      throw new EduException('UNKNOWN_ERROR');
-    }
+    return await this.schoolYearService.findAllSchoolYears();
+    // try {
+    //
+    // } catch (error) {
+    //   throw new EduException('UNKNOWN_ERROR');
+    // }
   }
 
   @Get('current')
