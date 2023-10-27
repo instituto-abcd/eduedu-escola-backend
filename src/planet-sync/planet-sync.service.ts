@@ -59,6 +59,7 @@ export class PlanetSyncService {
 
   async getPlanetSyncStatus(): Promise<any> {
     const empty = [undefined, null];
+    const running = await this.cacheManager.get('sync-running');
     const totalFiles = empty.includes(
       await this.cacheManager.get('sync-total-files'),
     )
@@ -93,6 +94,7 @@ export class PlanetSyncService {
       syncedFiles,
       percent,
       duration,
+      running,
     };
   }
 
@@ -344,6 +346,7 @@ export class PlanetSyncProcessor {
     try {
       console.log('Planet Sync - Iniciando sincronização');
 
+      await this.cacheManager.set('sync-running', true);
       const promises = [];
 
       promises.push(this.planetSyncService.handleSyncAll());
@@ -359,6 +362,8 @@ export class PlanetSyncProcessor {
       const duration = this.dateFormatterUtilsService.convertMsToTime(
         end.getTime() - start.getTime(),
       );
+
+      await this.cacheManager.set('sync-running', false);
 
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
