@@ -59,7 +59,7 @@ export class PlanetSyncService {
 
   async getPlanetSyncStatus(): Promise<any> {
     const empty = [undefined, null];
-    const running = await this.cacheManager.get('sync-running');
+    const running = empty.includes(await this.cacheManager.get('sync-running'));
     const totalFiles = empty.includes(
       await this.cacheManager.get('sync-total-files'),
     )
