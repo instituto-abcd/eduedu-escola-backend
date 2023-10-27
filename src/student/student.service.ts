@@ -163,37 +163,6 @@ export class StudentService {
       },
     };
 
-    const examResultConditions: Prisma.StudentExamResultWhereInput[] = [];
-
-    if (cfo !== undefined) {
-      examResultConditions.push({
-        axisCode: 'ES',
-        percent: { gte: cfo },
-      });
-    }
-
-    if (sea !== undefined) {
-      examResultConditions.push({
-        axisCode: 'EA',
-        percent: { gte: sea },
-      });
-    }
-
-    if (lct !== undefined) {
-      examResultConditions.push({
-        axisCode: 'LC',
-        percent: { gte: lct },
-      });
-    }
-
-    if (examResultConditions.length > 0) {
-      where.examResults = {
-        some: {
-          AND: examResultConditions,
-        },
-      };
-    }
-
     try {
       const students = await this.prisma.student.findMany({
         where,
@@ -202,6 +171,17 @@ export class StudentService {
             include: {
               schoolClass: true,
             },
+          },
+          examResults: {
+            where: {
+              axisCode: {
+                in: ['LC', 'EA', 'ES'],
+              },
+            },
+            orderBy: {
+              examDate: 'desc',
+            },
+            take: 3,
           },
         },
         skip: (pageNumber - 1) * pageSize,
@@ -226,60 +206,20 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
-      const studentIds = students.map((item) => item.id);
-      const currentStudentExams = await this.studentExamModel.find({
-        studentId: { $in: studentIds },
-        lastExam: true,
-      });
-      const currentStudentExamIds = currentStudentExams.map((item) => item.id);
-
-      const studentExamResultWhere: Prisma.StudentExamResultWhereInput[] = [];
-
-      if (cfo !== undefined) {
-        studentExamResultWhere.push({
-          axisCode: 'ES',
-          percent: { gte: cfo },
-        });
-      }
-
-      if (sea !== undefined) {
-        studentExamResultWhere.push({
-          axisCode: 'EA',
-          percent: { gte: sea },
-        });
-      }
-
-      if (lct !== undefined) {
-        studentExamResultWhere.push({
-          axisCode: 'LC',
-          percent: { gte: lct },
-        });
-      }
-
-      studentExamResultWhere.push({
-        studentId: { in: studentIds },
-        studentExamId: { in: currentStudentExamIds },
-      });
-
-      const studentExamResults = await this.prisma.studentExamResult.findMany({
-        where: {
-          OR: studentExamResultWhere,
-        },
-      });
-
       const responseStudents: StudentResponseDto[] = students.map((student) => {
-        const cfoResult = studentExamResults.filter(
+        const cfoResult = student.examResults.find(
           (result) => result.studentId == student.id && result.axisCode == 'ES',
         );
-        const seaResult = studentExamResults.filter(
+        const seaResult = student.examResults.find(
           (result) => result.studentId == student.id && result.axisCode == 'EA',
         );
-        const lctResult = studentExamResults.filter(
+        const lctResult = student.examResults.find(
           (result) => result.studentId == student.id && result.axisCode == 'LC',
         );
-        const cfo = cfoResult.length > 0 ? cfoResult[0].percent : 0;
-        const sea = seaResult.length > 0 ? seaResult[0].percent : 0;
-        const lct = lctResult.length > 0 ? lctResult[0].percent : 0;
+
+        const cfo = cfoResult ? cfoResult.percent : 0;
+        const sea = seaResult ? seaResult.percent : 0;
+        const lct = lctResult ? lctResult.percent : 0;
 
         return {
           id: student.id,
@@ -289,23 +229,38 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo:
-            cfoResult.length > 0
-              ? Math.round(+cfo).toString().concat('%')
-              : '-',
-          sea:
-            seaResult.length > 0
-              ? Math.round(+sea).toString().concat('%')
-              : '-',
-          lct:
-            lctResult.length > 0
-              ? Math.round(+lct).toString().concat('%')
-              : '-',
+          cfo: cfo ? Math.round(cfo.toNumber()).toString().concat('%') : '0%',
+          sea: sea ? Math.round(sea.toNumber()).toString().concat('%') : '0%',
+          lct: lct ? Math.round(lct.toNumber()).toString().concat('%') : '0%',
           status: student.status,
         };
       });
 
-      return new PaginationResponse(responseStudents, pagination);
+      const filteredStudents = responseStudents.filter((student) => {
+        if (cfo !== undefined && cfo !== '') {
+          const cfoValue = parseFloat(student.cfo.replace('%', ''));
+          if (cfoValue < cfo) {
+            return false;
+          }
+        }
+
+        if (sea !== undefined && sea !== '') {
+          const seaValue = parseFloat(student.sea.replace('%', ''));
+          if (seaValue < sea) {
+            return false;
+          }
+        }
+
+        if (lct !== undefined && lct !== '') {
+          const lctValue = parseFloat(student.lct.replace('%', ''));
+          if (lctValue < lct) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      return new PaginationResponse(filteredStudents, pagination);
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
     }
