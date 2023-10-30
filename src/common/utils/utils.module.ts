@@ -1,8 +1,9 @@
-import { Module } from "@nestjs/common";
-import { DateFormatterUtilsService } from "./date-formatter-utils.service";
+import { Module } from '@nestjs/common';
+import { DateFormatterUtilsService } from './date-formatter-utils.service';
+import { PerformanceResultUtilsService } from './performance-result-utils.service';
 
 @Module({
-    providers: [DateFormatterUtilsService],
-    exports: [DateFormatterUtilsService]
+  providers: [DateFormatterUtilsService, PerformanceResultUtilsService],
+  exports: [DateFormatterUtilsService, PerformanceResultUtilsService],
 })
-export class UtilsModule { }
+export class UtilsModule {}

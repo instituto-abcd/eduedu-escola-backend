@@ -13,7 +13,7 @@ import {
 import { StudentExamService } from '../student/studentExam.service';
 import { SchoolClassResultService } from './school-class-result.service';
 import { StudentModule } from 'src/student/student.module';
-import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
+import { UtilsModule } from '../common/utils/utils.module';
 
 @Module({
   imports: [
@@ -21,8 +21,8 @@ import { PerformanceResultUtilsService } from '../common/utils/performance-resul
       { name: StudentExam.name, schema: StudentExamSchema },
     ]),
     StudentModule,
+    UtilsModule,
   ],
-  exports: [PerformanceResultUtilsService],
   controllers: [SchoolClassController],
   providers: [
     SchoolClassService,
@@ -32,7 +32,6 @@ import { PerformanceResultUtilsService } from '../common/utils/performance-resul
     ValidationUtilsService,
     StudentExamService,
     SchoolClassResultService,
-    PerformanceResultUtilsService,
   ],
 })
 export class SchoolClassModule {}

@@ -74,7 +74,7 @@ import { LottieModule } from './lottie/lottie.module';
     JwtEduModule,
     SchoolClassModule,
     PlanetSyncModule,
-    RabbitMQModule,
+    // RabbitMQModule,
     StudentModule,
     SettingsModule,
     DashboardModule,
