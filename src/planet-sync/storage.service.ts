@@ -56,7 +56,13 @@ export class StorageService {
     const bucket = admin.storage().bucket();
 
     try {
-      const file = bucket.file(`${bucketName}/${fileName.toLocaleLowerCase()}`);
+
+      const [files] = await bucket.getFiles({
+        prefix: `${bucketName}/${fileName}`,
+      });
+  
+      const file = files.find((arquivo) => arquivo.name === `${bucketName}/${fileName}`);
+
       const [metadata] = await file.getMetadata();
       const contentType = metadata.contentType;
 
@@ -67,6 +73,9 @@ export class StorageService {
       if (extension) return extension;
       else return '';
     } catch (error) {
+      console.log(`Erro ao obter extensão do arquivo ${fileName}, no bucket ${bucketName}`);
+      console.log('----------------------------------------------------------------------------');
+
       const extensions = ['.svg', '.mp4', '.mp3', '.png', '.json'];
       for (const ext of extensions) {
         try {
