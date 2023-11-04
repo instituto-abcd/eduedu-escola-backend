@@ -21,7 +21,7 @@ export class StorageService {
     
   }
 
-  private async initialize(): Promise<any> {
+  async initialize(): Promise<any> {
     const bucket = admin.storage().bucket();
     const assetsFiles = (await bucket.getFiles({ prefix: 'assets' }))[0];
     const planetsFiles = (await bucket.getFiles({ prefix: 'planets' }))[0];
@@ -76,10 +76,6 @@ export class StorageService {
     fileName: string,
   ) {
     const bucket = admin.storage().bucket();
-
-    if (this.files && this.files.length == 0) {
-      await this.initialize();
-    }
 
     try {
       const file = await this.files.find((file) => file.name == `${bucketName}/${fileName}`);

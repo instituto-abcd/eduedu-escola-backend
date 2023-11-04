@@ -350,6 +350,8 @@ export class PlanetSyncProcessor {
       await this.cacheManager.set('sync-running', true);
       const promises = [];
 
+      await this.storageService.initialize();
+
       promises.push(this.planetSyncService.handleSyncAll());
       if (process.env.ASSETS == 'LOCAL') {
         promises.push(this.storageService.downloadFiles());
