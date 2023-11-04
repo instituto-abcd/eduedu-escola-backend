@@ -1764,8 +1764,11 @@ export class StudentService {
     questionAnswered =
       this.studentPlanetExecution.handleCustomQuestion(questionAnswered);
 
+    answersPlanet =
+      this.studentPlanetExecution.interceptCustomAnswer(answersPlanet, questionAnswered);
+      
     const skipVerify = questionAnswered.options.every((option) => {
-      return option.position === null && !option.isCorrect;
+      return (option.position === null && !option.isCorrect) || !option.isCorrect;
     });
 
     if (

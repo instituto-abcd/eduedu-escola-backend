@@ -1,9 +1,44 @@
 import { Injectable } from "@nestjs/common";
 import { QuestionPlanentDto } from "src/exam/dto/question-planet.dto";
+import { AnswersPlanet } from "./schemas/studentExam.schema";
 
 @Injectable()
 export class StudentPlanetExecutionService {
   constructor() { }
+
+  interceptCustomAnswer(
+    answersPlanet: AnswersPlanet,
+    questionAnswered: QuestionPlanentDto,
+  ): AnswersPlanet {
+    switch (questionAnswered.model_id) {
+      case "MODEL27":
+        return this.interceptCustomAnswer_MODEL27(answersPlanet, questionAnswered);
+      case "MODEL14":
+        return this.interceptCustomAnswer_MODEL14(answersPlanet, questionAnswered);
+      default:
+        return answersPlanet;
+    }
+  }
+
+  private interceptCustomAnswer_MODEL14(
+    answersPlanet: AnswersPlanet,
+    questionAnswered: QuestionPlanentDto,
+  ): AnswersPlanet {
+    const hasAnswer = answersPlanet.optionsAnswered.length > 0
+    
+    let positionAnswer = hasAnswer ? answersPlanet.optionsAnswered[0].positionAnswer : 0;
+    answersPlanet.optionsAnswered = hasAnswer ? questionAnswered.options.filter(item => item.position == positionAnswer) : [];
+    
+    return answersPlanet;
+  }
+
+  private interceptCustomAnswer_MODEL27(
+    answersPlanet: AnswersPlanet,
+    questionAnswered: QuestionPlanentDto,
+  ): AnswersPlanet {
+    answersPlanet.optionsAnswered = questionAnswered.options;
+    return answersPlanet;
+  }
 
   handleCustomQuestion(
     questionAnswered: QuestionPlanentDto,
@@ -12,7 +47,7 @@ export class StudentPlanetExecutionService {
       case "MODEL19":
         return this.handleQuestionAnswered_MODEL19(questionAnswered);
       case "MODEL14":
-        return this.handleQuestionAnswered_MODEL14(questionAnswered);    
+        return this.handleQuestionAnswered_MODEL14(questionAnswered);
       default:
         return questionAnswered;
     }
@@ -72,6 +107,7 @@ export class StudentPlanetExecutionService {
     }
 
     questionAnswered.options = options;
+    questionAnswered.orderedAnswer = questionAnswered.options.every(item => item.isCorrect);
 
     return questionAnswered;
   }
