@@ -45,6 +45,8 @@ export class ExamService {
   }
 
   private async handleFileURLs(exams: IExam[]): Promise<IExam[]> {
+    await this.storageService.initialize();
+
     const promises = exams.map(async (exam) => {
       const newQuestions = exam.questions.map(async (question) => {
         const newOptions = question.options.map(async (option) => {
