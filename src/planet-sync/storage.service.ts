@@ -10,11 +10,33 @@ import * as mime from 'mime-types';
 
 @Injectable()
 export class StorageService {
+  
+  private files: any[] = [];
+
   constructor(
     @InjectModel(DownloadedFile.name)
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) {
+    
+  }
+
+  private async initialize(): Promise<any> {
+    const bucket = admin.storage().bucket();
+    const assetsFiles = (await bucket.getFiles({ prefix: 'assets' }))[0];
+    const planetsFiles = (await bucket.getFiles({ prefix: 'planets' }))[0];
+    const examFiles = (await bucket.getFiles({ prefix: 'exam' }))[0];
+    const studentFiles = (await bucket.getFiles({ prefix: 'student' }))[0];
+
+    const allFiles = [
+      ...assetsFiles,
+      ...planetsFiles,
+      ...examFiles,
+      ...studentFiles,
+    ];
+
+    this.files = allFiles;
+  }
 
   async recoverFileURL(
     id: string | null,
@@ -55,13 +77,12 @@ export class StorageService {
   ) {
     const bucket = admin.storage().bucket();
 
-    try {
+    if (this.files && this.files.length == 0) {
+      await this.initialize();
+    }
 
-      const [files] = await bucket.getFiles({
-        prefix: `${bucketName}/${fileName.toLocaleLowerCase()}`,
-      });
-  
-      const file = files.find((arquivo) => arquivo.name === `${bucketName}/${fileName.toLocaleLowerCase()}`);
+    try {
+      const file = await this.files.find((file) => file.name == `${bucketName}/${fileName}`);
 
       const [metadata] = await file.getMetadata();
       const contentType = metadata.contentType;

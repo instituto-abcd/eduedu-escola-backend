@@ -49,13 +49,13 @@ export class ExamService {
       const newQuestions = exam.questions.map(async (question) => {
         const newOptions = question.options.map(async (option) => {
           option.image_url = await this.storageService.recoverFileURL(
-            option.image_name,
+            option.image_name.toLocaleLowerCase(),
             option.image_url,
             'exam',
             'image',
           );
           option.sound_url = await this.storageService.recoverFileURL(
-            option.sound_name,
+            option.sound_name.toLocaleLowerCase(),
             option.sound_url,
             'exam',
             'sound',
@@ -68,7 +68,7 @@ export class ExamService {
 
         const newTitles = question.titles.map(async (title) => {
           title.file_url = await this.storageService.recoverFileURL(
-            title.file_name,
+            title.file_name.toLocaleLowerCase(),
             title.file_url,
             'exam',
             'unknown',
