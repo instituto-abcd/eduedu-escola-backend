@@ -58,10 +58,10 @@ export class StorageService {
     try {
 
       const [files] = await bucket.getFiles({
-        prefix: `${bucketName}/${fileName}`,
+        prefix: `${bucketName}/${fileName.toLocaleLowerCase()}`,
       });
   
-      const file = files.find((arquivo) => arquivo.name === `${bucketName}/${fileName}`);
+      const file = files.find((arquivo) => arquivo.name === `${bucketName}/${fileName.toLocaleLowerCase()}`);
 
       const [metadata] = await file.getMetadata();
       const contentType = metadata.contentType;
