@@ -1767,8 +1767,8 @@ export class StudentService {
     answersPlanet =
       this.studentPlanetExecution.interceptCustomAnswer(answersPlanet, questionAnswered);
       
-    const skipVerify = questionAnswered.options.every((option) => {
-      return (option.position === null && !option.isCorrect) || !option.isCorrect;
+    const skipVerify = !questionAnswered.orderedAnswer && questionAnswered.options.every((option) => {
+      return (option.position === null && !option.isCorrect) || (!option.isCorrect);
     });
 
     if (
@@ -2050,34 +2050,42 @@ export class StudentService {
         return true;
       }
 
-      const correctOptions = question.options.filter(
-        (option) => option.isCorrect,
-      );
+      let assertions = [];
 
       if (!question.orderedAnswer) {
-        for (const answeredOption of answerOptions) {
-          return correctOptions.every((option) => {
-            return (
-              option.sound_url === answeredOption.sound_url &&
-              option.image_url === answeredOption.image_url &&
-              option.position === answeredOption.position &&
-              option.isCorrect === answeredOption.isCorrect
-            );
-          });
+        const correctOptions = question.options.filter(
+          (option) => option.isCorrect,
+        );
+
+        if (correctOptions.length != answerOptions.length) {
+          return false;
         }
+
+        assertions = answerOptions.map(answeredOption =>
+          correctOptions.some(option => (
+            option.sound_url === answeredOption.sound_url &&
+            option.image_url === answeredOption.image_url &&
+            option.position === answeredOption.position &&
+            option.isCorrect === answeredOption.isCorrect)
+          )
+        );
+        
       } else {
-        return question.options.every((option) => {
-          const answeredOption = answerOptions.find(
-            (item) => item.description == option.description,
-          );
-          return (
+        if (answerOptions.length == 0) {
+          return false;
+        }
+
+        assertions = answerOptions.map(answeredOption =>
+          question.options.some(option => (
             answeredOption != undefined &&
-            answeredOption.positionAnswer == option.position
-          );
-        });
+            option.position === answeredOption.position &&
+            answeredOption.position === answeredOption.positionAnswer)
+          )
+        );
       }
 
-      return true;
+      let allAnswersAreCorrect = assertions.every(assert => assert);
+      return allAnswersAreCorrect;
     } catch (error) {
       console.error('verifyAnswer: Error:', error);
       throw new EduException('DATABASE_ERROR');
