@@ -64,6 +64,18 @@ export class PlanetController {
     return this.planetService.findAllPlanetQuestions(modelId);
   }
 
+  @Get('/test-questions?')
+  @ApiResponse({
+    status: 201,
+    description: 'Retorna as questões de planetas PARA TESTE',
+    type: PlanetDto,
+  })
+  findAllPlanetQuestionTest(
+    @Query('modelId') modelId: string
+  ): Promise<any[]> {
+    return this.planetService.findAllPlanetQuestionsTest(modelId);
+  }
+
   @Get('/all-models?')
   @ApiResponse({
     status: 201,

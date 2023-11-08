@@ -187,6 +187,53 @@ export class PlanetService {
     return finalResult;
   }
 
+  async findAllPlanetQuestionsTest(
+    modelId: string,
+  ): Promise<any[]> {
+    let finalResult = [];
+
+    const aggregationResults: any[] = await this.planetModel
+        .aggregate([
+          {
+            // $match: { 'questions.model_id': modelId },
+            $match: { 'questions.orderedAnswer': true },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  // cond: { $eq: ['$$question.model_id', modelId] },
+                  cond: { $eq: ['$$question.model_id', true] },
+                },
+              },
+              title: true,
+            },
+          },
+        ])
+        .exec();
+
+    let resultQuestions = [];
+    aggregationResults.forEach(result => {
+      let questions = result.questions.map((question) => {
+        let questionFinal = question;
+        questionFinal.id = question.id.toString();
+        questionFinal.planetTitle = result.title;
+        return questionFinal;
+      });
+      resultQuestions.push(...questions);
+    });
+
+    finalResult = resultQuestions
+      .filter((item) => item.orderedAnswer == true && item.options.some(option => option.isCorrect == false))
+      .sort(
+        (a, b) => a.id.localeCompare(b.id),
+      );
+
+    return finalResult;
+  }
+
   private async findAllExamQuestions(
     modelId: string,
   ): Promise<any[]> {
