@@ -134,6 +134,9 @@ export class OptionsAnswersPlanet {
   position: number;
   @Prop()
   positionAnswer: number;
+
+  @Prop()
+  description: string;
 }
 
 export const StudentExamSchema = SchemaFactory.createForClass(StudentExam);
