@@ -9,6 +9,11 @@ export class StudentPlanetExecutionService {
     questionAnswered: QuestionPlanentDto,
   ): AnswersPlanet {
     switch (questionAnswered.model_id) {
+      case 'MODEL11':
+        return this.interceptCustomAnswer_MODEL11(
+          answersPlanet,
+          questionAnswered,
+        );
       case 'MODEL27':
         return this.interceptCustomAnswer_MODEL27(
           answersPlanet,
@@ -27,6 +32,24 @@ export class StudentPlanetExecutionService {
       default:
         return answersPlanet;
     }
+  }
+
+  private interceptCustomAnswer_MODEL11(
+    answersPlanet: AnswersPlanet,
+    questionAnswered: QuestionPlanentDto,
+  ): AnswersPlanet {
+    const expectedAnswer = questionAnswered.rules.find(
+      (rule) => rule.name === 'answers',
+    )?.value;
+
+    const providedAnswer = answersPlanet.optionsAnswered
+      .map((option) => option.description)
+      .join('')
+      .toUpperCase();
+
+    answersPlanet.isCorrect = expectedAnswer === providedAnswer;
+
+    return answersPlanet;
   }
 
   private interceptCustomAnswer_MODEL14(
@@ -77,8 +100,8 @@ export class StudentPlanetExecutionService {
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
     switch (questionAnswered.model_id) {
-      case 'MODEL19':
-        return this.handleQuestionAnswered_MODEL19(questionAnswered);
+      case 'MODEL11':
+        return this.handleQuestionAnswered_MODEL11(questionAnswered);
       case 'MODEL14':
         return this.handleQuestionAnswered_MODEL14(questionAnswered);
       case 'MODEL35':
@@ -86,6 +109,54 @@ export class StudentPlanetExecutionService {
       default:
         return questionAnswered;
     }
+  }
+
+  private handleQuestionAnswered_MODEL11(
+    questionAnswered: QuestionPlanentDto,
+  ): QuestionPlanentDto {
+    const expectedAnswer = questionAnswered.rules.find(
+      (rule) => rule.name === 'answer',
+    )?.value;
+
+    const providedAnswer = questionAnswered.options
+      .map((option) => option.description)
+      .join('')
+      .toUpperCase();
+
+    questionAnswered.orderedAnswer = expectedAnswer === providedAnswer;
+
+    return questionAnswered;
+  }
+
+  private handleQuestionAnswered_MODEL14(
+    questionAnswered: QuestionPlanentDto,
+  ): QuestionPlanentDto {
+    const circleSize =
+      questionAnswered.rules.length > 0 &&
+      questionAnswered.rules.filter((item) => item.name == 'circle_size')
+        .length > 0
+        ? +questionAnswered.rules.find((item) => item.name == 'circle_size')
+            .value
+        : 4;
+
+    const correctValue = (
+      questionAnswered.options[0].description as string
+    ).split('-').length;
+
+    const options = [];
+    for (let index = 0; index < circleSize; index++) {
+      options.push({
+        position: index,
+        isCorrect: index + 1 == correctValue,
+      });
+    }
+
+    questionAnswered.options = options;
+    questionAnswered.orderedAnswer = questionAnswered.options.every(
+      (item) => item.isCorrect,
+    );
+
+    return questionAnswered;
   }
 
   private handleQuestionAnswered_MODEL19(
@@ -126,37 +197,6 @@ export class StudentPlanetExecutionService {
     });
 
     questionAnswered.orderedAnswer = true;
-
-    return questionAnswered;
-  }
-
-  private handleQuestionAnswered_MODEL14(
-    questionAnswered: QuestionPlanentDto,
-  ): QuestionPlanentDto {
-    const circleSize =
-      questionAnswered.rules.length > 0 &&
-      questionAnswered.rules.filter((item) => item.name == 'circle_size')
-        .length > 0
-        ? +questionAnswered.rules.find((item) => item.name == 'circle_size')
-            .value
-        : 4;
-
-    const correctValue = (
-      questionAnswered.options[0].description as string
-    ).split('-').length;
-
-    const options = [];
-    for (let index = 0; index < circleSize; index++) {
-      options.push({
-        position: index,
-        isCorrect: index + 1 == correctValue,
-      });
-    }
-
-    questionAnswered.options = options;
-    questionAnswered.orderedAnswer = questionAnswered.options.every(
-      (item) => item.isCorrect,
-    );
 
     return questionAnswered;
   }
