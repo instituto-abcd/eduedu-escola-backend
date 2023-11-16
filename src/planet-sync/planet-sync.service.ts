@@ -261,7 +261,7 @@ export class PlanetSyncService {
               'image',
             ),
             description: optionOrigin.description,
-            position: optionOrigin.position,
+            position: questionOrigin.model_id == 'MODEL3' ? optionIndex : optionOrigin.position,
             isCorrect: optionOrigin.isCorrect,
           } as any;
 
