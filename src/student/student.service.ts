@@ -1764,12 +1764,18 @@ export class StudentService {
     questionAnswered =
       this.studentPlanetExecution.handleCustomQuestion(questionAnswered);
 
-    answersPlanet =
-      this.studentPlanetExecution.interceptCustomAnswer(answersPlanet, questionAnswered);
-      
-    const skipVerify = !questionAnswered.orderedAnswer && questionAnswered.options.every((option) => {
-      return (option.position === null && !option.isCorrect) || (!option.isCorrect);
-    });
+    answersPlanet = this.studentPlanetExecution.interceptCustomAnswer(
+      answersPlanet,
+      questionAnswered,
+    );
+
+    const skipVerify =
+      !questionAnswered.orderedAnswer &&
+      questionAnswered.options.every((option) => {
+        return (
+          (option.position === null && !option.isCorrect) || !option.isCorrect
+        );
+      });
 
     if (
       questionAnswered.options !== undefined &&
@@ -1807,7 +1813,7 @@ export class StudentService {
       if (nextQuestion === null || nextQuestion === undefined) {
         return await this.finishPlanet(studentId, planetId);
       }
-      nextQuestion.previousQuestionIsCorrect = true;
+      nextQuestion.previousQuestionIsCorrect = answersPlanet.isCorrect;
       return nextQuestion;
     }
   }
@@ -2061,30 +2067,31 @@ export class StudentService {
           return false;
         }
 
-        assertions = answerOptions.map(answeredOption =>
-          correctOptions.some(option => (
-            option.sound_url === answeredOption.sound_url &&
-            option.image_url === answeredOption.image_url &&
-            option.position === answeredOption.position &&
-            option.isCorrect === answeredOption.isCorrect)
-          )
+        assertions = answerOptions.map((answeredOption) =>
+          correctOptions.some(
+            (option) =>
+              option.sound_url === answeredOption.sound_url &&
+              option.image_url === answeredOption.image_url &&
+              option.position === answeredOption.position &&
+              option.isCorrect === answeredOption.isCorrect,
+          ),
         );
-        
       } else {
         if (answerOptions.length == 0) {
           return false;
         }
 
-        assertions = answerOptions.map(answeredOption =>
-          question.options.some(option => (
-            answeredOption != undefined &&
-            option.position === answeredOption.position &&
-            answeredOption.position === answeredOption.positionAnswer)
-          )
+        assertions = answerOptions.map((answeredOption) =>
+          question.options.some(
+            (option) =>
+              answeredOption != undefined &&
+              option.position === answeredOption.position &&
+              answeredOption.position === answeredOption.positionAnswer,
+          ),
         );
       }
 
-      let allAnswersAreCorrect = assertions.every(assert => assert);
+      const allAnswersAreCorrect = assertions.every((assert) => assert);
       return allAnswersAreCorrect;
     } catch (error) {
       console.error('verifyAnswer: Error:', error);
