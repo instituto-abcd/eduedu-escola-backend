@@ -14,11 +14,6 @@ export class StudentPlanetExecutionService {
           answersPlanet,
           questionAnswered,
         );
-      case 'MODEL12':
-        return this.interceptCustomAnswer_MODEL12(
-          answersPlanet,
-          questionAnswered,
-        );
       case 'MODEL27':
         return this.interceptCustomAnswer_MODEL27(
           answersPlanet,
@@ -45,24 +40,6 @@ export class StudentPlanetExecutionService {
   ): AnswersPlanet {
     const expectedAnswer = questionAnswered.rules.find(
       (rule) => rule.name === 'answers',
-    )?.value;
-
-    const providedAnswer = answersPlanet.optionsAnswered
-      .map((option) => option.description)
-      .join('')
-      .toUpperCase();
-
-    answersPlanet.isCorrect = expectedAnswer === providedAnswer;
-
-    return answersPlanet;
-  }
-
-  private interceptCustomAnswer_MODEL12(
-    answersPlanet: AnswersPlanet,
-    questionAnswered: QuestionPlanentDto,
-  ): AnswersPlanet {
-    const expectedAnswer = questionAnswered.rules.find(
-      (rule) => rule.name === 'answer',
     )?.value;
 
     const providedAnswer = answersPlanet.optionsAnswered
@@ -125,8 +102,6 @@ export class StudentPlanetExecutionService {
     switch (questionAnswered.model_id) {
       case 'MODEL11':
         return this.handleQuestionAnswered_MODEL11(questionAnswered);
-      case 'MODEL12':
-        return this.handleQuestionAnswered_MODEL12(questionAnswered);
       case 'MODEL14':
         return this.handleQuestionAnswered_MODEL14(questionAnswered);
       case 'MODEL35':
@@ -137,23 +112,6 @@ export class StudentPlanetExecutionService {
   }
 
   private handleQuestionAnswered_MODEL11(
-    questionAnswered: QuestionPlanentDto,
-  ): QuestionPlanentDto {
-    const expectedAnswer = questionAnswered.rules.find(
-      (rule) => rule.name === 'answer',
-    )?.value;
-
-    const providedAnswer = questionAnswered.options
-      .map((option) => option.description)
-      .join('')
-      .toUpperCase();
-
-    questionAnswered.orderedAnswer = expectedAnswer === providedAnswer;
-
-    return questionAnswered;
-  }
-
-  private handleQuestionAnswered_MODEL12(
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
     const expectedAnswer = questionAnswered.rules.find(
