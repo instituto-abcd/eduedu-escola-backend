@@ -1825,6 +1825,7 @@ export class StudentService {
       'MODEL5',
       'MODEL10',
       'MODEL11',
+      'MODEL12',
       'MODEL13',
       'MODEL18',
       'MODEL19',
