@@ -9,9 +9,8 @@ import {
 } from 'src/planet-sync/schemas/planet.schema';
 import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import * as cacheManager from 'cache-manager';
-import { StudentService } from '../student/student.service';
 import { Cache } from 'cache-manager';
+import { StudentService } from '../student/student.service';
 
 @Injectable()
 export class PlanetService {
