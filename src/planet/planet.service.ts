@@ -10,11 +10,6 @@ import {
 import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import {
-  StudentExam,
-  StudentExamDocument,
-} from '../student/schemas/studentExam.schema';
-import { StudentAwardService } from '../student/studentAward.service';
 import { StudentService } from '../student/student.service';
 
 @Injectable()

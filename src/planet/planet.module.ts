@@ -25,8 +25,8 @@ import { StudentPlanetExecutionService } from '../student/studentPlanetExecution
   imports: [
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
-      { name: Exam.name, schema: ExamSchema },
       { name: Planet.name, schema: PlanetSchema },
+      { name: Exam.name, schema: ExamSchema },
     ]),
   ],
   exports: [PerformanceResultUtilsService, StudentResultService],
