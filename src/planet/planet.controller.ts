@@ -19,6 +19,7 @@ export class PlanetController {
     return this.planetService.assignAllPlanetsToUser(studentId);
   }
 
+
   @Get()
   @ApiResponse({
     status: 201,
