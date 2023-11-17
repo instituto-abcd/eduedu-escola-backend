@@ -8,10 +8,10 @@ import {
   Question,
 } from 'src/planet-sync/schemas/planet.schema';
 import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import * as cacheManager from 'cache-manager';
 import { StudentService } from '../student/student.service';
-// import { Cache } from 'cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class PlanetService {
@@ -20,7 +20,7 @@ export class PlanetService {
     private planetModel: Model<PlanetDocument>,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
-    // @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly studentService: StudentService,
   ) {}
 
@@ -137,62 +137,62 @@ export class PlanetService {
     return planet.questions;
   }
 
-  // async resetAllPlanetQuestionsCache() {
-  //   const models = await this.findPlanetModels();
-  //
-  //   for (let index = 0; index < models.length; index++) {
-  //     const modelId = models[index];
-  //     await this.cacheManager.del(`DEBUG_QUESTIONS_${modelId}`);
-  //   }
-  // }
+  async resetAllPlanetQuestionsCache() {
+    const models = await this.findPlanetModels();
 
-  // async findAllPlanetQuestions(modelId: string): Promise<any[]> {
-  //   let finalResult = await this.cacheManager.get<any[]>(
-  //     `DEBUG_QUESTIONS_${modelId}`,
-  //   );
-  //
-  //   if (!finalResult) {
-  //     const aggregationResults: any[] = await this.planetModel
-  //       .aggregate([
-  //         {
-  //           $match: { 'questions.model_id': modelId },
-  //         },
-  //         {
-  //           $project: {
-  //             questions: {
-  //               $filter: {
-  //                 input: '$questions',
-  //                 as: 'question',
-  //                 cond: { $eq: ['$$question.model_id', modelId] },
-  //               },
-  //             },
-  //             title: true,
-  //           },
-  //         },
-  //       ])
-  //       .exec();
-  //
-  //     const resultQuestions = [];
-  //     aggregationResults.forEach((result) => {
-  //       const questions = result.questions.map((question) => {
-  //         const questionFinal = question;
-  //         questionFinal.id = question.id.toString();
-  //         questionFinal.planetTitle = result.title;
-  //         return questionFinal;
-  //       });
-  //       resultQuestions.push(...questions);
-  //     });
-  //
-  //     finalResult = resultQuestions.sort((a, b) => a.id.localeCompare(b.id));
-  //
-  //     const examQuestions = await this.findAllExamQuestions(modelId);
-  //     finalResult.push(...examQuestions);
-  //
-  //     await this.cacheManager.set(`DEBUG_QUESTIONS_${modelId}`, finalResult, 0);
-  //   }
-  //
-  //   return finalResult;
-  // }
+    for (let index = 0; index < models.length; index++) {
+      const modelId = models[index];
+      await this.cacheManager.del(`DEBUG_QUESTIONS_${modelId}`);
+    }
+  }
+
+  async findAllPlanetQuestions(modelId: string): Promise<any[]> {
+    let finalResult = await this.cacheManager.get<any[]>(
+      `DEBUG_QUESTIONS_${modelId}`,
+    );
+
+    if (!finalResult) {
+      const aggregationResults: any[] = await this.planetModel
+        .aggregate([
+          {
+            $match: { 'questions.model_id': modelId },
+          },
+          {
+            $project: {
+              questions: {
+                $filter: {
+                  input: '$questions',
+                  as: 'question',
+                  cond: { $eq: ['$$question.model_id', modelId] },
+                },
+              },
+              title: true,
+            },
+          },
+        ])
+        .exec();
+
+      const resultQuestions = [];
+      aggregationResults.forEach((result) => {
+        const questions = result.questions.map((question) => {
+          const questionFinal = question;
+          questionFinal.id = question.id.toString();
+          questionFinal.planetTitle = result.title;
+          return questionFinal;
+        });
+        resultQuestions.push(...questions);
+      });
+
+      finalResult = resultQuestions.sort((a, b) => a.id.localeCompare(b.id));
+
+      const examQuestions = await this.findAllExamQuestions(modelId);
+      finalResult.push(...examQuestions);
+
+      await this.cacheManager.set(`DEBUG_QUESTIONS_${modelId}`, finalResult, 0);
+    }
+
+    return finalResult;
+  }
 
   async findAllPlanetQuestionsTest(modelId: string): Promise<any[]> {
     let finalResult = [];
