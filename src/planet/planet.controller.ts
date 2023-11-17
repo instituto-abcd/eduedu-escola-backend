@@ -19,7 +19,6 @@ export class PlanetController {
     return this.planetService.assignAllPlanetsToUser(studentId);
   }
 
-
   @Get()
   @ApiResponse({
     status: 201,
@@ -63,17 +62,15 @@ export class PlanetController {
     return this.planetService.findPlanetQuestion(planetId, questionId);
   }
 
-  @Get('/all-questions?')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna as questões de planetas',
-    type: PlanetDto,
-  })
-  findAllPlanetQuestion(
-    @Query('modelId') modelId: string
-  ): Promise<any[]> {
-    return this.planetService.findAllPlanetQuestions(modelId);
-  }
+  // @Get('/all-questions?')
+  // @ApiResponse({
+  //   status: 201,
+  //   description: 'Retorna as questões de planetas',
+  //   type: PlanetDto,
+  // })
+  // findAllPlanetQuestion(@Query('modelId') modelId: string): Promise<any[]> {
+  //   return this.planetService.findAllPlanetQuestions(modelId);
+  // }
 
   @Get('/test-questions?')
   @ApiResponse({
@@ -81,9 +78,7 @@ export class PlanetController {
     description: 'Retorna as questões de planetas PARA TESTE',
     type: PlanetDto,
   })
-  findAllPlanetQuestionTest(
-    @Query('modelId') modelId: string
-  ): Promise<any[]> {
+  findAllPlanetQuestionTest(@Query('modelId') modelId: string): Promise<any[]> {
     return this.planetService.findAllPlanetQuestionsTest(modelId);
   }
 
@@ -93,18 +88,16 @@ export class PlanetController {
     description: 'Retorna os modelos de questão utilizados em planetas',
     type: PlanetDto,
   })
-  findAllPlanetModels(
-    @Query('planetId') planetIds: string[]
-  ): Promise<any[]> {
+  findAllPlanetModels(@Query('planetId') planetIds: string[]): Promise<any[]> {
     return this.planetService.findAllPlanetModels(planetIds);
   }
 
-  @Delete('/reset-cache-all-models')
-  @ApiResponse({
-    status: 200,
-    description: 'Reset cache'
-  })
-  resetAllPlanetQuestionsCache(): Promise<any> {
-    return this.planetService.resetAllPlanetQuestionsCache();
-  }
+  // @Delete('/reset-cache-all-models')
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Reset cache'
+  // })
+  // resetAllPlanetQuestionsCache(): Promise<any> {
+  //   return this.planetService.resetAllPlanetQuestionsCache();
+  // }
 }
