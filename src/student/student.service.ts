@@ -752,7 +752,7 @@ export class StudentService {
   }
 
   // Criar trilha de planetas para o aluno
-  private async generateAndSavePlanetTrack(
+  async generateAndSavePlanetTrack(
     studentId: string,
     planets: PlanetDocument[],
   ): Promise<any> {
