@@ -35,7 +35,6 @@ export class PlanetService {
     // let models = questions.map((question) => {
     //   return question.model_id
     // });
-
     const models = [
       'MODEL2',
       'MODEL3',
