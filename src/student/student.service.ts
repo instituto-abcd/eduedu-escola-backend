@@ -1788,7 +1788,7 @@ export class StudentService {
       );
       answersPlanet.isCorrect = isCorrect;
 
-      // await this.saveAnswerPlanet(studentId, planetId, answersPlanet);
+      await this.saveAnswerPlanet(studentId, planetId, answersPlanet);
 
       const nextQuestion = await this.getQuestionByPlanetIdAndPosition(
         planetId,
@@ -1825,6 +1825,7 @@ export class StudentService {
       'MODEL5',
       'MODEL10',
       'MODEL11',
+      'MODEL12',
       'MODEL13',
       'MODEL18',
       'MODEL19',
