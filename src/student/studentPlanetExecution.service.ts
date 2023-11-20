@@ -44,10 +44,10 @@ export class StudentPlanetExecutionService {
 
     const providedAnswer = answersPlanet.optionsAnswered
       .map((option) => option.description)
-      .join('')
-      .toUpperCase();
+      .join(',');
 
-    answersPlanet.isCorrect = expectedAnswer === providedAnswer;
+    answersPlanet.isCorrect =
+      expectedAnswer?.toUpperCase() === providedAnswer.toUpperCase();
 
     return answersPlanet;
   }
@@ -120,10 +120,9 @@ export class StudentPlanetExecutionService {
 
     const providedAnswer = questionAnswered.options
       .map((option) => option.description)
-      .join('')
-      .toUpperCase();
+      .join(',');
 
-    questionAnswered.orderedAnswer = expectedAnswer === providedAnswer;
+    questionAnswered.orderedAnswer = expectedAnswer?.toUpperCase() === providedAnswer.toUpperCase();
 
     return questionAnswered;
   }
