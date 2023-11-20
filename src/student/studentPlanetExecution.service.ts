@@ -14,11 +14,6 @@ export class StudentPlanetExecutionService {
           answersPlanet,
           questionAnswered,
         );
-      case 'MODEL12':
-        return this.interceptCustomAnswer_MODEL12(
-          answersPlanet,
-          questionAnswered,
-        );
       case 'MODEL27':
         return this.interceptCustomAnswer_MODEL27(
           answersPlanet,
@@ -37,19 +32,6 @@ export class StudentPlanetExecutionService {
       default:
         return answersPlanet;
     }
-  }
-
-  private interceptCustomAnswer_MODEL12(
-    answersPlanet: AnswersPlanet,
-    questionAnswered: QuestionPlanentDto,
-  ): AnswersPlanet {
-    const filteredOptions = answersPlanet.optionsAnswered.filter(
-      (option) => option.isCorrect === true,
-    );
-
-    answersPlanet.optionsAnswered = filteredOptions;
-
-    return answersPlanet;
   }
 
   private interceptCustomAnswer_MODEL11(

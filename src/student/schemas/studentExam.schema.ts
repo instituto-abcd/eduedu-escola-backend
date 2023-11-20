@@ -137,9 +137,6 @@ export class OptionsAnswersPlanet {
 
   @Prop()
   description: string;
-
-  @Prop()
-  isCorrect: boolean = false;
 }
 
 export const StudentExamSchema = SchemaFactory.createForClass(StudentExam);
