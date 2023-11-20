@@ -102,6 +102,8 @@ export class StudentPlanetExecutionService {
     switch (questionAnswered.model_id) {
       case 'MODEL11':
         return this.handleQuestionAnswered_MODEL11(questionAnswered);
+      case 'MODEL19':
+        return this.handleQuestionAnswered_MODEL19(questionAnswered);
       case 'MODEL14':
         return this.handleQuestionAnswered_MODEL14(questionAnswered);
       case 'MODEL35':
@@ -122,7 +124,8 @@ export class StudentPlanetExecutionService {
       .map((option) => option.description)
       .join(',');
 
-    questionAnswered.orderedAnswer = expectedAnswer?.toUpperCase() === providedAnswer.toUpperCase();
+    questionAnswered.orderedAnswer =
+      expectedAnswer?.toUpperCase() === providedAnswer.toUpperCase();
 
     return questionAnswered;
   }
