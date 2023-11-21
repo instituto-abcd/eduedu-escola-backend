@@ -39,11 +39,6 @@ export class StudentPlanetExecutionService {
   private interceptCustomAnswer_MODEL12(
     answersPlanet: AnswersPlanet,
   ): AnswersPlanet {
-    const filteredOptions = answersPlanet.optionsAnswered.filter(
-      (option) => option.isCorrect === true,
-    );
-
-    answersPlanet.optionsAnswered = filteredOptions;
 
     answersPlanet.isCorrect = answersPlanet.optionsAnswered.every(
       (item) =>
