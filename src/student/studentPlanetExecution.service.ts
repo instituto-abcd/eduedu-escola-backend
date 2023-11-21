@@ -45,6 +45,12 @@ export class StudentPlanetExecutionService {
 
     answersPlanet.optionsAnswered = filteredOptions;
 
+    answersPlanet.isCorrect = answersPlanet.optionsAnswered.every(
+      (item) =>
+        (item.isCorrect && item.positionAnswer == 2) ||
+        (!item.isCorrect && item.positionAnswer == 1),
+    );
+
     return answersPlanet;
   }
 
