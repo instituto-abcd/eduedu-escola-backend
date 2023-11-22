@@ -241,7 +241,8 @@ export class StudentPlanetExecutionService {
       case "MODEL12":
         return this.verifyAnswerPlanet_MODEL12(question, answerOptions);
       case "MODEL13":
-        return this.verifyAnswerPlanet_MODEL13(question, answerOptions);    
+      case "MODEL18":
+        return this.verifyAnswerPlanet_MODELS_13_18(question, answerOptions);    
       default:
         return await this.defaultVerifyAnswerPlanet(question, answerOptions);
     }
@@ -258,7 +259,7 @@ export class StudentPlanetExecutionService {
     return allAnswersAreCorrect;
   }
 
-  private async verifyAnswerPlanet_MODEL13(
+  private async verifyAnswerPlanet_MODELS_13_18(
     question: QuestionPlanentDto,
     answerOptions: OptionAnswer[],
   ): Promise<boolean> {
