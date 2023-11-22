@@ -8,44 +8,29 @@ export class StudentPlanetExecutionService {
     answersPlanet: AnswersPlanet,
     questionAnswered: QuestionPlanentDto,
   ): AnswersPlanet {
-    switch (questionAnswered.model_id) {
-      case 'MODEL11':
-        return this.interceptCustomAnswer_MODEL11(
-          answersPlanet,
-          questionAnswered,
-        );
-      case 'MODEL12':
-        return this.interceptCustomAnswer_MODEL12(answersPlanet);
-      case 'MODEL27':
-        return this.interceptCustomAnswer_MODEL27(
-          answersPlanet,
-          questionAnswered,
-        );
-      case 'MODEL14':
-        return this.interceptCustomAnswer_MODEL14(
-          answersPlanet,
-          questionAnswered,
-        );
-      case 'MODEL35':
-        return this.interceptCustomAnswer_MODEL35(
-          answersPlanet,
-          questionAnswered,
-        );
-      default:
-        return answersPlanet;
-    }
+    const modelHandlers = {
+      MODEL11: this.interceptCustomAnswer_MODEL11,
+      MODEL12: this.interceptCustomAnswer_MODEL12,
+      MODEL27: this.interceptCustomAnswer_MODEL27,
+      MODEL14: this.interceptCustomAnswer_MODEL14,
+      MODEL35: this.interceptCustomAnswer_MODEL35,
+    };
+
+    const handler =
+      modelHandlers[questionAnswered.model_id] || this.defaultHandler;
+    return handler.call(this, answersPlanet, questionAnswered);
   }
 
   private interceptCustomAnswer_MODEL12(
     answersPlanet: AnswersPlanet,
   ): AnswersPlanet {
-
     answersPlanet.isCorrect = answersPlanet.optionsAnswered.every(
       (item) =>
         (item.isCorrect && item.positionAnswer == 2) ||
         (!item.isCorrect && item.positionAnswer == 1),
     );
 
+    answersPlanet.analyzed = true;
     return answersPlanet;
   }
 
@@ -114,18 +99,17 @@ export class StudentPlanetExecutionService {
   handleCustomQuestion(
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
-    switch (questionAnswered.model_id) {
-      case 'MODEL11':
-        return this.handleQuestionAnswered_MODEL11(questionAnswered);
-      case 'MODEL19':
-        return this.handleQuestionAnswered_MODEL19(questionAnswered);
-      case 'MODEL14':
-        return this.handleQuestionAnswered_MODEL14(questionAnswered);
-      case 'MODEL35':
-        return this.handleQuestionAnswered_MODEL35(questionAnswered);
-      default:
-        return questionAnswered;
-    }
+    const questionHandlers = {
+      MODEL11: this.handleQuestionAnswered_MODEL11,
+      MODEL19: this.handleQuestionAnswered_MODEL19,
+      MODEL14: this.handleQuestionAnswered_MODEL14,
+      MODEL35: this.handleQuestionAnswered_MODEL35,
+    };
+
+    const handler =
+      questionHandlers[questionAnswered.model_id] ||
+      this.defaultQuestionHandler;
+    return handler.call(this, questionAnswered);
   }
 
   private handleQuestionAnswered_MODEL11(
@@ -232,6 +216,19 @@ export class StudentPlanetExecutionService {
 
     questionAnswered.orderedAnswer = expectedAnswer === providedAnswer;
 
+    return questionAnswered;
+  }
+
+  private defaultHandler(
+    answersPlanet: AnswersPlanet,
+    questionAnswered: QuestionPlanentDto,
+  ): AnswersPlanet {
+    return answersPlanet;
+  }
+
+  private defaultQuestionHandler(
+    questionAnswered: QuestionPlanentDto,
+  ): QuestionPlanentDto {
     return questionAnswered;
   }
 }
