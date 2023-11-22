@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { QuestionPlanentDto } from 'src/exam/dto/question-planet.dto';
 import { AnswersPlanet } from './schemas/studentExam.schema';
+import { EduException } from 'src/common/exceptions/edu-school.exception';
+import { OptionAnswer } from 'src/exam/dto/request/answers-request.dto';
 
 @Injectable()
 export class StudentPlanetExecutionService {
@@ -230,5 +232,79 @@ export class StudentPlanetExecutionService {
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
     return questionAnswered;
+  }
+
+  async verifyAnswerPlanet(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): Promise<boolean> {
+    switch (question.model_id) {
+      case "MODEL13":
+        return this.verifyAnswerPlanet_MODEL13(question, answerOptions);    
+      default:
+        return await this.defaultVerifyAnswerPlanet(question, answerOptions);
+    }
+  }
+
+  private async verifyAnswerPlanet_MODEL13(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): Promise<boolean> {
+    const allAnswersAreCorrect = answerOptions.every((answeredOption) =>
+      answeredOption.positionAnswer == answeredOption.position
+    );
+    return allAnswersAreCorrect;
+  }
+
+  private async defaultVerifyAnswerPlanet(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): Promise<boolean> {
+    try {
+      if (question.options.every((item) => item.isCorrect)) {
+        return true;
+      }
+
+      let assertions = [];
+
+      if (!question.orderedAnswer) {
+        const correctOptions = question.options.filter(
+          (option) => option.isCorrect,
+        );
+
+        if (correctOptions.length != answerOptions.length) {
+          return false;
+        }
+
+        assertions = answerOptions.map((answeredOption) =>
+          correctOptions.some(
+            (option) =>
+              option.sound_url === answeredOption.sound_url &&
+              option.image_url === answeredOption.image_url &&
+              option.position === answeredOption.position &&
+              option.isCorrect === answeredOption.isCorrect,
+          ),
+        );
+      } else {
+        if (answerOptions.length == 0) {
+          return false;
+        }
+
+        assertions = answerOptions.map((answeredOption) =>
+          question.options.some(
+            (option) =>
+              answeredOption != undefined &&
+              option.position === answeredOption.position &&
+              answeredOption.position === answeredOption.positionAnswer,
+          ),
+        );
+      }
+
+      const allAnswersAreCorrect = assertions.every((assert) => assert);
+      return allAnswersAreCorrect;
+    } catch (error) {
+      console.error('verifyAnswer: Error:', error);
+      throw new EduException('DATABASE_ERROR');
+    }
   }
 }
