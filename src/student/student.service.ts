@@ -1780,8 +1780,7 @@ export class StudentService {
     if (
       questionAnswered.options !== undefined &&
       questionAnswered.options.length > 0 &&
-      !skipVerify &&
-      !answersPlanet.analyzed // Se vou verificado no handleCustomQuestion
+      !skipVerify
     ) {
       const isCorrect = await this.studentPlanetExecution.verifyAnswerPlanet(
         questionAnswered,

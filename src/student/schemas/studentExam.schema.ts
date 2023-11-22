@@ -126,9 +126,6 @@ export class AnswersPlanet {
 
   @Prop()
   lastQuestion: boolean;
-
-  @Prop()
-  analyzed: boolean = false;
 }
 
 @Schema()

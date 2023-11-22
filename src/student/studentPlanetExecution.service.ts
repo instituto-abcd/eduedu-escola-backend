@@ -32,7 +32,6 @@ export class StudentPlanetExecutionService {
         (!item.isCorrect && item.positionAnswer == 1),
     );
 
-    answersPlanet.analyzed = true;
     return answersPlanet;
   }
 
@@ -239,11 +238,24 @@ export class StudentPlanetExecutionService {
     answerOptions: OptionAnswer[],
   ): Promise<boolean> {
     switch (question.model_id) {
+      case "MODEL12":
+        return this.verifyAnswerPlanet_MODEL12(question, answerOptions);
       case "MODEL13":
         return this.verifyAnswerPlanet_MODEL13(question, answerOptions);    
       default:
         return await this.defaultVerifyAnswerPlanet(question, answerOptions);
     }
+  }
+
+  private async verifyAnswerPlanet_MODEL12(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): Promise<boolean> {
+    const allAnswersAreCorrect = answerOptions.every((answeredOption) =>
+      (answeredOption.positionAnswer == 2 && answeredOption.isCorrect) ||
+      (answeredOption.positionAnswer == 1 && !answeredOption.isCorrect)
+    );
+    return allAnswersAreCorrect;
   }
 
   private async verifyAnswerPlanet_MODEL13(
