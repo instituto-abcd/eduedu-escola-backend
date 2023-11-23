@@ -103,7 +103,17 @@ export class PlanetSyncService {
     const start = new Date();
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
-    this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
+
+    let running = await this.cacheManager.get('sync-running');
+    if (running === undefined) {
+      running = false;
+      await this.cacheManager.set('sync-running', running, 0);
+    }
+
+    if (!running) {
+      await this.cacheManager.set('sync-running', true, 0);
+      this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
+    }
   }
 
   async handleSyncAll() {
@@ -261,7 +271,10 @@ export class PlanetSyncService {
               'image',
             ),
             description: optionOrigin.description,
-            position: questionOrigin.model_id == 'MODEL3' ? optionIndex : optionOrigin.position,
+            position:
+              questionOrigin.model_id == 'MODEL3'
+                ? optionIndex
+                : optionOrigin.position,
             isCorrect: optionOrigin.isCorrect,
           } as any;
 
@@ -347,7 +360,6 @@ export class PlanetSyncProcessor {
     try {
       console.log('Planet Sync - Iniciando sincronização');
 
-      await this.cacheManager.set('sync-running', true);
       const promises = [];
 
       await this.storageService.initialize();
