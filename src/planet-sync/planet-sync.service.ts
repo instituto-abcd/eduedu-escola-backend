@@ -59,7 +59,8 @@ export class PlanetSyncService {
 
   async getPlanetSyncStatus(): Promise<any> {
     const empty = [undefined, null];
-    const running = (await this.cacheManager.get('sync-running')) ?? false;
+    const cachedValue = await this.cacheManager.get('sync-running');
+    const running = cachedValue !== undefined ? cachedValue : false;
 
     const totalFiles = empty.includes(
       await this.cacheManager.get('sync-total-files'),
@@ -103,17 +104,8 @@ export class PlanetSyncService {
     const start = new Date();
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
-
-    let running = await this.cacheManager.get('sync-running');
-    if (running === undefined) {
-      running = false;
-      await this.cacheManager.set('sync-running', running, 0);
-    }
-
-    if (!running) {
-      await this.cacheManager.set('sync-running', true, 0);
-      this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
-    }
+    this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
+    await this.cacheManager.set('sync-running', true, 0);
   }
 
   async handleSyncAll() {
@@ -360,6 +352,7 @@ export class PlanetSyncProcessor {
     try {
       console.log('Planet Sync - Iniciando sincronização');
 
+      await this.cacheManager.set('sync-running', true, 0);
       const promises = [];
 
       await this.storageService.initialize();
@@ -378,7 +371,7 @@ export class PlanetSyncProcessor {
         end.getTime() - start.getTime(),
       );
 
-      await this.cacheManager.set('sync-running', false);
+      await this.cacheManager.set('sync-running', false, 0);
 
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
