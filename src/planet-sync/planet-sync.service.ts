@@ -352,32 +352,38 @@ export class PlanetSyncProcessor {
     try {
       console.log('Planet Sync - Iniciando sincronização');
 
-      await this.cacheManager.set('sync-running', true, 0);
+      const syncKey = 'sync-running';
+      const syncValue = true;
+      const syncDuration = 0;
+
+      await this.cacheManager.set(syncKey, syncValue, syncDuration);
+
       const promises = [];
 
       await this.storageService.initialize();
 
       promises.push(this.planetSyncService.handleSyncAll());
-      if (process.env.ASSETS == 'LOCAL') {
+
+      if (process.env.ASSETS === 'LOCAL') {
         promises.push(this.storageService.downloadFiles());
       }
 
       const start = new Date();
 
       await Promise.all(promises);
-      const end = new Date();
 
+      const end = new Date();
       const duration = this.dateFormatterUtilsService.convertMsToTime(
         end.getTime() - start.getTime(),
       );
 
-      await this.cacheManager.set('sync-running', false, 0);
+      await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
       console.log('Planet Sync - Duração Sincronização: ' + duration);
     } catch (error) {
-      console.log(error);
+      console.error('Erro durante a sincronização:', error);
     }
   }
 }
