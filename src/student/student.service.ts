@@ -1780,10 +1780,9 @@ export class StudentService {
     if (
       questionAnswered.options !== undefined &&
       questionAnswered.options.length > 0 &&
-      !skipVerify &&
-      !answersPlanet.analyzed // Se vou verificado no handleCustomQuestion
+      !skipVerify
     ) {
-      const isCorrect = await this.verifyAnswerPlanet(
+      const isCorrect = await this.studentPlanetExecution.verifyAnswerPlanet(
         questionAnswered,
         answersPlanet.optionsAnswered,
       );
@@ -2048,56 +2047,5 @@ export class StudentService {
       throw new EduException('DATABASE_ERROR');
     }
   }
-
-  async verifyAnswerPlanet(
-    question: QuestionPlanentDto,
-    answerOptions: OptionAnswer[],
-  ): Promise<boolean> {
-    try {
-      if (question.options.every((item) => item.isCorrect)) {
-        return true;
-      }
-
-      let assertions = [];
-
-      if (!question.orderedAnswer) {
-        const correctOptions = question.options.filter(
-          (option) => option.isCorrect,
-        );
-
-        if (correctOptions.length != answerOptions.length) {
-          return false;
-        }
-
-        assertions = answerOptions.map((answeredOption) =>
-          correctOptions.some(
-            (option) =>
-              option.sound_url === answeredOption.sound_url &&
-              option.image_url === answeredOption.image_url &&
-              option.position === answeredOption.position &&
-              option.isCorrect === answeredOption.isCorrect,
-          ),
-        );
-      } else {
-        if (answerOptions.length == 0) {
-          return false;
-        }
-
-        assertions = answerOptions.map((answeredOption) =>
-          question.options.some(
-            (option) =>
-              answeredOption != undefined &&
-              option.position === answeredOption.position &&
-              answeredOption.position === answeredOption.positionAnswer,
-          ),
-        );
-      }
-
-      const allAnswersAreCorrect = assertions.every((assert) => assert);
-      return allAnswersAreCorrect;
-    } catch (error) {
-      console.error('verifyAnswer: Error:', error);
-      throw new EduException('DATABASE_ERROR');
-    }
-  }
+ 
 }
