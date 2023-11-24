@@ -1782,7 +1782,7 @@ export class StudentService {
       questionAnswered.options.length > 0 &&
       !skipVerify
     ) {
-      const isCorrect = await this.studentPlanetExecution.verifyAnswerPlanet(
+      const isCorrect = this.studentPlanetExecution.verifyAnswerPlanet(
         questionAnswered,
         answersPlanet.optionsAnswered,
       );
@@ -1796,7 +1796,7 @@ export class StudentService {
       );
 
       if (nextQuestion === null || nextQuestion === undefined) {
-        return await this.finishPlanet(studentId, planetId);
+        return await this.finishPlanet(studentId, planetId, isCorrect);
       }
 
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
@@ -1813,7 +1813,9 @@ export class StudentService {
       if (nextQuestion === null || nextQuestion === undefined) {
         return await this.finishPlanet(studentId, planetId);
       }
-      nextQuestion.previousQuestionIsCorrect = answersPlanet.isCorrect;
+      // Se entrou nesse else, é porque não deve ser verificado se a questão foi respondida corretamente.
+      // Logo, retornamos true e boa.
+      nextQuestion.previousQuestionIsCorrect = true;
       return nextQuestion;
     }
   }
@@ -1849,6 +1851,7 @@ export class StudentService {
   private async finishPlanet(
     studentId: string,
     planetId: string,
+    previousQuestionIsCorrect: boolean = true,
   ): Promise<AnswersPlanetResponseDto> {
     const planet = await this.planetModel.findOne({ id: planetId });
 
@@ -1870,7 +1873,7 @@ export class StudentService {
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
     await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
-    return { planetCompleted: true, previousQuestionIsCorrect: true };
+    return { planetCompleted: true, previousQuestionIsCorrect: previousQuestionIsCorrect };
   }
 
   async saveStudentPlanetResult(

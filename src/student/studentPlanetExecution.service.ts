@@ -233,26 +233,27 @@ export class StudentPlanetExecutionService {
     return questionAnswered;
   }
 
-  async verifyAnswerPlanet(
+  verifyAnswerPlanet(
     question: QuestionPlanentDto,
     answerOptions: OptionAnswer[],
-  ): Promise<boolean> {
+  ): boolean {
     switch (question.model_id) {
       case "MODEL12":
         return this.verifyAnswerPlanet_MODEL12(question, answerOptions);
       case "MODEL13":
+        return this.verifyAnswerPlanet_MODEL13(question, answerOptions);
       case "MODEL18":
       case "MODEL25":
         return this.verifyAnswerPlanetByPositionAnswer(question, answerOptions);    
       default:
-        return await this.defaultVerifyAnswerPlanet(question, answerOptions);
+        return this.defaultVerifyAnswerPlanet(question, answerOptions);
     }
   }
 
-  private async verifyAnswerPlanet_MODEL12(
+  private verifyAnswerPlanet_MODEL12(
     question: QuestionPlanentDto,
     answerOptions: OptionAnswer[],
-  ): Promise<boolean> {
+  ): boolean {
     const allAnswersAreCorrect = answerOptions.every((answeredOption) =>
       (answeredOption.positionAnswer == 2 && answeredOption.isCorrect) ||
       (answeredOption.positionAnswer == 1 && !answeredOption.isCorrect)
@@ -260,20 +261,30 @@ export class StudentPlanetExecutionService {
     return allAnswersAreCorrect;
   }
 
-  private async verifyAnswerPlanetByPositionAnswer(
+  private verifyAnswerPlanet_MODEL13(
     question: QuestionPlanentDto,
     answerOptions: OptionAnswer[],
-  ): Promise<boolean> {
+  ): boolean {
     const allAnswersAreCorrect = answerOptions.every((answeredOption) =>
-      answeredOption.positionAnswer == answeredOption.position
+      (answeredOption.positionAnswer == (answeredOption.position ?? 1))
     );
     return allAnswersAreCorrect;
   }
 
-  private async defaultVerifyAnswerPlanet(
+  private verifyAnswerPlanetByPositionAnswer(
     question: QuestionPlanentDto,
     answerOptions: OptionAnswer[],
-  ): Promise<boolean> {
+  ): boolean {
+    const allAnswersAreCorrect = answerOptions.every((answeredOption) =>
+      (answeredOption.positionAnswer == answeredOption.position)
+    );
+    return allAnswersAreCorrect;
+  }
+
+  private defaultVerifyAnswerPlanet(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): boolean {
     try {
       if (question.options.every((item) => item.isCorrect)) {
         return true;
