@@ -244,6 +244,7 @@ export class StudentPlanetExecutionService {
         return this.verifyAnswerPlanet_MODEL13(question, answerOptions);
       case "MODEL2":
       case "MODEL18":
+      case "MODEL20":
       case "MODEL25":
       case "MODEL26":
         return this.verifyAnswerPlanetByPositionAnswer(question, answerOptions);    
