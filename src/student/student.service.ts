@@ -1770,6 +1770,7 @@ export class StudentService {
     );
 
     const skipVerify =
+      answersPlanet.optionsAnswered.length == 0 ||
       !questionAnswered.orderedAnswer &&
       questionAnswered.options.every((option) => {
         return (
