@@ -13,7 +13,6 @@ export class StudentPlanetExecutionService {
     const modelHandlers = {
       MODEL11: this.interceptCustomAnswer_MODEL11,
       MODEL12: this.interceptCustomAnswer_MODEL12,
-      MODEL27: this.interceptCustomAnswer_MODEL27,
       MODEL14: this.interceptCustomAnswer_MODEL14,
       MODEL35: this.interceptCustomAnswer_MODEL35,
     };
@@ -68,14 +67,6 @@ export class StudentPlanetExecutionService {
         )
       : [];
 
-    return answersPlanet;
-  }
-
-  private interceptCustomAnswer_MODEL27(
-    answersPlanet: AnswersPlanet,
-    questionAnswered: QuestionPlanentDto,
-  ): AnswersPlanet {
-    answersPlanet.optionsAnswered = questionAnswered.options;
     return answersPlanet;
   }
 
