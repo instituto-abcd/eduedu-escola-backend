@@ -1778,11 +1778,7 @@ export class StudentService {
         );
       });
 
-    if (
-      questionAnswered.options !== undefined &&
-      questionAnswered.options.length > 0 &&
-      !skipVerify
-    ) {
+    if (!skipVerify) {
       const isCorrect = this.studentPlanetExecution.verifyAnswerPlanet(
         questionAnswered,
         answersPlanet.optionsAnswered,

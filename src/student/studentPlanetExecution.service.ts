@@ -6,15 +6,14 @@ import { OptionAnswer } from 'src/exam/dto/request/answers-request.dto';
 
 @Injectable()
 export class StudentPlanetExecutionService {
+
   interceptCustomAnswer(
     answersPlanet: AnswersPlanet,
     questionAnswered: QuestionPlanentDto,
   ): AnswersPlanet {
     const modelHandlers = {
-      MODEL11: this.interceptCustomAnswer_MODEL11,
       MODEL12: this.interceptCustomAnswer_MODEL12,
       MODEL14: this.interceptCustomAnswer_MODEL14,
-      MODEL35: this.interceptCustomAnswer_MODEL35,
     };
 
     const handler =
@@ -30,24 +29,6 @@ export class StudentPlanetExecutionService {
         (item.isCorrect && item.positionAnswer == 2) ||
         (!item.isCorrect && item.positionAnswer == 1),
     );
-
-    return answersPlanet;
-  }
-
-  private interceptCustomAnswer_MODEL11(
-    answersPlanet: AnswersPlanet,
-    questionAnswered: QuestionPlanentDto,
-  ): AnswersPlanet {
-    const expectedAnswer = questionAnswered.rules.find(
-      (rule) => rule.name === 'answers',
-    )?.value;
-
-    const providedAnswer = answersPlanet.optionsAnswered
-      .map((option) => option.description)
-      .join(',');
-
-    answersPlanet.isCorrect =
-      expectedAnswer?.toUpperCase() === providedAnswer.toUpperCase();
 
     return answersPlanet;
   }
@@ -70,29 +51,10 @@ export class StudentPlanetExecutionService {
     return answersPlanet;
   }
 
-  private interceptCustomAnswer_MODEL35(
-    answersPlanet: AnswersPlanet,
-    questionAnswered: QuestionPlanentDto,
-  ): AnswersPlanet {
-    const expectedAnswer = questionAnswered.rules.find(
-      (rule) => rule.name === 'answer',
-    )?.value;
-
-    const providedAnswer = answersPlanet.optionsAnswered
-      .map((option) => option.description)
-      .join('')
-      .toUpperCase();
-
-    answersPlanet.isCorrect = expectedAnswer === providedAnswer;
-
-    return answersPlanet;
-  }
-
   handleCustomQuestion(
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
     const questionHandlers = {
-      MODEL11: this.handleQuestionAnswered_MODEL11,
       MODEL19: this.handleQuestionAnswered_MODEL19,
       MODEL14: this.handleQuestionAnswered_MODEL14,
       MODEL35: this.handleQuestionAnswered_MODEL35,
@@ -102,23 +64,6 @@ export class StudentPlanetExecutionService {
       questionHandlers[questionAnswered.model_id] ||
       this.defaultQuestionHandler;
     return handler.call(this, questionAnswered);
-  }
-
-  private handleQuestionAnswered_MODEL11(
-    questionAnswered: QuestionPlanentDto,
-  ): QuestionPlanentDto {
-    const expectedAnswer = questionAnswered.rules.find(
-      (rule) => rule.name === 'answer',
-    )?.value;
-
-    const providedAnswer = questionAnswered.options
-      .map((option) => option.description)
-      .join(',');
-
-    questionAnswered.orderedAnswer =
-      expectedAnswer?.toUpperCase() === providedAnswer.toUpperCase();
-
-    return questionAnswered;
   }
 
   private handleQuestionAnswered_MODEL14(
@@ -197,17 +142,7 @@ export class StudentPlanetExecutionService {
   private handleQuestionAnswered_MODEL35(
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
-    const expectedAnswer = questionAnswered.rules.find(
-      (rule) => rule.name === 'answer',
-    )?.value;
-
-    const providedAnswer = questionAnswered.options
-      .map((option) => option.description)
-      .join('')
-      .toUpperCase();
-
-    questionAnswered.orderedAnswer = expectedAnswer === providedAnswer;
-
+    questionAnswered.orderedAnswer = true;
     return questionAnswered;
   }
 
@@ -229,10 +164,14 @@ export class StudentPlanetExecutionService {
     answerOptions: OptionAnswer[],
   ): boolean {
     switch (question.model_id) {
+      case "MODEL11":
+        return this.verifyAnswerPlanet_MODEL11(question, answerOptions);
       case "MODEL12":
         return this.verifyAnswerPlanet_MODEL12(question, answerOptions);
       case "MODEL13":
         return this.verifyAnswerPlanet_MODEL13(question, answerOptions);
+      case "MODEL35":
+        return this.verifyAnswerPlanet_MODEL35(question, answerOptions);
       case "MODEL2":
       case "MODEL18":
       case "MODEL20":
@@ -240,10 +179,25 @@ export class StudentPlanetExecutionService {
       case "MODEL26":
       case "MODEL29":
       case "MODEL31":
-        return this.verifyAnswerPlanetByPositionAnswer(question, answerOptions);    
+        return this.verifyAnswerPlanetByPositionAnswer(question, answerOptions);
       default:
         return this.defaultVerifyAnswerPlanet(question, answerOptions);
     }
+  }
+
+  private verifyAnswerPlanet_MODEL11(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): boolean {
+    const expectedOptionAnswers = question.rules.find(
+      (rule) => rule.name === 'answers',
+    )?.value;
+
+    const providedAnswer = answerOptions
+      .map((option) => option.description)
+      .join(',');
+
+    return expectedOptionAnswers == providedAnswer;
   }
 
   private verifyAnswerPlanet_MODEL12(
@@ -265,6 +219,22 @@ export class StudentPlanetExecutionService {
       (answeredOption.positionAnswer == (answeredOption.position ?? 1))
     );
     return allAnswersAreCorrect;
+  }
+
+  private verifyAnswerPlanet_MODEL35(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): boolean {
+    const expectedAnswer = question.rules.find(
+      (rule) => rule.name === 'answer',
+    )?.value;
+
+    const providedAnswer = answerOptions
+      .map((option) => option.description)
+      .join('')
+      .toUpperCase();
+
+    return expectedAnswer === providedAnswer;
   }
 
   private verifyAnswerPlanetByPositionAnswer(
