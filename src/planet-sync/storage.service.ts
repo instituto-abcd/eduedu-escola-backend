@@ -143,7 +143,7 @@ export class StorageService {
       )
         continue;
 
-      const fileExt = this.getExt(file.metadata.contentType);
+      // const fileExt = this.getExt(file.metadata.contentType);
 
       const fileName =
         file.name
@@ -151,7 +151,8 @@ export class StorageService {
           .replace('assets/', '')
           .replace('planets/', '')
           .replace('exam/', '')
-          .replace('student/', '') + fileExt;
+          .replace('student/', '');
+          //  + fileExt;
 
       await bucket
         .file(file.name)
@@ -191,6 +192,14 @@ export class StorageService {
     const file = bucket.file(`assets/${lottieId}`);
     await file.download({ destination: `dist/assets-data/${lottieId}.json` });
     return lottieId;
+  }
+
+  public async downloadFile(fileId: string): Promise<string> {
+    await this.createDirectoryInRoot('dist/assets-data');
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(`assets/${fileId}`);
+    await file.download({ destination: `dist/assets-data/${fileId}` });
+    return fileId;
   }
 
   async createDirectoryInRoot(directoryName: string): Promise<void> {
