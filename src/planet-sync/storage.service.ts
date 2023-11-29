@@ -140,6 +140,7 @@ export class StorageService {
 
     await this.cacheManager.set('sync-current-end', new Date(), 0);
 
+    await this.cacheManager.set('sync-current-operation', 'Sincronizando planetas', 0);
     console.log('Planet Sync - Download dos artefatos concluído');
   }
 

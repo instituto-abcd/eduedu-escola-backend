@@ -62,6 +62,9 @@ export class PlanetSyncService {
     const cachedValue = await this.cacheManager.get('sync-running');
     const running = cachedValue !== undefined ? cachedValue : false;
 
+    const currentOperationCached = await this.cacheManager.get('sync-current-operation');
+    const currentOperation = currentOperationCached !== undefined ? currentOperationCached : '';
+
     const totalFiles = empty.includes(
       await this.cacheManager.get('sync-total-files'),
     )
@@ -97,6 +100,7 @@ export class PlanetSyncService {
       percent,
       duration,
       running,
+      currentOperation,
     };
   }
 
@@ -130,6 +134,7 @@ export class PlanetSyncService {
       planetsInsertedOrUpdated.push(planet);
     }
 
+    await this.cacheManager.set('sync-current-operation', 'Baixando Artefatos', 0);
     console.log(
       'Planet Sync - Sincronização de documentos do firestore concluída',
     );
@@ -361,6 +366,8 @@ export class PlanetSyncProcessor {
 
       await this.cacheManager.set(syncKey, syncValue, syncDuration);
 
+      await this.cacheManager.set('sync-current-operation', 'Baixando Artefatos', 0);
+
       const promises = [];
 
       await this.storageService.initialize();
@@ -382,6 +389,7 @@ export class PlanetSyncProcessor {
 
       await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
+      await this.cacheManager.set('sync-current-operation', '', 0);
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
       console.log('Planet Sync - Duração Sincronização: ' + duration);
