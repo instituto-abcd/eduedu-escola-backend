@@ -121,6 +121,8 @@ export class StudentPlanetExecutionService {
     answerOptions: OptionAnswer[],
   ): boolean {
     switch (question.model_id) {
+      case "MODEL10":
+        return this.verifyAnswerPlanet_MODEL10(question, answerOptions);
       case "MODEL11":
         return this.verifyAnswerPlanet_MODEL11(question, answerOptions);
       case "MODEL12":
@@ -142,6 +144,13 @@ export class StudentPlanetExecutionService {
       default:
         return this.defaultVerifyAnswerPlanet(question, answerOptions);
     }
+  }
+
+  private verifyAnswerPlanet_MODEL10(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): boolean {
+    return answerOptions.some(answer => answer.isCorrect);
   }
 
   private verifyAnswerPlanet_MODEL11(
