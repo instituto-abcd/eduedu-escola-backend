@@ -150,7 +150,7 @@ export class StudentPlanetExecutionService {
   ): boolean {
     const expectedOptionAnswers = question.rules.find(
       (rule) => rule.name === 'answers',
-    )?.value;
+    )?.value.replace('\"','').replace('"','');
 
     const providedAnswer = answerOptions
       .map((option) => option.description)
