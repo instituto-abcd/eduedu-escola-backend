@@ -220,11 +220,7 @@ export class PlanetSyncService {
           orderedAnswer:
             questionOrigin.options.length > 0 &&
             questionOrigin.options.every((o) => !o.isCorrect),
-          multiplesAnswer:
-            questionOrigin.options.length > 0 &&
-            questionOrigin.options.some((o) => !o.isCorrect) &&
-            questionOrigin.options.filter((option) => option.isCorrect).length >
-              1,
+          multiplesAnswer: this.getMultiplesAnswer(questionOrigin),
           level: questionOrigin.level,
           id: questionOrigin.id,
           model_id: questionOrigin.model_id,
@@ -300,6 +296,17 @@ export class PlanetSyncService {
       console.log(`- ERROR: Planet ${planetOrigin.title}`);
       console.log(error);
       throw error;
+    }
+  }
+
+  private getMultiplesAnswer(questionOrigin: any) {
+    switch (questionOrigin.model_id) {
+      case 'MODEL5':
+        return true
+      default:
+        return questionOrigin.options.length > 0 &&
+           questionOrigin.options.some((o) => !o.isCorrect) &&
+           questionOrigin.options.filter((option) => option.isCorrect).length > 1
     }
   }
 
