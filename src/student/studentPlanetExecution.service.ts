@@ -55,7 +55,6 @@ export class StudentPlanetExecutionService {
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
     const questionHandlers = {
-      MODEL19: this.handleQuestionAnswered_MODEL19,
       MODEL14: this.handleQuestionAnswered_MODEL14,
       MODEL35: this.handleQuestionAnswered_MODEL35,
     };
@@ -97,48 +96,6 @@ export class StudentPlanetExecutionService {
     return questionAnswered;
   }
 
-  private handleQuestionAnswered_MODEL19(
-    questionAnswered: QuestionPlanentDto,
-  ): QuestionPlanentDto {
-    const targets = questionAnswered.titles
-      .find((item) => item.type == 'TEXT' && item.description.includes(' '))
-      .description.split(' ');
-
-    questionAnswered.options.forEach((option) => {
-      const rule = questionAnswered.rules.find(
-        (item) => item.name == 'verify',
-      ).value;
-
-      switch (rule) {
-        case 'starts_with':
-          const initialChar = option.description.substring(0, 1);
-          option.position = targets.indexOf(initialChar);
-          break;
-
-        case 'ends_with':
-          const finalChar = option.description.substring(
-            option.description.length - 1,
-            1,
-          );
-          option.position = targets.indexOf(finalChar);
-          break;
-
-        case 'contains':
-          targets.forEach((target) => {
-            const charIsContained = option.description.includes(target);
-            option.position = charIsContained ? targets.indexOf(target) : null;
-          });
-
-        default:
-          break;
-      }
-    });
-
-    questionAnswered.orderedAnswer = true;
-
-    return questionAnswered;
-  }
-
   private handleQuestionAnswered_MODEL35(
     questionAnswered: QuestionPlanentDto,
   ): QuestionPlanentDto {
@@ -170,6 +127,8 @@ export class StudentPlanetExecutionService {
         return this.verifyAnswerPlanet_MODEL12(question, answerOptions);
       case "MODEL13":
         return this.verifyAnswerPlanet_MODEL13(question, answerOptions);
+      case "MODEL19":
+        return this.verifyAnswerPlanet_MODEL19(question, answerOptions);
       case "MODEL35":
         return this.verifyAnswerPlanet_MODEL35(question, answerOptions);
       case "MODEL2":
@@ -219,6 +178,40 @@ export class StudentPlanetExecutionService {
       (answeredOption.positionAnswer == (answeredOption.position ?? 1))
     );
     return allAnswersAreCorrect;
+  }
+
+  private verifyAnswerPlanet_MODEL19(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): boolean {
+    const rule = question.rules.find(
+      (item) => item.name == 'verify',
+    ).value;
+    
+    const targets = question.titles
+      .find((item) => item.type == 'TEXT' && item.description.includes(' '))
+      .description.split(' ');
+
+    const answers = answerOptions
+      .map(answerOption => answerOption.description);
+    let asserts = [];
+
+    for (let index = 0; index < answers.length; index++) {
+      const answer = answers[index];
+      switch (rule) {
+        case 'starts_with':
+          asserts.push(targets[index].startsWith(answer));
+          break;
+        case 'ends_with':
+          asserts.push(targets[index].endsWith(answer));
+          break;
+        case 'contains':
+          asserts.push(targets[index].includes(answer));
+          break;
+      }
+    }
+
+    return asserts.every(assert => assert);
   }
 
   private verifyAnswerPlanet_MODEL35(
