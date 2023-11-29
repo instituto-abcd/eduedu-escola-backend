@@ -54,13 +54,11 @@ export class ExamService {
             option.image_name.toLocaleLowerCase(),
             option.image_url,
             'exam',
-            'image',
           );
           option.sound_url = await this.storageService.recoverFileURL(
             option.sound_name.toLocaleLowerCase(),
             option.sound_url,
             'exam',
-            'sound',
           );
 
           return option;
@@ -73,7 +71,6 @@ export class ExamService {
             title.file_name.toLocaleLowerCase(),
             title.file_url,
             'exam',
-            'unknown',
           );
 
           return title;

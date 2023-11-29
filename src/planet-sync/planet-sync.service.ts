@@ -201,7 +201,6 @@ export class PlanetSyncService {
         planet.avatar_id,
         planetOrigin?.avatar_url,
         'planets',
-        'image',
       );
       planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
       planet.domain_code = planetOrigin.domain_code;
@@ -254,13 +253,11 @@ export class PlanetSyncService {
               optionOrigin.sound_id,
               optionOrigin.sound_url,
               'assets',
-              'sound',
             ),
             image_url: await this.storageService.recoverFileURL(
               optionOrigin.image_id,
               optionOrigin.image_url,
               'assets',
-              'image',
             ),
             description: optionOrigin.description,
             position:
@@ -285,7 +282,6 @@ export class PlanetSyncService {
               titleOrigin.file_id,
               titleOrigin.file_url,
               'assets',
-              'unknown',
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
