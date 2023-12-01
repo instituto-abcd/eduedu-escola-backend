@@ -209,13 +209,13 @@ export class StudentPlanetExecutionService {
       const answer = answers[index];
       switch (rule) {
         case 'starts_with':
-          asserts.push(targets[index].startsWith(answer));
+          asserts.push(answer.toLowerCase().startsWith(targets[index].toLowerCase()));
           break;
         case 'ends_with':
-          asserts.push(targets[index].endsWith(answer));
+          asserts.push(answer.toLowerCase().endsWith(targets[index].toLowerCase()));
           break;
         case 'contains':
-          asserts.push(targets[index].includes(answer));
+          asserts.push(answer.toLowerCase().includes(targets[index].toLowerCase()));
           break;
       }
     }
