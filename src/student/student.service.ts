@@ -1214,6 +1214,11 @@ export class StudentService {
     }
   }
 
+  private recoverPlanetProgress(currentQuestionPosition: number, totalQuestionsPlanet: number) {
+    const percentage = (currentQuestionPosition / totalQuestionsPlanet) * 100;
+    return percentage;
+  }
+
   // Salva a resposta no banco de dados studentexams.answer
   async saveAnswer(
     studentId: string,
@@ -1744,6 +1749,7 @@ export class StudentService {
     }
 
     const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
+    question.progress = 0;
 
     if (question === null) {
       throw new EduException('QUESTION_NOT_FOUND');
@@ -1756,6 +1762,8 @@ export class StudentService {
     planetId: string,
     answersPlanet: AnswersPlanet,
   ): Promise<AnswersPlanetResponseDto | QuestionPlanentDto> {
+    const planet = await this.planetModel.findOne({ id: planetId });
+
     let questionAnswered = await this.getQuestionByPlanetId(
       planetId,
       answersPlanet.questionId,
@@ -1799,6 +1807,7 @@ export class StudentService {
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
 
       nextQuestion.previousQuestionIsCorrect = isCorrect;
+      nextQuestion.progress = this.recoverPlanetProgress(questionAnswered.position + 1, planet.questions.length);
       return nextQuestion;
     } else {
       // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
@@ -1813,6 +1822,7 @@ export class StudentService {
       // Se entrou nesse else, é porque não deve ser verificado se a questão foi respondida corretamente.
       // Logo, retornamos true e boa.
       nextQuestion.previousQuestionIsCorrect = true;
+      nextQuestion.progress = this.recoverPlanetProgress(questionAnswered.position + 1, planet.questions.length);
       return nextQuestion;
     }
   }
@@ -1870,7 +1880,7 @@ export class StudentService {
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
     await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
-    return { planetCompleted: true, previousQuestionIsCorrect: previousQuestionIsCorrect };
+    return { planetCompleted: true, previousQuestionIsCorrect: previousQuestionIsCorrect, progress: 100 };
   }
 
   async saveStudentPlanetResult(
