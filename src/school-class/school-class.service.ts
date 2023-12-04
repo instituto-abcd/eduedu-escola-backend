@@ -427,6 +427,7 @@ export class SchoolClassService {
           take: pageSize,
           include: {
             student: true,
+            schoolClass: true
           },
         });
 
@@ -446,6 +447,10 @@ export class SchoolClassService {
               reserved: scs.reserved,
               examPerformed: examPerformed,
               firstAccess: scs.firstAccess,
+              schoolGrade: scs.schoolClass.schoolGrade,
+              schoolPeriod: scs.schoolClass.schoolPeriod,
+              schoolClassId: scs.schoolClass.id,
+              schoolClassName: scs.schoolClass.name
             };
           }),
         );
