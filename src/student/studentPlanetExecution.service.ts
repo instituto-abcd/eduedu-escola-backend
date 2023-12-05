@@ -131,6 +131,8 @@ export class StudentPlanetExecutionService {
         return this.verifyAnswerPlanet_MODEL13(question, answerOptions);
       case "MODEL19":
         return this.verifyAnswerPlanet_MODEL19(question, answerOptions);
+      case "MODEL34":
+        return this.verifyAnswerPlanet_MODEL34(question, answerOptions);
       case "MODEL35":
         return this.verifyAnswerPlanet_MODEL35(question, answerOptions);
       case "MODEL2":
@@ -221,6 +223,13 @@ export class StudentPlanetExecutionService {
     }
 
     return asserts.every(assert => assert);
+  }
+
+  private verifyAnswerPlanet_MODEL34(
+    question: QuestionPlanentDto,
+    answerOptions: OptionAnswer[],
+  ): boolean {
+    return answerOptions.length > 0 && answerOptions[0].position == 0;
   }
 
   private verifyAnswerPlanet_MODEL35(
