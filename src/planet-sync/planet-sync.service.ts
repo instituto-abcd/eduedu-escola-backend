@@ -100,7 +100,7 @@ export class PlanetSyncService {
     const factor = +totalFiles / +totalPlanets;
     const percent = +((+totalFiles + +totalPlanets) > 0 ?
       ((+syncedFiles + (+syncedPlanets*factor)) / (+totalFiles + (+totalPlanets*factor))) * 100 : 0)
-      .toFixed(2);
+      .toFixed(2) ?? 0;
 
     return {
       totalFiles,
