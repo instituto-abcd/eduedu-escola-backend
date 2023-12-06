@@ -71,6 +71,9 @@ export class PlanetSyncService {
       ? 0
       : await this.cacheManager.get('sync-total-files');
 
+    const totalPlanetsCached = await this.cacheManager.get('sync-total-planets');
+    const totalPlanets = totalPlanetsCached !== undefined ? totalPlanetsCached : 0;
+
     const syncCurrentStart = (await this.cacheManager.get(
       'sync-current-start',
     )) as Date;
@@ -92,11 +95,18 @@ export class PlanetSyncService {
     }
 
     const syncedFiles = await this.downloadedFileModel.countDocuments();
-    const percent = +totalFiles > 0 ? (+syncedFiles / +totalFiles) * 100 : 0;
+    const syncedPlanets = await this.planetModel.countDocuments();
+
+    const factor = +totalFiles / +totalPlanets;
+    const percent = +((+totalFiles + +totalPlanets) > 0 ?
+      ((+syncedFiles + (+syncedPlanets*factor)) / (+totalFiles + (+totalPlanets*factor))) * 100 : 0)
+      .toFixed(2);
 
     return {
       totalFiles,
       syncedFiles,
+      totalPlanets,
+      syncedPlanets,
       percent,
       duration,
       running,
@@ -117,7 +127,8 @@ export class PlanetSyncService {
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
     const planetsFromFirestore = await this.firestoreService.getPlanets();
-
+    this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
+    
     const planetsInsertedOrUpdated = [];
     for (let index = 0; index < planetsFromFirestore.length; index++) {
       const planet = await this.parsePlanetOriginToPlanet(
@@ -387,6 +398,7 @@ export class PlanetSyncProcessor {
         end.getTime() - start.getTime(),
       );
 
+      await this.cacheManager.set('sync-current-end', end, 0);
       await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
       await this.cacheManager.set('sync-current-operation', '', 0);

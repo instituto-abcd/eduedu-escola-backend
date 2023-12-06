@@ -111,72 +111,61 @@ export class StorageService {
     const examFiles = (await bucket.getFiles({ prefix: 'exam' }))[0];
     const studentFiles = (await bucket.getFiles({ prefix: 'student' }))[0];
 
-    const allFiles = [
+    let allFiles = [
       ...assetsFiles,
       ...planetsFiles,
       ...examFiles,
       ...studentFiles,
     ];
 
+    allFiles = allFiles.filter(
+      (file) =>
+        file.metadata.contentType !=
+        'application/x-www-form-urlencoded;charset=UTF-8',
+    );
+
     await this.cacheManager.set(
       'sync-total-files',
-      allFiles.filter(
-        (file) =>
-          file.metadata.contentType !=
-          'application/x-www-form-urlencoded;charset=UTF-8',
-      ).length,
+      allFiles.length,
       0,
     );
 
     for (const file of allFiles) {
-      if (
-        file.metadata.contentType ===
-        'application/x-www-form-urlencoded;charset=UTF-8'
-      )
-        continue;
-
-      await this.downloadSingleFile(file);
+      try {
+        await this.downloadSingleFile(file);
+      } catch (error) {
+        console.log(file.name);
+        console.log(error);
+      }
     }
 
-    await this.cacheManager.set('sync-current-end', new Date(), 0);
-
-    await this.cacheManager.set('sync-current-operation', 'Sincronizando planetas', 0);
+    await this.cacheManager.set('sync-current-operation', 'Baixando Metadados', 0);
     console.log('Planet Sync - Download dos artefatos concluído');
   }
 
   async downloadSingleFile(file: any): Promise<boolean> {
-    var result = false;
     const bucket = admin.storage().bucket();
-    const [metadata] = await file.getMetadata();
+    const fileExt = await this.getExt(file);
 
-    if (
-      metadata.contentType !==
-      'application/x-www-form-urlencoded;charset=UTF-8'
-    ) {
-      const fileExt = await this.getExt(file);
+    const fileName =
+      file.name
+        .replace(/\.[^/.]+$/, '')
+        .replace('assets/', '')
+        .replace('planets/', '')
+        .replace('exam/', '')
+        .replace('student/', '') + fileExt;
 
-      const fileName =
-        file.name
-          .replace(/\.[^/.]+$/, '')
-          .replace('assets/', '')
-          .replace('planets/', '')
-          .replace('exam/', '')
-          .replace('student/', '') + fileExt;
+    await bucket
+      .file(file.name)
+      .download({ destination: `dist/assets-data/${fileName}` });
 
-      await bucket
-        .file(file.name)
-        .download({ destination: `dist/assets-data/${fileName}` });
+    await this.downloadedFileModel.findOneAndUpdate(
+      { fileName },
+      { fileName },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
 
-      await this.downloadedFileModel.findOneAndUpdate(
-        { fileName },
-        { fileName },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
-      );
-
-      result = true;
-    }
-
-    return result;
+    return true;
   }
 
   async getLottie(lottieId: string) {
