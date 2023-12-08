@@ -95,7 +95,10 @@ export class PlanetSyncService {
     }
 
     const syncedFiles = await this.downloadedFileModel.countDocuments();
-    const syncedPlanets = await this.planetModel.countDocuments();
+
+    const syncedPlanetsCached = await this.cacheManager.get('sync-synced-planets');
+    const syncedPlanets = syncedPlanetsCached !== undefined ? syncedPlanetsCached : 0;
+
 
     const factor = +totalFiles / +totalPlanets;
     const percent = +((+totalFiles + +totalPlanets) > 0 ?
@@ -143,6 +146,7 @@ export class PlanetSyncService {
         .exec();
 
       planetsInsertedOrUpdated.push(planet);
+      this.cacheManager.set('sync-synced-planets', planetsInsertedOrUpdated.length, 0);
     }
 
     await this.cacheManager.set('sync-current-operation', 'Baixando Artefatos', 0);
@@ -370,6 +374,7 @@ export class PlanetSyncProcessor {
   async processPlanetSync() {
     try {
       console.log('Planet Sync - Iniciando sincronização');
+      this.cacheManager.set('sync-synced-planets', 0, 0);
 
       const syncKey = 'sync-running';
       const syncValue = true;

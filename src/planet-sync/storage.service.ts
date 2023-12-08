@@ -102,6 +102,8 @@ export class StorageService {
   }
 
   async downloadFiles() {
+    await this.downloadedFileModel.deleteMany();
+
     console.log('Planet Sync - Iniciando download dos artefatos');
     this.createDirectoryInRoot('dist/assets-data');
     const bucket = admin.storage().bucket();
