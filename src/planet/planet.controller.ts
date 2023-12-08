@@ -9,6 +9,17 @@ import { Question } from 'src/planet-sync/schemas/planet.schema';
 export class PlanetController {
   constructor(private readonly planetService: PlanetService) {}
 
+  @Get('/assign-all-planets/:id')
+  @ApiResponse({
+    status: 201,
+    description: 'Atribuir todos planetas ao usuário ',
+    type: PlanetDto,
+  })
+  assignAllPlanetsToUser(@Param('id') studentId: string): Promise<PlanetDto[]> {
+    return this.planetService.assignAllPlanetsToUser(studentId);
+  }
+
+
   @Get()
   @ApiResponse({
     status: 201,
@@ -62,6 +73,18 @@ export class PlanetController {
     @Query('modelId') modelId: string
   ): Promise<any[]> {
     return this.planetService.findAllPlanetQuestions(modelId);
+  }
+
+  @Get('/test-questions?')
+  @ApiResponse({
+    status: 201,
+    description: 'Retorna as questões de planetas PARA TESTE',
+    type: PlanetDto,
+  })
+  findAllPlanetQuestionTest(
+    @Query('modelId') modelId: string
+  ): Promise<any[]> {
+    return this.planetService.findAllPlanetQuestionsTest(modelId);
   }
 
   @Get('/all-models?')

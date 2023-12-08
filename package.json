@@ -45,7 +45,7 @@
     "axios": "^1.4.0",
     "bcrypt": "^5.1.0",
     "bull": "^4.11.3",
-    "cache-manager": "^5.2.3",
+    "cache-manager": "5.2.4",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
     "file-type": "^18.5.0",

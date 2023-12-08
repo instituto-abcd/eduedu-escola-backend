@@ -22,6 +22,9 @@ export class QuestionPlanentDto {
   previousQuestionIsCorrect: boolean = false;
 
   @ApiProperty()
+  progress: number = 0;
+
+  @ApiProperty()
   orderedAnswer: boolean;
 
   @ApiProperty()

@@ -59,13 +59,20 @@ export class PlanetSyncService {
 
   async getPlanetSyncStatus(): Promise<any> {
     const empty = [undefined, null];
-    const running = (await this.cacheManager.get('sync-running')) ?? false;
+    const cachedValue = await this.cacheManager.get('sync-running');
+    const running = cachedValue !== undefined ? cachedValue : false;
+
+    const currentOperationCached = await this.cacheManager.get('sync-current-operation');
+    const currentOperation = currentOperationCached !== undefined ? currentOperationCached : '';
 
     const totalFiles = empty.includes(
       await this.cacheManager.get('sync-total-files'),
     )
       ? 0
       : await this.cacheManager.get('sync-total-files');
+
+    const totalPlanetsCached = await this.cacheManager.get('sync-total-planets');
+    const totalPlanets = totalPlanetsCached !== undefined ? totalPlanetsCached : 0;
 
     const syncCurrentStart = (await this.cacheManager.get(
       'sync-current-start',
@@ -88,14 +95,25 @@ export class PlanetSyncService {
     }
 
     const syncedFiles = await this.downloadedFileModel.countDocuments();
-    const percent = +totalFiles > 0 ? (+syncedFiles / +totalFiles) * 100 : 0;
+
+    const syncedPlanetsCached = await this.cacheManager.get('sync-synced-planets');
+    const syncedPlanets = syncedPlanetsCached !== undefined ? syncedPlanetsCached : 0;
+
+
+    const factor = +totalFiles / +totalPlanets;
+    const percent = +((+totalFiles + +totalPlanets) > 0 ?
+      ((+syncedFiles + (+syncedPlanets*factor)) / (+totalFiles + (+totalPlanets*factor))) * 100 : 0)
+      .toFixed(2) ?? 0;
 
     return {
       totalFiles,
       syncedFiles,
+      totalPlanets,
+      syncedPlanets,
       percent,
       duration,
       running,
+      currentOperation,
     };
   }
 
@@ -104,6 +122,7 @@ export class PlanetSyncService {
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
+    await this.cacheManager.set('sync-running', true, 0);
   }
 
   async handleSyncAll() {
@@ -111,7 +130,8 @@ export class PlanetSyncService {
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
     const planetsFromFirestore = await this.firestoreService.getPlanets();
-
+    this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
+    
     const planetsInsertedOrUpdated = [];
     for (let index = 0; index < planetsFromFirestore.length; index++) {
       const planet = await this.parsePlanetOriginToPlanet(
@@ -126,8 +146,10 @@ export class PlanetSyncService {
         .exec();
 
       planetsInsertedOrUpdated.push(planet);
+      this.cacheManager.set('sync-synced-planets', planetsInsertedOrUpdated.length, 0);
     }
 
+    await this.cacheManager.set('sync-current-operation', 'Baixando Artefatos', 0);
     console.log(
       'Planet Sync - Sincronização de documentos do firestore concluída',
     );
@@ -199,7 +221,6 @@ export class PlanetSyncService {
         planet.avatar_id,
         planetOrigin?.avatar_url,
         'planets',
-        'image',
       );
       planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
       planet.domain_code = planetOrigin.domain_code;
@@ -219,11 +240,7 @@ export class PlanetSyncService {
           orderedAnswer:
             questionOrigin.options.length > 0 &&
             questionOrigin.options.every((o) => !o.isCorrect),
-          multiplesAnswer:
-            questionOrigin.options.length > 0 &&
-            questionOrigin.options.some((o) => !o.isCorrect) &&
-            questionOrigin.options.filter((option) => option.isCorrect).length >
-              1,
+          multiplesAnswer: this.getMultiplesAnswer(questionOrigin),
           level: questionOrigin.level,
           id: questionOrigin.id,
           model_id: questionOrigin.model_id,
@@ -252,16 +269,17 @@ export class PlanetSyncService {
               optionOrigin.sound_id,
               optionOrigin.sound_url,
               'assets',
-              'sound',
             ),
             image_url: await this.storageService.recoverFileURL(
               optionOrigin.image_id,
               optionOrigin.image_url,
               'assets',
-              'image',
             ),
             description: optionOrigin.description,
-            position: optionOrigin.position,
+            position:
+              questionOrigin.model_id == 'MODEL3'
+                ? optionIndex
+                : optionOrigin.position,
             isCorrect: optionOrigin.isCorrect,
           } as any;
 
@@ -280,7 +298,6 @@ export class PlanetSyncService {
               titleOrigin.file_id,
               titleOrigin.file_url,
               'assets',
-              'unknown',
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
@@ -299,6 +316,17 @@ export class PlanetSyncService {
       console.log(`- ERROR: Planet ${planetOrigin.title}`);
       console.log(error);
       throw error;
+    }
+  }
+
+  private getMultiplesAnswer(questionOrigin: any) {
+    switch (questionOrigin.model_id) {
+      case 'MODEL5':
+        return true
+      default:
+        return questionOrigin.options.length > 0 &&
+           questionOrigin.options.some((o) => !o.isCorrect) &&
+           questionOrigin.options.filter((option) => option.isCorrect).length > 1
     }
   }
 
@@ -346,31 +374,44 @@ export class PlanetSyncProcessor {
   async processPlanetSync() {
     try {
       console.log('Planet Sync - Iniciando sincronização');
+      this.cacheManager.set('sync-synced-planets', 0, 0);
 
-      await this.cacheManager.set('sync-running', true);
+      const syncKey = 'sync-running';
+      const syncValue = true;
+      const syncDuration = 0;
+
+      await this.cacheManager.set(syncKey, syncValue, syncDuration);
+
+      await this.cacheManager.set('sync-current-operation', 'Baixando Artefatos', 0);
+
       const promises = [];
 
+      await this.storageService.initialize();
+
       promises.push(this.planetSyncService.handleSyncAll());
-      if (process.env.ASSETS == 'LOCAL') {
+
+      if (process.env.ASSETS === 'LOCAL') {
         promises.push(this.storageService.downloadFiles());
       }
 
       const start = new Date();
 
       await Promise.all(promises);
-      const end = new Date();
 
+      const end = new Date();
       const duration = this.dateFormatterUtilsService.convertMsToTime(
         end.getTime() - start.getTime(),
       );
 
-      await this.cacheManager.set('sync-running', false);
+      await this.cacheManager.set('sync-current-end', end, 0);
+      await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
+      await this.cacheManager.set('sync-current-operation', '', 0);
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
       console.log('Planet Sync - Duração Sincronização: ' + duration);
     } catch (error) {
-      console.log(error);
+      console.error('Erro durante a sincronização:', error);
     }
   }
 }
