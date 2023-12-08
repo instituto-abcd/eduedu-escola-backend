@@ -349,7 +349,7 @@ export class SchoolClassResultService {
           const averageStars = totalStars / filteredResults.length;
           chartDataset.data.push(averageStars);
         } else {
-          chartDataset.data.push(0);
+          chartDataset.data.push(null);
         }
       }
 
