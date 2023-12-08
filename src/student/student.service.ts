@@ -1819,6 +1819,7 @@ export class StudentService {
       if (nextQuestion === null || nextQuestion === undefined) {
         return await this.finishPlanet(studentId, planetId);
       }
+      nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
       // Se entrou nesse else, é porque não deve ser verificado se a questão foi respondida corretamente.
       // Logo, retornamos true e boa.
       nextQuestion.previousQuestionIsCorrect = true;
@@ -1828,28 +1829,39 @@ export class StudentService {
   }
 
   private applyPlanetQuestionShuffle(planetQuestion: any): any {
-    const modelIdsToShuffle = [
-      'MODEL2',
-      'MODEL4',
-      'MODEL5',
-      'MODEL10',
-      'MODEL11',
-      'MODEL12',
-      'MODEL13',
-      'MODEL18',
-      'MODEL19',
-      'MODEL24',
-      'MODEL25',
-      'MODEL26',
-      'MODEL28',
-      'MODEL29',
-      'MODEL31',
-      'MODEL32',
-      'MODEL34',
-    ];
-
-    if (modelIdsToShuffle.includes(planetQuestion.model_id)) {
-      planetQuestion.options = this.shuffleOptions(planetQuestion.options);
+    switch (planetQuestion.model_id) {
+      case 'MODEL12':
+        const shuffleRule = planetQuestion.rules
+          .find((rule) => rule.name === 'shuffle');
+        if (shuffleRule == undefined || JSON.parse(shuffleRule.value.toLowerCase())) {
+          planetQuestion.options = this.shuffleOptions(planetQuestion.options);
+        }
+        break;
+      case 'MODEL24':
+        if (planetQuestion.options.length > 2) {
+          planetQuestion.options = this.shuffleOptions(planetQuestion.options);
+        }
+        break;
+      case 'MODEL4':
+      case 'MODEL10':
+      case 'MODEL11':
+      case 'MODEL32':
+      case 'MODEL13':
+      case 'MODEL18':
+      case 'MODEL5':
+      case 'MODEL2':
+      case 'MODEL8':
+      case 'MODEL26':
+      case 'MODEL34':
+      case 'MODEL25':
+      case 'MODEL19':
+      case 'MODEL28':
+      case 'MODEL31':
+      case 'MODEL29':
+        planetQuestion.options = this.shuffleOptions(planetQuestion.options);
+        break;
+      default:
+        break;
     }
 
     return planetQuestion.options;
