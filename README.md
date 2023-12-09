@@ -10,9 +10,9 @@
 
 ## Gestão de Branches
 
-Fluxo utilizado: **GitLab Flow**
+Fluxo utilizado: **Git Flow**
 
-![gitlab-flow](https://i.imgur.com/ZVS8XcV.png)
+![git-flow](https://i.imgur.com/Wk7LfaW.png)
 
 ---
 
