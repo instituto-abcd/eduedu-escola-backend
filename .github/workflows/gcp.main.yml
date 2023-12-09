@@ -1,6 +1,10 @@
 ---
-name: MAIN - CI Pipeline
-on: workflow_dispatch
+name: Publicação de Release - CI Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag da release que será gerada'
 
 jobs:
   build-push:
@@ -11,13 +15,14 @@ jobs:
       IMAGE_NAME: eduedu-escola-backend-main
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
-      REGISTRY_NAME: eduedu-escola-backend
       ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
       REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.inputs.tag }}
     
     - uses: 'google-github-actions/auth@v1'
       with:
@@ -38,15 +43,7 @@ jobs:
         gcloud auth configure-docker --quiet
         gcloud auth configure-docker $REGISTRY_PREFIX --quiet
 
-    - name: Push Docker Image to Artifact Registry
-      run: |-
-        docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
-        docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
-
     - name: Push Docker Image to Setup
       run: |-
-        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:main
-        docker push $REGISTRY_SETUP_REPOSITORY:main
-
-    outputs:
-      git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
+        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:${{ github.event.inputs.tag }}
+        docker push $REGISTRY_SETUP_REPOSITORY:${{ github.event.inputs.tag }}
