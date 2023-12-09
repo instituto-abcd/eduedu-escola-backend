@@ -5,6 +5,7 @@ on:
     inputs:
       tag:
         description: 'Tag da release que será gerada'
+        required: true
 
 jobs:
   build-push:
