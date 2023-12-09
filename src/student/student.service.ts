@@ -1749,6 +1749,7 @@ export class StudentService {
     }
 
     const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
+    question.options = this.applyPlanetQuestionShuffle(question);
     question.progress = 0;
 
     if (question === null) {
