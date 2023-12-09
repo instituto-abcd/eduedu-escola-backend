@@ -2,7 +2,7 @@
 name: DEVELOPMENT GCP - CI/CD Pipeline
 on:
   push:
-    branches: [ main, devops ]
+    branches: [ development ]
 jobs:
   build-push:
     name: Build and Push Docker Image
