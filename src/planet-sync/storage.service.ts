@@ -43,6 +43,10 @@ export class StorageService {
     url: string | null,
     bucket: string,
   ): Promise<string | null> {
+    if (id === null || id === undefined || id === '') {
+      return;
+    }
+
     if (process.env.ASSETS !== 'LOCAL') {
       return url;
     }
