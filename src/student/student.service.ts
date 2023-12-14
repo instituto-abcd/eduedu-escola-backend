@@ -1148,6 +1148,10 @@ export class StudentService {
   }
 
   private shuffleOptions(options: any): any {
+    if (options == undefined || options == null || options.length == 0) {
+      return options;
+    }
+
     let originalOptions = JSON.parse(JSON.stringify(options));
 
     if (options != undefined && options != null && options.length > 0) {
