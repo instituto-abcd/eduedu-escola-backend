@@ -22,17 +22,22 @@ export class AuthResponseDto {
   @ApiProperty({ description: 'Token de acesso', example: 'EDUEDU001' })
   accessToken: string;
 
+  @ApiProperty({ description: 'Nome da Escola', example: 'Escola Pública' })
+  schoolName: string;
+
   constructor(
     id: string,
     name: string,
     email: string,
     document: string,
     accessToken: string,
+    schoolName: string,
   ) {
     this.id = id;
     this.name = name;
     this.email = email;
     this.document = document;
     this.accessToken = accessToken;
+    this.schoolName = schoolName;
   }
 }

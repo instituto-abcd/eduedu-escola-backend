@@ -1148,6 +1148,12 @@ export class StudentService {
   }
 
   private shuffleOptions(options: any): any {
+    if (options == undefined || options == null || options.length == 0) {
+      return options;
+    }
+
+    let originalOptions = JSON.parse(JSON.stringify(options));
+
     if (options != undefined && options != null && options.length > 0) {
       let currentIndex = options.length,
         randomIndex;
@@ -1162,6 +1168,21 @@ export class StudentService {
         ];
       }
     }
+
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = options[i];
+      options[i] = options[j];
+      options[j] = temp;
+    }
+
+    let originalPositions = originalOptions.map(option => option.position);
+    let positionsShuffle = options.map(option => option.position);
+
+    if (originalPositions == positionsShuffle) {
+      options = this.shuffleOptions(options);
+    }
+
     return options;
   }
 
