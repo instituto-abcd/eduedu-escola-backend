@@ -19,8 +19,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.inputs.tag }}
     
     - uses: 'google-github-actions/auth@v1'
       with:
@@ -43,5 +41,5 @@ jobs:
 
     - name: Push Docker Image to Setup
       run: |-
-        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:${{ github.event.inputs.tag }}
-        docker push $REGISTRY_SETUP_REPOSITORY:${{ github.event.inputs.tag }}
+        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:alpha
+        docker push $REGISTRY_SETUP_REPOSITORY:alpha
