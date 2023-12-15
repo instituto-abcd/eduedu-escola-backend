@@ -29,6 +29,7 @@ export class AuthService {
     const { email, password } = authRequestDto;
     const user = await this.prismaService.user.findFirst({
       where: { email },
+      include: { school: true },
     });
 
     if (!user) {
@@ -46,7 +47,7 @@ export class AuthService {
 
     const accessToken = this.generateAccessToken(user);
     const { id, name, email: userEmail, document } = user;
-    return new AuthResponseDto(id, name, userEmail, document, accessToken);
+    return new AuthResponseDto(id, name, userEmail, document, accessToken, user.school.name);
   }
 
   generateAccessToken(user: User): string {
@@ -159,6 +160,7 @@ export class AuthService {
   async authenticateAccessKey(accessKey: string): Promise<AuthResponseDto> {
     const user = await this.prismaService.user.findFirst({
       where: { accessKey: { equals: accessKey, mode: 'insensitive' } },
+      include: { school: true },
     });
 
     if (!user) {
@@ -177,6 +179,7 @@ export class AuthService {
       email: user.email,
       id: user.id,
       name: user.name,
+      schoolName: user.school.name
     };
   }
 }
