@@ -37,19 +37,31 @@ export class SchoolClassResultService {
   ): Promise<SchoolClassDetailedSummaryDto[]> {
     const result: SchoolClassDetailedSummaryDto[] = [];
 
-    const students = await this.prisma.student.findMany({
+    const studentsExamResult = await this.prisma.studentExamResult.findMany({
       where: {
-        schoolClasses: {
-          some: {
-            schoolClassId: schoolClassId,
-            active: true,
+        student: {
+          schoolClasses: {
+            some: {
+              schoolClassId: schoolClassId,
+              active: true,
+            },
+          },
+          examResults: {
+            some: {},
           },
         },
       },
       include: {
-        examResults: true,
+        student: {
+          include: {
+            examResults: true,
+          },
+        },
       },
+      distinct: ['studentId'],
     });
+
+    const students = studentsExamResult.map((value) => value.student);
 
     if (students.length === 0) {
       return result; // No students found
