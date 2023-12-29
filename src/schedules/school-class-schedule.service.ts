@@ -24,7 +24,7 @@ export class SchoolClassScheduleService {
     }
   }
 
-  @Cron('54 23 * * *') // Agendamento para 23:54 todos os dias (Acordar Banco de Daddos)
+  @Cron('54 23 * * *') // Agendamento para 23:54 todos os dias (Acordar Banco de Dados Cloud)
   async updateSchoolClassStudentsWakeUpDatabase() {
     try {
       await this.prisma.schoolClassStudent.updateMany({
@@ -36,6 +36,24 @@ export class SchoolClassScheduleService {
     } catch (error) {
       this.logger.error(
         'Ocorreu um erro ao cancelar as reservas dos alunos.',
+        error,
+      );
+    }
+  }
+
+  async updateSchoolClassStudentsStartApp() {
+    try {
+      await this.prisma.schoolClassStudent.updateMany({
+        data: {
+          reserved: false,
+        },
+      });
+      this.logger.log(
+        `Reservas dos alunos foram canceladas com êxito durante a inicialização do sistema.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Houve um problema ao cancelar as reservas dos alunos durante o início do sistema.',
         error,
       );
     }
