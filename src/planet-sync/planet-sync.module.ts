@@ -13,13 +13,32 @@ import {
   DownloadedFile,
   DownloadedFileSchema,
 } from './schemas/download-file.schema';
+import { StudentService } from '../student/student.service';
+import {
+  StudentExam,
+  StudentExamSchema,
+} from '../student/schemas/studentExam.schema';
+import { Exam, ExamSchema } from '../exam/schemas/exam.schema';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
+import { StudentResultService } from '../student/studentResult.service';
+import { PlanetService } from '../planet/planet.service';
+import { ValidationUtilsService } from '../common/utils/validation-utils.service';
+import { BcryptService } from '../common/services/bcrypt.service';
+import { DashboardService } from '../dashboard/dashboard.service';
+import { DateApiService } from '../common/services/date-api.service';
+import { StudentExamService } from '../student/studentExam.service';
+import { AwardsService } from '../awards/awards.service';
+import { StudentAwardService } from '../student/studentAward.service';
+import { StudentPlanetExecutionService } from '../student/studentPlanetExecution.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: StudentExam.name, schema: StudentExamSchema },
       { name: Planet.name, schema: PlanetSchema },
       { name: PlanetSync.name, schema: PlanetSyncSchema },
       { name: DownloadedFile.name, schema: DownloadedFileSchema },
+      { name: Exam.name, schema: ExamSchema },
     ]),
     BullModule.registerQueueAsync({ name: 'planet-sync' }),
     UtilsModule,
@@ -31,7 +50,26 @@ import {
     FirestoreService,
     StorageService,
     PlanetSyncProcessor,
+    PlanetService,
+    StudentService,
+    ValidationUtilsService,
+    BcryptService,
+    DashboardService,
+    DateApiService,
+    StudentExamService,
+    AwardsService,
+    StudentAwardService,
+    StudentResultService,
+    StudentPlanetExecutionService,
+    PerformanceResultUtilsService,
   ],
-  exports: [PlanetSyncModule, FirestoreService, StorageService, BullModule],
+  exports: [
+    PlanetSyncModule,
+    FirestoreService,
+    StorageService,
+    BullModule,
+    PerformanceResultUtilsService,
+    StudentResultService,
+  ],
 })
 export class PlanetSyncModule {}

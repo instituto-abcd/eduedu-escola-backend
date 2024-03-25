@@ -7,6 +7,7 @@ import {
   Prisma,
   SchoolGradeEnum,
   Status,
+  Student,
   StudentPlanetResult,
 } from '@prisma/client';
 import { StudentResponseDto } from './dto/response/student-response.dto';
@@ -653,6 +654,54 @@ export class StudentService {
     return null;
   }
 
+  async syncPlanetStudent(): Promise<void> {
+    try {
+      console.log('Sync Planet Student - Sincronizando Planetas do Aluno');
+      const allStudents = await this.getAllStudents();
+
+      await Promise.all(
+        allStudents.map(async (student) => {
+          const studentExam = await this.studentExamModel.findOne({
+            studentId: student.id,
+            current: true,
+            examDate: { $ne: null },
+          });
+
+          if (studentExam) {
+            const axisCodes = ['ES', 'EA', 'LC'];
+            const planets: PlanetDocument[] = [];
+
+            for (const axisCode of axisCodes) {
+              const studentLevel = await this.findStudentLevel(
+                student.id,
+                axisCode,
+              );
+              const axisPlanets = await this.getPlanetsByAxisAndLevel(
+                axisCode,
+                studentLevel,
+              );
+              planets.push(...axisPlanets);
+            }
+
+            await this.generateAndSavePlanetTrack(student.id, planets);
+          }
+        }),
+      );
+      console.log('Sync Planet Student - Planetas do Aluno Sincronizados');
+    } catch (error) {
+      console.error('Erro ao sincronizar alunos e planetas:', error);
+    }
+  }
+
+  async getAllStudents(): Promise<Student[]> {
+    try {
+      return await this.prisma.student.findMany();
+    } catch (error) {
+      console.error('Erro ao obter todos os alunos:', error);
+      throw new Error('Erro ao obter todos os alunos');
+    }
+  }
+
   async authorizeNewExam(
     requestDto: AuthorizeNewExamRequestDto,
   ): Promise<AuthorizeNewExamResponseDto> {
@@ -1152,7 +1201,7 @@ export class StudentService {
       return options;
     }
 
-    let originalOptions = JSON.parse(JSON.stringify(options));
+    const originalOptions = JSON.parse(JSON.stringify(options));
 
     if (options != undefined && options != null && options.length > 0) {
       let currentIndex = options.length,
@@ -1176,8 +1225,8 @@ export class StudentService {
       options[j] = temp;
     }
 
-    let originalPositions = originalOptions.map(option => option.position);
-    let positionsShuffle = options.map(option => option.position);
+    const originalPositions = originalOptions.map((option) => option.position);
+    const positionsShuffle = options.map((option) => option.position);
 
     if (originalPositions == positionsShuffle) {
       options = this.shuffleOptions(options);
@@ -1235,7 +1284,10 @@ export class StudentService {
     }
   }
 
-  private recoverPlanetProgress(currentQuestionPosition: number, totalQuestionsPlanet: number) {
+  private recoverPlanetProgress(
+    currentQuestionPosition: number,
+    totalQuestionsPlanet: number,
+  ) {
     const percentage = (currentQuestionPosition / totalQuestionsPlanet) * 100;
     return percentage;
   }
@@ -1801,12 +1853,12 @@ export class StudentService {
 
     const skipVerify =
       answersPlanet.optionsAnswered.length == 0 ||
-      !questionAnswered.orderedAnswer &&
-      questionAnswered.options.every((option) => {
-        return (
-          (option.position === null && !option.isCorrect) || !option.isCorrect
-        );
-      });
+      (!questionAnswered.orderedAnswer &&
+        questionAnswered.options.every((option) => {
+          return (
+            (option.position === null && !option.isCorrect) || !option.isCorrect
+          );
+        }));
 
     if (!skipVerify) {
       const isCorrect = this.studentPlanetExecution.verifyAnswerPlanet(
@@ -1829,7 +1881,10 @@ export class StudentService {
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
 
       nextQuestion.previousQuestionIsCorrect = isCorrect;
-      nextQuestion.progress = this.recoverPlanetProgress(questionAnswered.position + 1, planet.questions.length);
+      nextQuestion.progress = this.recoverPlanetProgress(
+        questionAnswered.position + 1,
+        planet.questions.length,
+      );
       return nextQuestion;
     } else {
       // Verifica se existe próxima questão do planeta, considerando a propriedade position+1 da questão respondida (questão que chega).
@@ -1845,7 +1900,10 @@ export class StudentService {
       // Se entrou nesse else, é porque não deve ser verificado se a questão foi respondida corretamente.
       // Logo, retornamos true e boa.
       nextQuestion.previousQuestionIsCorrect = true;
-      nextQuestion.progress = this.recoverPlanetProgress(questionAnswered.position + 1, planet.questions.length);
+      nextQuestion.progress = this.recoverPlanetProgress(
+        questionAnswered.position + 1,
+        planet.questions.length,
+      );
       return nextQuestion;
     }
   }
@@ -1853,9 +1911,13 @@ export class StudentService {
   private applyPlanetQuestionShuffle(planetQuestion: any): any {
     switch (planetQuestion.model_id) {
       case 'MODEL12':
-        const shuffleRule = planetQuestion.rules
-          .find((rule) => rule.name === 'shuffle');
-        if (shuffleRule == undefined || JSON.parse(shuffleRule.value.toLowerCase())) {
+        const shuffleRule = planetQuestion.rules.find(
+          (rule) => rule.name === 'shuffle',
+        );
+        if (
+          shuffleRule == undefined ||
+          JSON.parse(shuffleRule.value.toLowerCase())
+        ) {
           planetQuestion.options = this.shuffleOptions(planetQuestion.options);
         }
         break;
@@ -1892,7 +1954,7 @@ export class StudentService {
   private async finishPlanet(
     studentId: string,
     planetId: string,
-    previousQuestionIsCorrect: boolean = true,
+    previousQuestionIsCorrect = true,
   ): Promise<AnswersPlanetResponseDto> {
     const planet = await this.planetModel.findOne({ id: planetId });
 
@@ -1914,7 +1976,11 @@ export class StudentService {
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
     await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
-    return { planetCompleted: true, previousQuestionIsCorrect: previousQuestionIsCorrect, progress: 100 };
+    return {
+      planetCompleted: true,
+      previousQuestionIsCorrect: previousQuestionIsCorrect,
+      progress: 100,
+    };
   }
 
   async saveStudentPlanetResult(
@@ -2091,5 +2157,4 @@ export class StudentService {
       throw new EduException('DATABASE_ERROR');
     }
   }
- 
 }
