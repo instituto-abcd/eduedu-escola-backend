@@ -7,12 +7,12 @@ ENV FIRESTORE_READ_SERVICEACCOUNT=${ARG_FIRESTORE_READ_SERVICEACCOUNT}
 
 COPY package.json ./
 
-RUN yarn
+RUN npm i
 
 COPY . .
 
-RUN yarn prisma generate
+RUN npx prisma generate
 
-RUN FIRESTORE_READ_SERVICEACCOUNT=$FIRESTORE_READ_SERVICEACCOUNT yarn build
+RUN FIRESTORE_READ_SERVICEACCOUNT=$FIRESTORE_READ_SERVICEACCOUNT npm run build
 
 CMD [ "node", "--max-old-space-size=6144", "dist/src/main.js" ]

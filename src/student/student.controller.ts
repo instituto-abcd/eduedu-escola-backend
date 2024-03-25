@@ -66,6 +66,11 @@ export class StudentController {
     private readonly studentResultService: StudentResultService,
   ) {}
 
+  @Get('sync-planet-student')
+  async syncPlanetStudent(): Promise<any> {
+    return await this.studentService.syncPlanetStudent();
+  }
+
   @AuditGuard()
   @Post()
   @ApiResponse({
