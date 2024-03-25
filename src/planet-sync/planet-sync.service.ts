@@ -423,6 +423,8 @@ export class PlanetSyncProcessor {
         promises.push(this.storageService.downloadFiles());
       }
 
+      promises.push(this.studentService.syncPlanetStudent());
+
       const start = new Date();
 
       await Promise.all(promises);
@@ -436,7 +438,6 @@ export class PlanetSyncProcessor {
       await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
       await this.cacheManager.set('sync-current-operation', '', 0);
-      await this.studentService.syncPlanetStudent();
 
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
