@@ -22,6 +22,7 @@ import { PerformanceResultUtilsService } from 'src/common/utils/performance-resu
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';
+import { parse } from 'date-fns';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -396,11 +397,21 @@ export class SchoolClassResultService {
 
   async examsPerformanceStudents(
     idSchoolClass: string,
+    studentName: string,
+    examDate: string,
+    cfo: number,
+    lct: number,
+    sea: number,
   ): Promise<ExamPerformanceResponse[]> {
-    const students = await this.getStudentBySchoolClasses(idSchoolClass);
-    const studentIds = students.map((student) => student.id);
+    const students = await this.getStudentBySchoolClasses(
+      idSchoolClass,
+      studentName,
+    );
     const filteredStudentExamResults = await this.getFilteredStudentExamResults(
-      studentIds,
+      examDate,
+      cfo,
+      lct,
+      sea,
     );
 
     const resultsByStudent = this.organizeResultsByStudent(
@@ -414,7 +425,7 @@ export class SchoolClassResultService {
       ),
     );
 
-    return students.map((student) => {
+    return studentsWithResultsAndExams.map((student) => {
       const performanceData = this.calculatePerformanceExam(
         student,
         resultsByStudent,
@@ -511,15 +522,54 @@ export class SchoolClassResultService {
     };
   }
 
-  async getFilteredStudentExamResults(studentIds: string[]) {
+  async getFilteredStudentExamResults(
+    examDate?: string | null,
+    cfo?: number,
+    lct?: number,
+    sea?: number,
+  ) {
+    const filters = {
+      OR: [],
+    };
+
+    // Verifica se foi fornecido o limite para a categoria "ES" (cfo)
+    if (cfo !== undefined) {
+      // Adiciona filtro para a categoria "ES" com percentual maior que o fornecido
+      filters.OR.push({
+        axisCode: 'ES',
+        percent: { gt: cfo },
+      });
+    }
+
+    // Verifica se foi fornecido o limite para a categoria "LC" (lct)
+    if (lct !== undefined) {
+      // Adiciona filtro para a categoria "LC" com percentual maior que o fornecido
+      filters.OR.push({
+        axisCode: 'LC',
+        percent: { gt: lct },
+      });
+    }
+
+    // Verifica se foi fornecido o limite para a categoria "EA" (sea)
+    if (sea !== undefined) {
+      // Adiciona filtro para a categoria "EA" com percentual maior que o fornecido
+      filters.OR.push({
+        axisCode: 'EA',
+        percent: { gt: sea },
+      });
+    }
+
+    const parsedExamDate = examDate
+      ? parse(examDate, 'dd/MM', new Date())
+      : undefined;
+
+    // Retorna os resultados filtrados usando os filtros construídos
     return this.prisma.studentExamResult.findMany({
       where: {
-        studentId: {
-          in: studentIds,
-        },
-        examDate: {
-          not: undefined,
-        },
+        AND: [
+          { OR: filters.OR }, // Usa os filtros construídos em OR
+          { examDate: parsedExamDate ? { not: undefined } : undefined },
+        ],
       },
     });
   }
@@ -530,15 +580,26 @@ export class SchoolClassResultService {
     return `${day}/${month}`;
   }
 
-  private async getStudentBySchoolClasses(schoolClassesId: string) {
-    return this.prisma.student.findMany({
-      where: {
-        schoolClasses: {
-          some: {
-            schoolClassId: schoolClassesId,
-          },
+  private async getStudentBySchoolClasses(
+    schoolClassesId: string,
+    studentName?: string,
+  ) {
+    const whereCondition: any = {
+      schoolClasses: {
+        some: {
+          schoolClassId: schoolClassesId,
         },
       },
+    };
+
+    if (studentName && studentName.trim() !== '') {
+      whereCondition.name = {
+        contains: studentName,
+      };
+    }
+
+    return this.prisma.student.findMany({
+      where: whereCondition,
       include: {
         schoolClasses: {
           include: {
