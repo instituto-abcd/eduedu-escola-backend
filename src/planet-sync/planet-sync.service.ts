@@ -12,8 +12,6 @@ import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
-import { StudentService } from '../student/student.service';
-import * as fs from 'fs';
 
 @Injectable()
 export class PlanetSyncService {
@@ -144,21 +142,6 @@ export class PlanetSyncService {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
-
-    try {
-      // Verifica se a pasta assets-data existe
-      const directoryPath = 'dist/assets-data';
-      const directoryExists = fs.existsSync(directoryPath);
-
-      // Se existir, exclui a pasta
-      if (directoryExists) {
-        fs.rmdirSync(directoryPath, { recursive: true });
-        console.log('Pasta assets-data deletada com sucesso.');
-      }
-    } catch (error) {
-      console.error('Erro ao deletar a pasta assets-data:', error);
-    }
-
     const planetsFromFirestore = await this.firestoreService.getPlanets();
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
@@ -405,7 +388,6 @@ export class PlanetSyncService {
 export class PlanetSyncProcessor {
   constructor(
     private readonly planetSyncService: PlanetSyncService,
-    private readonly studentService: StudentService,
     private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
@@ -439,8 +421,6 @@ export class PlanetSyncProcessor {
         promises.push(this.storageService.downloadFiles());
       }
 
-      promises.push(this.studentService.syncPlanetStudent());
-
       const start = new Date();
 
       await Promise.all(promises);
@@ -454,7 +434,6 @@ export class PlanetSyncProcessor {
       await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
       await this.cacheManager.set('sync-current-operation', '', 0);
-
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
       console.log('Planet Sync - Duração Sincronização: ' + duration);
