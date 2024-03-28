@@ -10,16 +10,13 @@ import * as mime from 'mime-types';
 
 @Injectable()
 export class StorageService {
-  
   private files: any[] = [];
 
   constructor(
     @InjectModel(DownloadedFile.name)
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {
-    
-  }
+  ) {}
 
   async initialize(): Promise<any> {
     const bucket = admin.storage().bucket();
@@ -51,7 +48,7 @@ export class StorageService {
       return url;
     }
 
-    let fileExtension = await this.getFileExtensionByFileName(bucket, id);
+    const fileExtension = await this.getFileExtensionByFileName(bucket, id);
 
     const fileServerUrl = process.env.FILE_SERVER_URL;
     const [fileName] = id.split('.');
@@ -66,7 +63,9 @@ export class StorageService {
     const bucket = admin.storage().bucket();
 
     try {
-      const file = await this.files.find((file) => file.name == `${bucketName}/${fileName}`);
+      const file = await this.files.find(
+        (file) => file.name == `${bucketName}/${fileName}`,
+      );
 
       const [metadata] = await file.getMetadata();
       const contentType = metadata.contentType;
@@ -78,22 +77,30 @@ export class StorageService {
       if (extension) return extension;
       else return '';
     } catch (error) {
-      console.log(`Erro ao obter extensão do arquivo ${fileName}, no bucket ${bucketName}`);
+      console.log(
+        `Erro ao obter extensão do arquivo ${fileName}, no bucket ${bucketName}`,
+      );
       console.log('Efetuando tentativa alternativa...');
-      
+
       const extensions = ['.svg', '.mp4', '.mp3', '.png', '.json'];
       for (const ext of extensions) {
         try {
-          const file = await this.files.find((file) => file.name == `${bucketName}/${fileName}/${ext}`);
+          const file = await this.files.find(
+            (file) => file.name == `${bucketName}/${fileName}/${ext}`,
+          );
           const extension = await this.getExt(file);
 
           if (extension) {
             console.log('Tudo Ok');
-            console.log('----------------------------------------------------------------------------');
+            console.log(
+              '----------------------------------------------------------------------------',
+            );
             return extension;
           } else {
             console.log('Não deu =/');
-            console.log('----------------------------------------------------------------------------');
+            console.log(
+              '----------------------------------------------------------------------------',
+            );
             return '';
           }
         } catch {}
@@ -126,11 +133,7 @@ export class StorageService {
         'application/x-www-form-urlencoded;charset=UTF-8',
     );
 
-    await this.cacheManager.set(
-      'sync-total-files',
-      allFiles.length,
-      0,
-    );
+    await this.cacheManager.set('sync-total-files', allFiles.length, 0);
 
     for (const file of allFiles) {
       try {
@@ -141,7 +144,11 @@ export class StorageService {
       }
     }
 
-    await this.cacheManager.set('sync-current-operation', 'Baixando Metadados', 0);
+    await this.cacheManager.set(
+      'sync-current-operation',
+      'Baixando Metadados',
+      0,
+    );
     console.log('Planet Sync - Download dos artefatos concluído');
   }
 
@@ -194,7 +201,10 @@ export class StorageService {
     return lottieId;
   }
 
-  public async downloadFile(fileId: string, bucketName: string): Promise<string> {
+  public async downloadFile(
+    fileId: string,
+    bucketName: string,
+  ): Promise<string> {
     await this.createDirectoryInRoot('dist/assets-data');
     const bucket = admin.storage().bucket();
     const file = bucket.file(`${bucketName}/${fileId}`);
@@ -215,7 +225,6 @@ export class StorageService {
   }
 
   async getExt(file: any) {
-
     const [metadata] = await file.getMetadata();
     const contentType = metadata.contentType;
 

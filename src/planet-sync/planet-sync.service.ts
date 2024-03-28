@@ -12,7 +12,6 @@ import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
-import { StudentService } from '../student/student.service';
 
 @Injectable()
 export class PlanetSyncService {
@@ -389,7 +388,6 @@ export class PlanetSyncService {
 export class PlanetSyncProcessor {
   constructor(
     private readonly planetSyncService: PlanetSyncService,
-    private readonly studentService: StudentService,
     private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
@@ -423,8 +421,6 @@ export class PlanetSyncProcessor {
         promises.push(this.storageService.downloadFiles());
       }
 
-      promises.push(this.studentService.syncPlanetStudent());
-
       const start = new Date();
 
       await Promise.all(promises);
@@ -438,7 +434,6 @@ export class PlanetSyncProcessor {
       await this.cacheManager.set(syncKey, !syncValue, syncDuration);
 
       await this.cacheManager.set('sync-current-operation', '', 0);
-
       console.log('Planet Sync - Sincronização concluída');
       console.log('-------------------------------------');
       console.log('Planet Sync - Duração Sincronização: ' + duration);
