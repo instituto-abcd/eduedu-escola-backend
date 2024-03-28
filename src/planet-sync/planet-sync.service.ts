@@ -13,6 +13,7 @@ import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
+import * as fs from 'fs';
 
 @Injectable()
 export class PlanetSyncService {
@@ -143,6 +144,21 @@ export class PlanetSyncService {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
+
+    try {
+      // Verifica se a pasta assets-data existe
+      const directoryPath = 'dist/assets-data';
+      const directoryExists = fs.existsSync(directoryPath);
+
+      // Se existir, exclui a pasta
+      if (directoryExists) {
+        fs.rmdirSync(directoryPath, { recursive: true });
+        console.log('Pasta assets-data deletada com sucesso.');
+      }
+    } catch (error) {
+      console.error('Erro ao deletar a pasta assets-data:', error);
+    }
+
     const planetsFromFirestore = await this.firestoreService.getPlanets();
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
@@ -419,9 +435,9 @@ export class PlanetSyncProcessor {
 
       promises.push(this.planetSyncService.handleSyncAll());
 
-      // if (process.env.ASSETS === 'LOCAL') {
+      if (process.env.ASSETS === 'LOCAL') {
         promises.push(this.storageService.downloadFiles());
-      // }
+      }
 
       promises.push(this.studentService.syncPlanetStudent());
 
