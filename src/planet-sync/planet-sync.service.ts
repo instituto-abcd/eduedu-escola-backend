@@ -13,6 +13,7 @@ import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
+import * as fs from 'fs-extra';
 
 @Injectable()
 export class PlanetSyncService {
@@ -135,14 +136,35 @@ export class PlanetSyncService {
     const start = new Date();
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
+
+    // Deleta a pasta assets-data antes de iniciar o sincronismo
+    await this.deleteAssetsDataFolder();
+
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
     await this.cacheManager.set('sync-running', true, 0);
+  }
+
+  // Função para deletar a pasta assets-data
+  async deleteAssetsDataFolder() {
+    const rootPath = process.cwd();
+    const directoryPath = `${rootPath}/dist/assets-data`;
+
+    try {
+      await fs.remove(directoryPath);
+      console.log('Pasta assets-data deletada com sucesso.');
+    } catch (error) {
+      console.error('Erro ao deletar a pasta assets-data:', error);
+    }
   }
 
   async handleSyncAll() {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
+
+    // Deleta a pasta assets-data antes de iniciar o sincronismo
+    await this.deleteAssetsDataFolder();
+
     const planetsFromFirestore = await this.firestoreService.getPlanets();
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
