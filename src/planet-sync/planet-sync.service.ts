@@ -441,9 +441,9 @@ export class PlanetSyncProcessor {
 
       promises.push(this.planetSyncService.handleSyncAll());
 
-      if (process.env.ASSETS === 'LOCAL') {
+      // if (process.env.ASSETS === 'LOCAL') {
         promises.push(this.storageService.downloadFiles());
-      }
+      // }
 
       promises.push(this.studentService.syncPlanetStudent());
 

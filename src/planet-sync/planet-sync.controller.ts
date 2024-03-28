@@ -35,11 +35,13 @@ export class PlanetSyncController {
     type: SyncPlanetResponse,
   })
   syncAll() {
-    if (process.env.ASSETS != 'LOCAL') {
-      return this.planetSyncService.handleSyncAll();
-    } else {
-      return this.planetSyncService.enqueueSyncAll();
-    }
+    return this.planetSyncService.handleSyncAll();
+
+    // if (process.env.ASSETS != 'LOCAL') {
+    //   return this.planetSyncService.handleSyncAll();
+    // } else {
+    //   return this.planetSyncService.enqueueSyncAll();
+    // }
   }
 
   @Post('force-sync-all')
