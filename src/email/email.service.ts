@@ -52,11 +52,13 @@ export class EmailService {
         to: email,
         subject: 'Redefinição de senha',
         html: passwordTemplate(url, name),
-        attachments: [{
-          filename: 'eduedu-preta.png',
-          path: `${__dirname}/../../templates/eduedu-preta.png`,
-          cid: 'logoeduedu'
-        }]
+        attachments: [
+          {
+            filename: 'eduedu-preta.png',
+            path: `${__dirname}/../../templates/eduedu-preta.png`,
+            cid: 'logoeduedu',
+          },
+        ],
       })
       .catch((error) => {
         console.error('Erro ao enviar email:', error);
@@ -64,22 +66,34 @@ export class EmailService {
   }
 
   async confirmEmail({ url, email }: { url: string; email: string }) {
-    const client = await this.getClient();
+    try {
+      // Buscando as configurações de email no banco de dados
+      const settings = await this.prismaService.settings.findFirst();
 
-    client
-      .sendMail({
-        from: 'EduEdu Escola <edueduescola@institutoabcd.org>',
+      // Criando o cliente de email
+      const client = await this.getClient();
+
+      // Enviando o email
+      await client.sendMail({
+        from: `EduEdu Escola ${
+          settings?.smtpUserName || 'edueduescola@institutoabcd.org'
+        }`,
         to: email,
         subject: 'Confirmação de email',
         html: emailConfirmTemplate(url, email),
-        attachments: [{
-          filename: 'eduedu-preta.png',
-          path: `${__dirname}/../../templates/eduedu-preta.png`,
-          cid: 'logoeduedu'
-        }]
-      })
-      .catch((error) => {
-        console.error('Erro ao enviar email:', error);
+        attachments: [
+          {
+            filename: 'eduedu-preta.png',
+            path: `${__dirname}/../../templates/eduedu-preta.png`,
+            cid: 'logoeduedu',
+          },
+        ],
       });
+
+      console.log('Email enviado com sucesso.');
+    } catch (error) {
+      console.error('Erro ao enviar email:', error);
+      throw new Error('Erro ao enviar email.'); // Rethrow o erro para um tratamento em um nível mais alto
+    }
   }
 }
