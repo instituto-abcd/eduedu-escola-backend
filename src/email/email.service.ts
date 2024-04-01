@@ -66,13 +66,16 @@ export class EmailService {
   }
 
   async confirmEmail({ url, email }: { url: string; email: string }) {
-    const settings = await this.prismaService.settings.findFirst();
+    try {
+      // Buscando as configurações de email no banco de dados
+      const settings = await this.prismaService.settings.findFirst();
 
-    const client = await this.getClient();
+      // Criando o cliente de email
+      const client = await this.getClient();
 
-    client
-      .sendMail({
-        from: `EduEdu Escola ${settings.smtpUserName}`,
+      // Enviando o email
+      await client.sendMail({
+        from: `EduEdu Escola ${settings?.smtpUserName || 'Padrão'}`, // Usando um valor padrão se as configurações não estiverem disponíveis
         to: email,
         subject: 'Confirmação de email',
         html: emailConfirmTemplate(url, email),
@@ -83,9 +86,12 @@ export class EmailService {
             cid: 'logoeduedu',
           },
         ],
-      })
-      .catch((error) => {
-        console.error('Erro ao enviar email:', error);
       });
+
+      console.log('Email enviado com sucesso.');
+    } catch (error) {
+      console.error('Erro ao enviar email:', error);
+      throw new Error('Erro ao enviar email.'); // Rethrow o erro para um tratamento em um nível mais alto
+    }
   }
 }
