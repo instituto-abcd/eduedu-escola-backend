@@ -75,7 +75,9 @@ export class EmailService {
 
       // Enviando o email
       await client.sendMail({
-        from: `EduEdu Escola ${settings?.smtpUserName || 'Padrão'}`, // Usando um valor padrão se as configurações não estiverem disponíveis
+        from: `EduEdu Escola ${
+          settings?.smtpUserName || 'edueduescola@institutoabcd.org'
+        }`,
         to: email,
         subject: 'Confirmação de email',
         html: emailConfirmTemplate(url, email),
