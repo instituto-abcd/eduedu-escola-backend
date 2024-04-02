@@ -12,7 +12,7 @@ jobs:
       IMAGE_NAME: eduedu-escola-backend
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
-      REGISTRY_NAME: eduedu-escola-backend-treinamento
+      REGISTRY_NAME: eduedu-escola-backend
       ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
       REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
