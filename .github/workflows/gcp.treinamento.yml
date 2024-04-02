@@ -2,12 +2,12 @@
 name: TREINAMENTO - CI/CD Pipeline
 on:
   push:
-    branches: [ staging ]
+    branches: [ treinamento ]
 jobs:
   build-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    environment: staging
+    environment: treinamento
     env:
       IMAGE_NAME: eduedu-escola-backend-treinamento
       PROJECT_ID: edueduescola-teste
@@ -56,7 +56,7 @@ jobs:
     name: Deploy New Revision
     needs: build-push
     runs-on: ubuntu-latest
-    environment: STAGING
+    environment: treinamento
     env:
       IMAGE_NAME: eduedu-escola-backend-treinamento
       PROJECT_ID: edueduescola-teste
@@ -80,7 +80,7 @@ jobs:
         id: 'deploy'
         uses: 'google-github-actions/deploy-cloudrun@v0'
         with:
-          service: 'eduedu-escola-backend'
+          service: 'eduedu-escola-backend-treinamento'
           image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
           region: us-central1
           env_vars: |-
