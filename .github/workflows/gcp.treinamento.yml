@@ -1,5 +1,5 @@
 ---
-name: STAGING - CI/CD Pipeline
+name: TREINAMENTO - CI/CD Pipeline
 on:
   push:
     branches: [ staging ]
