@@ -46,8 +46,8 @@ jobs:
 
     - name: Push Docker Image to Setup
       run: |-
-        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:staging
-        docker push $REGISTRY_SETUP_REPOSITORY:staging
+        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:treinamento
+        docker push $REGISTRY_SETUP_REPOSITORY:treinamento
 
     outputs:
       git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
@@ -56,7 +56,7 @@ jobs:
     name: Deploy New Revision
     needs: build-push
     runs-on: ubuntu-latest
-    environment: STAGING
+    environment: treinamento
     env:
       IMAGE_NAME: eduedu-escola-backend-treinamento
       PROJECT_ID: edueduescola-teste
