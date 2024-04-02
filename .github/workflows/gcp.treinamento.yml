@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: STAGING
     env:
-      IMAGE_NAME: eduedu-escola-backend-staging
+      IMAGE_NAME: eduedu-escola-backend-treinamento
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       REGISTRY_NAME: eduedu-escola-backend-treinamento
