@@ -7,7 +7,7 @@ jobs:
   build-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    environment: staging
+    environment: treinamento
     env:
       IMAGE_NAME: eduedu-escola-backend-treinamento
       PROJECT_ID: edueduescola-teste
