@@ -13,12 +13,23 @@ export class PlanetController {
   @ApiResponse({
     status: 201,
     description: 'Atribuir todos planetas ao usuário ',
-    type: PlanetDto,
   })
-  assignAllPlanetsToUser(@Param('id') studentId: string): Promise<PlanetDto[]> {
+  assignAllPlanetsToUser(@Param('id') studentId: string): Promise<any[]> {
     return this.planetService.assignAllPlanetsToUser(studentId);
   }
 
+  @Get(':axisCode/level/:level')
+  @ApiResponse({
+    status: 200,
+    description: 'Retorna todos os planetas por eixo e nível',
+    type: [PlanetDto],
+  })
+  findAllPlanetsByAxisAndLevel(
+    @Param('axisCode') axisCode: string,
+    @Param('level') level: number,
+  ): Promise<PlanetDto[]> {
+    return this.planetService.findAllPlanetsByAxisAndLevel(axisCode, level);
+  }
 
   @Get()
   @ApiResponse({
@@ -69,9 +80,7 @@ export class PlanetController {
     description: 'Retorna as questões de planetas',
     type: PlanetDto,
   })
-  findAllPlanetQuestion(
-    @Query('modelId') modelId: string
-  ): Promise<any[]> {
+  findAllPlanetQuestion(@Query('modelId') modelId: string): Promise<any[]> {
     return this.planetService.findAllPlanetQuestions(modelId);
   }
 
@@ -81,9 +90,7 @@ export class PlanetController {
     description: 'Retorna as questões de planetas PARA TESTE',
     type: PlanetDto,
   })
-  findAllPlanetQuestionTest(
-    @Query('modelId') modelId: string
-  ): Promise<any[]> {
+  findAllPlanetQuestionTest(@Query('modelId') modelId: string): Promise<any[]> {
     return this.planetService.findAllPlanetQuestionsTest(modelId);
   }
 
@@ -93,16 +100,14 @@ export class PlanetController {
     description: 'Retorna os modelos de questão utilizados em planetas',
     type: PlanetDto,
   })
-  findAllPlanetModels(
-    @Query('planetId') planetIds: string[]
-  ): Promise<any[]> {
+  findAllPlanetModels(@Query('planetId') planetIds: string[]): Promise<any[]> {
     return this.planetService.findAllPlanetModels(planetIds);
   }
 
   @Delete('/reset-cache-all-models')
   @ApiResponse({
     status: 200,
-    description: 'Reset cache'
+    description: 'Reset cache',
   })
   resetAllPlanetQuestionsCache(): Promise<any> {
     return this.planetService.resetAllPlanetQuestionsCache();

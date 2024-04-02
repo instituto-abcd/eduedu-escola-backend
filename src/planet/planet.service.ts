@@ -11,6 +11,10 @@ import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { StudentService } from '../student/student.service';
+import {
+  StudentExam,
+  StudentExamDocument,
+} from '../student/schemas/studentExam.schema';
 
 @Injectable()
 export class PlanetService {
@@ -21,11 +25,66 @@ export class PlanetService {
     private examModel: Model<ExamDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly studentService: StudentService,
+    @InjectModel(StudentExam.name)
+    private studentExamModel: Model<StudentExamDocument>,
   ) {}
 
   async findAll(): Promise<PlanetDto[]> {
     const planets = await this.planetModel.find();
     return planets;
+  }
+
+  async findAllPlanetsByAxisAndLevel(
+    axisCode: string,
+    level: number,
+  ): Promise<any> {
+    try {
+      const planets = await this.planetModel
+        .find({ axis_code: axisCode, level: level })
+        .exec();
+      const summary = {
+        totalPlanets: planets.length,
+      };
+
+      const planetList = planets.map(async (planet) => {
+        const students = await this.getStudentsForPlanet(planet.id);
+        return {
+          id: planet.id,
+          title: planet.title,
+          enable: planet.enable,
+          level: planet.level,
+          axis_code: planet.axis_code,
+          position: planet.position,
+          students: students,
+        };
+      });
+
+      const populatedPlanets = await Promise.all(planetList);
+
+      return { summary, planets: populatedPlanets };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getStudentsForPlanet(planetId: string): Promise<any[]> {
+    try {
+      const students = await this.studentExamModel
+        .find({ 'planetTrack.planetId': planetId })
+        .exec();
+      return students.map((studentExam) => ({
+        studentId: studentExam.studentId,
+        examId: studentExam.examId,
+        examDate: studentExam.examDate,
+        current: studentExam.current,
+        examPerformed: studentExam.examPerformed,
+        lastExam: studentExam.lastExam,
+        createdAt: studentExam.createdAt,
+        updatedAt: studentExam.updatedAt,
+      }));
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findPlanetModels(): Promise<any> {
