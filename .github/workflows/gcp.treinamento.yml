@@ -7,7 +7,7 @@ jobs:
   build-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    environment: staging
+    environment: treinamento
     env:
       IMAGE_NAME: eduedu-escola-backend-treinamento
       PROJECT_ID: edueduescola-teste
@@ -62,10 +62,10 @@ jobs:
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       REGISTRY_NAME: eduedu-escola-backend-treinamento
-      DATABASE_URL: ${{ secrets.DATABASE_URL_TREINAMENTO }}
-      MONGO_URI: ${{ secrets.MONGO_URI_TREINAMENTO }}
-      MONGO_USER: ${{ secrets.MONGO_USER_TREINAMENTO }}
-      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD_TREINAMENTO }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_USER: ${{ secrets.MONGO_USER }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
       RABBITMQ_URI: ${{ secrets.RABBITMQ_URI }}
 
     steps:
