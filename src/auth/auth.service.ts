@@ -47,11 +47,19 @@ export class AuthService {
 
     const accessToken = this.generateAccessToken(user);
     const { id, name, email: userEmail, document } = user;
-    return new AuthResponseDto(id, name, userEmail, document, accessToken, user.school.name);
+    return new AuthResponseDto(
+      id,
+      name,
+      userEmail,
+      document,
+      accessToken,
+      user.school.name,
+    );
   }
 
   generateAccessToken(user: User): string {
     const payload = {
+      id: user.id,
       email: user.email,
       profile: user.profile,
       owner: user.owner,
@@ -179,7 +187,7 @@ export class AuthService {
       email: user.email,
       id: user.id,
       name: user.name,
-      schoolName: user.school.name
+      schoolName: user.school.name,
     };
   }
 }

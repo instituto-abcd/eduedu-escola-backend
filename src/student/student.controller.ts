@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
@@ -98,6 +99,7 @@ export class StudentController {
   })
   @ApiOperation({ summary: 'Obter todos os estudantes' })
   findAll(
+    @Req() req,
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
     @Query('name') name?: string,
@@ -111,6 +113,7 @@ export class StudentController {
   ): Promise<PaginationResponse<StudentResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
+    const user = req.user;
 
     const filters = {
       name,
@@ -123,7 +126,7 @@ export class StudentController {
       status,
     };
 
-    return this.studentService.findAll(pageNumber, pageSize, filters);
+    return this.studentService.findAll(pageNumber, pageSize, filters, user);
   }
 
   @Get(':id')

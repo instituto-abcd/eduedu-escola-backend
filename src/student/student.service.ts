@@ -5,10 +5,12 @@ import { UpdateStudentRequestDto } from './dto/request/update-student-request.dt
 import { EduException } from '../common/exceptions/edu-school.exception';
 import {
   Prisma,
+  Profile,
   SchoolGradeEnum,
   Status,
   Student,
   StudentPlanetResult,
+  UserSchoolClass,
 } from '@prisma/client';
 import { StudentResponseDto } from './dto/response/student-response.dto';
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
@@ -127,7 +129,9 @@ export class StudentService {
     pageNumber: number,
     pageSize: number,
     filters: any,
+    user: any,
   ): Promise<PaginationResponse<StudentResponseDto>> {
+    // Validate pagination parameters
     if (
       !Number.isInteger(pageNumber) ||
       pageNumber <= 0 ||
@@ -137,69 +141,60 @@ export class StudentService {
       throw new EduException('INVALID_PAGINATION_PARAMETERS');
     }
 
-    const {
-      name,
-      schoolClassName,
-      schoolPeriod,
-      schoolGrade,
-      cfo,
-      sea,
-      lct,
-      status,
-    } = filters || {};
-
     const where: Prisma.StudentWhereInput = {
-      name: name ? { contains: name, mode: 'insensitive' } : undefined,
-      status: status ? { equals: status } : undefined,
+      name: filters?.name
+        ? { contains: filters.name, mode: 'insensitive' }
+        : undefined,
+      status: filters?.status ? { equals: filters.status } : undefined,
       schoolClasses: {
         some: {
           schoolClass: {
-            name: schoolClassName
-              ? { contains: schoolClassName, mode: 'insensitive' }
+            name: filters?.schoolClassName
+              ? { contains: filters.schoolClassName, mode: 'insensitive' }
               : undefined,
-            schoolPeriod: schoolPeriod ? { equals: schoolPeriod } : undefined,
-            schoolGrade: schoolGrade ? { equals: schoolGrade } : undefined,
+            schoolPeriod: filters?.schoolPeriod
+              ? { equals: filters.schoolPeriod }
+              : undefined,
+            schoolGrade: filters?.schoolGrade
+              ? { equals: filters.schoolGrade }
+              : undefined,
           },
         },
       },
     };
 
+    // If the user is a director, no need to filter by user classes
+    if (user.profile !== Profile.DIRECTOR) {
+      const classIds = await this.userClasses(user.id);
+      where.schoolClasses.some.schoolClassId = { in: classIds };
+    }
+
     try {
-      const students = await this.prisma.student.findMany({
-        where,
-        include: {
-          schoolClasses: {
-            include: {
-              schoolClass: true,
+      // Retrieve students
+      const [students, totalCount] = await Promise.all([
+        this.prisma.student.findMany({
+          where,
+          include: {
+            schoolClasses: { include: { schoolClass: true } },
+            examResults: {
+              where: { axisCode: { in: ['LC', 'EA', 'ES'] } },
+              orderBy: { examDate: 'desc' },
+              take: 3,
             },
           },
-          examResults: {
-            where: {
-              axisCode: {
-                in: ['LC', 'EA', 'ES'],
-              },
-            },
-            orderBy: {
-              examDate: 'desc',
-            },
-            take: 3,
-          },
-        },
-        skip: (pageNumber - 1) * pageSize,
-        take: pageSize,
-      });
+          skip: (pageNumber - 1) * pageSize,
+          take: pageSize,
+        }),
+        this.prisma.student.count({ where }),
+      ]);
 
-      const totalCount = await this.prisma.student.count({
-        where,
-      });
-
+      // Calculate pagination
       const totalPages = Math.ceil(totalCount / pageSize);
-
       const pagination = {
         totalItems: totalCount,
-        pageSize: pageSize,
-        pageNumber: pageNumber,
-        totalPages: totalPages,
+        pageSize,
+        pageNumber,
+        totalPages,
         previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
         nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
         lastPage: totalPages,
@@ -207,20 +202,20 @@ export class StudentService {
         hasNextPage: pageNumber < totalPages,
       };
 
+      // Transform student data to DTO format
       const responseStudents: StudentResponseDto[] = students.map((student) => {
         const cfoResult = student.examResults.find(
-          (result) => result.studentId == student.id && result.axisCode == 'ES',
+          (result) =>
+            result.studentId === student.id && result.axisCode === 'ES',
         );
         const seaResult = student.examResults.find(
-          (result) => result.studentId == student.id && result.axisCode == 'EA',
+          (result) =>
+            result.studentId === student.id && result.axisCode === 'EA',
         );
         const lctResult = student.examResults.find(
-          (result) => result.studentId == student.id && result.axisCode == 'LC',
+          (result) =>
+            result.studentId === student.id && result.axisCode === 'LC',
         );
-
-        const cfo = cfoResult ? cfoResult.percent : 0;
-        const sea = seaResult ? seaResult.percent : 0;
-        const lct = lctResult ? lctResult.percent : 0;
 
         return {
           id: student.id,
@@ -230,41 +225,46 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfo ? Math.round(cfo.toNumber()).toString().concat('%') : '0%',
-          sea: sea ? Math.round(sea.toNumber()).toString().concat('%') : '0%',
-          lct: lct ? Math.round(lct.toNumber()).toString().concat('%') : '0%',
+          cfo: cfoResult
+            ? `${Math.round(cfoResult.percent.toNumber())}%`
+            : '0%',
+          sea: seaResult
+            ? `${Math.round(seaResult.percent.toNumber())}%`
+            : '0%',
+          lct: lctResult
+            ? `${Math.round(lctResult.percent.toNumber())}%`
+            : '0%',
           status: student.status,
         };
       });
 
+      // Filter students based on criteria
       const filteredStudents = responseStudents.filter((student) => {
-        if (cfo !== undefined && cfo !== '') {
-          const cfoValue = parseFloat(student.cfo.replace('%', ''));
-          if (cfoValue < cfo) {
-            return false;
-          }
-        }
+        const cfoValue = parseFloat(student.cfo.replace('%', ''));
+        const seaValue = parseFloat(student.sea.replace('%', ''));
+        const lctValue = parseFloat(student.lct.replace('%', ''));
 
-        if (sea !== undefined && sea !== '') {
-          const seaValue = parseFloat(student.sea.replace('%', ''));
-          if (seaValue < sea) {
-            return false;
-          }
-        }
-
-        if (lct !== undefined && lct !== '') {
-          const lctValue = parseFloat(student.lct.replace('%', ''));
-          if (lctValue < lct) {
-            return false;
-          }
-        }
-        return true;
+        return (
+          (filters.cfo === undefined || cfoValue >= filters.cfo) &&
+          (filters.sea === undefined || seaValue >= filters.sea) &&
+          (filters.lct === undefined || lctValue >= filters.lct)
+        );
       });
 
       return new PaginationResponse(filteredStudents, pagination);
     } catch (error) {
       throw new EduException('DATABASE_ERROR');
     }
+  }
+
+  async userClasses(userId: string): Promise<string[]> {
+    const uniqueClassIds = await this.prisma.userSchoolClass.findMany({
+      where: { userId },
+      select: { schoolClassId: true },
+      distinct: ['schoolClassId'],
+    });
+
+    return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
   }
 
   async findOne(id: string): Promise<StudentResponseDto> {
