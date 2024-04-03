@@ -1,31 +1,22 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateSchoolClassDto } from './dto/create-school-class.dto';
-import { EduException } from '../common/exceptions/edu-school.exception';
-import { CreateSchoolClassResponseDto } from './dto/response/create-school-class-response';
-import { SchoolClassResponseDto } from './dto/response/school-class-response';
-import { DeleteUserResponseDto } from '../user/dto/response/delete-user-response.dto';
-import { PaginationInfo } from '../common/pagination/pagination-info-response.dto';
-import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import {
-  Prisma,
-  SchoolClassStudent,
-  Status,
-  Student,
-  StudentPlanetResult,
-} from '@prisma/client';
-import * as xlsx from 'xlsx';
-import { CreateStudentRequestDto } from '../student/dto/request/create-student-request.dto';
-import { v4 as uuidv4 } from 'uuid';
-import { UpdateSchoolClassRequestDto } from './dto/request/update-school-class-request';
-import { DashboardService } from '../dashboard/dashboard.service';
-import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
-import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
-import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
-import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
-import { StudentExamService } from '../student/studentExam.service';
-import { ChartDatasetDto } from '../student/dto/response/chart-dataset-dto';
-import { ChartStudentResponse } from '../student/dto/response/chart-studant-response.dto';
+import { HttpException, Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateSchoolClassDto } from "./dto/create-school-class.dto";
+import { EduException } from "../common/exceptions/edu-school.exception";
+import { CreateSchoolClassResponseDto } from "./dto/response/create-school-class-response";
+import { SchoolClassResponseDto } from "./dto/response/school-class-response";
+import { DeleteUserResponseDto } from "../user/dto/response/delete-user-response.dto";
+import { PaginationResponse } from "../common/pagination/pagination-response.dto";
+import { Prisma, Profile, SchoolClassStudent, Status, Student } from "@prisma/client";
+import * as xlsx from "xlsx";
+import { CreateStudentRequestDto } from "../student/dto/request/create-student-request.dto";
+import { v4 as uuidv4 } from "uuid";
+import { UpdateSchoolClassRequestDto } from "./dto/request/update-school-class-request";
+import { DashboardService } from "../dashboard/dashboard.service";
+import { AddStudentsToClassDto } from "./dto/add-students-to-class.dto";
+import { UpdateStudentReservedResponseDto } from "./dto/response/update-student-reserved-response";
+import { ReservedStudentRequestDto } from "./dto/request/reserved-student-request.dto";
+import { StudentSimplifiedResponseDto } from "../student/dto/response/student-simplified-response.dto";
+import { StudentExamService } from "../student/studentExam.service";
 
 @Injectable()
 export class SchoolClassService {
@@ -91,102 +82,58 @@ export class SchoolClassService {
     pageNumber = 1,
     pageSize = 10,
     filters: any = {},
+    user: any,
   ): Promise<PaginationResponse<SchoolClassResponseDto>> {
-    try {
-      if (!Number.isInteger(pageNumber) || pageNumber <= 0) {
+    const validatePaginationParameters = () => {
+      if (!Number.isInteger(pageNumber) || pageNumber <= 0 ||
+        !Number.isInteger(pageSize) || pageSize <= 0) {
         throw new EduException('INVALID_PAGINATION_PARAMETERS');
       }
+    };
 
-      if (!Number.isInteger(pageSize) || pageSize <= 0) {
-        throw new EduException('INVALID_PAGINATION_PARAMETERS');
-      }
-
-      const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } =
-        filters;
-
+    const buildWhereClause = async () => {
+      const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } = filters;
       const where: Prisma.SchoolClassWhereInput = {};
 
-      if (name) {
-        where.name = { contains: name };
-      }
-
-      if (schoolGrade) {
-        where.schoolGrade = { equals: schoolGrade };
-      }
-
-      if (schoolPeriod) {
-        where.schoolPeriod = { equals: schoolPeriod };
-      }
-
+      if (name) where.name = { contains: name };
+      if (schoolGrade) where.schoolGrade = { equals: schoolGrade };
+      if (schoolPeriod) where.schoolPeriod = { equals: schoolPeriod };
       if (schoolYearName) {
         const schoolYear = await this.prismaService.schoolYear.findFirst({
           where: { name: Number(schoolYearName) },
           select: { id: true },
         });
-
-        if (schoolYear) {
-          where.schoolYearId = schoolYear.id;
-        } else {
-          return {
-            items: [],
-            pagination: {
-              totalItems: 0,
-              pageSize,
-              pageNumber,
-              totalPages: 0,
-              previousPage: 0,
-              nextPage: 0,
-              lastPage: 0,
-              hasPreviousPage: false,
-              hasNextPage: false,
-            },
-          };
-        }
+        if (schoolYear) where.schoolYearId = schoolYear.id;
       }
-
       if (teacherName) {
         const teachers = await this.prismaService.user.findMany({
-          where: { name: { contains: teacherName } }, // Corresponder parcialmente ao nome
+          where: { name: { contains: teacherName } },
           select: { id: true },
         });
-
         if (teachers.length > 0) {
           const teacherIds = teachers.map((teacher) => teacher.id);
           where.users = { some: { userId: { in: teacherIds } } };
-        } else {
-          // Se nenhum professor for encontrado, não há correspondência, então podemos retornar vazio
-          return {
-            items: [],
-            pagination: {
-              totalItems: 0,
-              pageSize,
-              pageNumber,
-              totalPages: 0,
-              previousPage: 0,
-              nextPage: 0,
-              lastPage: 0,
-              hasPreviousPage: false,
-              hasNextPage: false,
-            },
-          };
         }
       }
+      return where;
+    };
 
-      const totalCount = await this.prismaService.schoolClass.count({
-        where,
-      });
-
+    const retrieveClasses = async (where: Prisma.SchoolClassWhereInput) => {
+      const totalCount = await this.prismaService.schoolClass.count({ where });
       const schoolClasses = await this.prismaService.schoolClass.findMany({
         where,
         skip: (pageNumber - 1) * pageSize,
         take: pageSize,
-        include: {
-          schoolYear: true,
-          students: true,
-          users: { include: { user: true } },
-        },
+        include: { schoolYear: true, students: true, users: { include: { user: true } } },
       });
+      return { totalCount, schoolClasses };
+    };
 
+    try {
+      validatePaginationParameters();
+      const where = user.profile === Profile.DIRECTOR ? await buildWhereClause() :
+        { id: { in: await this.userClasses(user.id) } };
+      const { totalCount, schoolClasses } = await retrieveClasses(where);
       const totalPages = Math.ceil(totalCount / pageSize);
 
       return {
@@ -195,14 +142,8 @@ export class SchoolClassService {
           name: schoolClass.name,
           schoolGrade: schoolClass.schoolGrade,
           schoolPeriod: schoolClass.schoolPeriod,
-          schoolYear: {
-            id: schoolClass.schoolYear.id,
-            name: schoolClass.schoolYear.name,
-          },
-          teachers: schoolClass.users.map((user) => ({
-            id: user.user.id,
-            name: user.user.name,
-          })),
+          schoolYear: { id: schoolClass.schoolYear.id, name: schoolClass.schoolYear.name },
+          teachers: schoolClass.users.map((user) => ({ id: user.user.id, name: user.user.name })),
           studentsCount: schoolClass.students.length,
         })),
         pagination: {
@@ -220,6 +161,15 @@ export class SchoolClassService {
     } catch (error) {
       throw new NotFoundException('Turmas não encontradas');
     }
+  }
+
+  async userClasses(userId: string): Promise<string[]> {
+    const uniqueClassIds = await this.prismaService.userSchoolClass.findMany({
+      where: { userId },
+      select: { schoolClassId: true },
+      distinct: ['schoolClassId'],
+    });
+    return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
   }
 
   async findOne(schoolClassId: string): Promise<SchoolClassResponseDto> {
