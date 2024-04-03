@@ -6,12 +6,12 @@ import {
   Param,
   Patch,
   Post,
-  Query, Req,
+  Query,
   Res,
   UploadedFile,
   UseGuards,
-  UseInterceptors
-} from "@nestjs/common";
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -53,8 +53,6 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
@@ -80,7 +78,6 @@ export class SchoolClassController {
   @Get('all')
   @ApiBearerAuth()
   async findAll(
-    @Req() req,
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
     @Query('name') name?: string,
@@ -91,8 +88,6 @@ export class SchoolClassController {
   ): Promise<PaginationResponse<SchoolClassResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
-    const user = req.user;
-
     const filters = {
       name,
       schoolGrade,
@@ -101,7 +96,7 @@ export class SchoolClassController {
       teacherName,
     };
 
-    return this.schoolClassService.findAll(pageNumber, pageSize, filters, user);
+    return this.schoolClassService.findAll(pageNumber, pageSize, filters);
   }
 
   @Get(':id')
