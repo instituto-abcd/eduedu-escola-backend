@@ -1,95 +1,94 @@
-#---
-#name: TREINAMENTO - CI/CD Pipeline
-#on:
-#  push:
-#    branches: [ staging ]
-#jobs:
-#  build-push:
-#    name: Build and Push Docker Image
-#    runs-on: ubuntu-latest
-#    environment: staging
-#    env:
-#      IMAGE_NAME: eduedu-escola-backend-treinamento
-#      PROJECT_ID: edueduescola-teste
-#      REGISTRY_PREFIX: us-east1-docker.pkg.dev
-#      REGISTRY_NAME: eduedu-escola-backend-treinamento
-#      ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
-#      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#
-#      - uses: 'google-github-actions/auth@v1'
-#        with:
-#          credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
-#
-#      - uses: google-github-actions/setup-gcloud@v1
-#        with:
-#          project_id: ${{ env.PROJECT_ID }}
-#
-#      - name: Build Docker Image
-#        run: |-
-#          docker build \
-#          --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }} \
-#          -t $IMAGE_NAME:latest .
-#
-#      - name: Configure Docker Client
-#        run: |-
-#          gcloud auth configure-docker --quiet
-#          gcloud auth configure-docker $REGISTRY_PREFIX --quiet
-#
-#      - name: Push Docker Image to Artifact Registry
-#        run: |-
-#          docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
-#          docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
-#
-#      - name: Push Docker Image to Setup
-#        run: |-
-#          docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:staging
-#          docker push $REGISTRY_SETUP_REPOSITORY:staging
-#
-#    outputs:
-#      git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
-#
-#  deploy:
-#    name: Deploy New Revision
-#    needs: build-push
-#    runs-on: ubuntu-latest
-#    environment: STAGING
-#    env:
-#      IMAGE_NAME: eduedu-escola-backend-treinamento
-#      PROJECT_ID: edueduescola-teste
-#      REGISTRY_PREFIX: us-east1-docker.pkg.dev
-#      REGISTRY_NAME: eduedu-escola-backend-treinamento
-#      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-#      MONGO_URI: ${{ secrets.MONGO_URI }}
-#      MONGO_USER: ${{ secrets.MONGO_USER }}
-#      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-#      RABBITMQ_URI: ${{ secrets.RABBITMQ_URI }}
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#
-#      - uses: 'google-github-actions/auth@v1'
-#        with:
-#          credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
-#
-#      - name: Deploy
-#        id: 'deploy'
-#        uses: 'google-github-actions/deploy-cloudrun@v0'
-#        with:
-#          service: 'eduedu-escola-backend'
-#          image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
-#          region: us-central1
-#          env_vars: |-
-#            DATABASE_URL=${{ env.DATABASE_URL }}
-#            MONGO_URI=${{ env.MONGO_URI }}
-#            MONGO_USER=${{ env.MONGO_USER }}
-#            MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
-#            RABBITMQ_URI=${{ env.RABBITMQ_URI }}
-#
-#      - name: 'App URL'on:
+---
+name: TREINAMENTO - CI/CD Pipeline
+on:
+  push:
+    branches: [ treinamento ]
 jobs:
-#        run: 'curl "${{ steps.deploy.outputs.url }}"'
+  build-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    environment: treinamento
+    env:
+      IMAGE_NAME: eduedu-escola-backend-treinamento
+      PROJECT_ID: edueduescola-teste
+      REGISTRY_PREFIX: us-east1-docker.pkg.dev
+      REGISTRY_NAME: eduedu-escola-backend
+      ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
+      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
+
+      - uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Build Docker Image
+        run: |-
+          docker build \
+          --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }} \
+          -t $IMAGE_NAME:latest .
+
+      - name: Configure Docker Client
+        run: |-
+          gcloud auth configure-docker --quiet
+          gcloud auth configure-docker $REGISTRY_PREFIX --quiet
+
+      - name: Push Docker Image to Artifact Registry
+        run: |-
+          docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
+          docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
+
+      - name: Push Docker Image to Setup
+        run: |-
+          docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:treinamento
+          docker push $REGISTRY_SETUP_REPOSITORY:treinamento
+
+    outputs:
+      git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
+
+  deploy:
+    name: Deploy New Revision
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: TREINAMENTO
+    env:
+      IMAGE_NAME: eduedu-escola-backend-treinamento
+      PROJECT_ID: edueduescola-teste
+      REGISTRY_PREFIX: us-east1-docker.pkg.dev
+      REGISTRY_NAME: eduedu-escola-backend
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_USER: ${{ secrets.MONGO_USER }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      RABBITMQ_URI: ${{ secrets.RABBITMQ_URI }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
+
+      - name: Deploy
+        id: 'deploy'
+        uses: 'google-github-actions/deploy-cloudrun@v0'
+        with:
+          service: 'eduedu-escola-backend-treinamento'
+          image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
+          region: us-central1
+          env_vars: |-
+            DATABASE_URL=${{ env.DATABASE_URL }}
+            MONGO_URI=${{ env.MONGO_URI }}
+            MONGO_USER=${{ env.MONGO_USER }}
+            MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
+            RABBITMQ_URI=${{ env.RABBITMQ_URI }}
+
+      - name: 'App URL'
+        run: 'curl "${{ steps.deploy.outputs.url }}"'
