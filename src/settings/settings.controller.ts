@@ -9,11 +9,29 @@ import { StatusResponseDto } from './dto/status-response.dto';
 import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { Request } from 'express';
+import axios from 'axios';
 
 @ApiTags('Settings')
 @Controller('system-configuration')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
+
+  @Get('public-ip')
+  @ApiOperation({ summary: 'Obter endereço IP público' })
+  @ApiResponse({
+    status: 200,
+    description: 'Endereço IP público recuperado com sucesso',
+    type: String,
+  })
+  async getPublicIpAddress(): Promise<string> {
+    try {
+      const response = await axios.get('https://api.ipify.org?format=json');
+      return response.data.ip;
+    } catch (error) {
+      console.error('Erro ao obter o endereço IP público:', error);
+      throw new Error('Erro ao obter o endereço IP público');
+    }
+  }
 
   @Get()
   @ApiOperation({ summary: 'Obter configurações da escola' })

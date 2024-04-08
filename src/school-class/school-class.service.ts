@@ -83,7 +83,7 @@ export class SchoolClassService {
       if (e.code === 'P2002') {
         throw new EduException('SCHOOL_CLASS_EXISTS');
       }
-      throw new EduException('UNKNOWN_ERROR');
+      throw new EduException(e);
     }
   }
 

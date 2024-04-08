@@ -38,7 +38,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from './common/utils/utils.module';
 import { LottieModule } from './lottie/lottie.module';
-import { StudentService } from "./student/student.service";
 
 @Module({
   imports: [
@@ -49,7 +48,7 @@ import { StudentService } from "./student/student.service";
         username: process.env.MONGO_USER,
         password: process.env.MONGO_PASSWORD,
       },
-      dbName: 'eduedu-escola-admin',
+      dbName: process.env.DB_MONGO || 'eduedu-escola-admin',
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'dist', 'templates'),
