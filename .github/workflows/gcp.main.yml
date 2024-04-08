@@ -82,7 +82,6 @@ jobs:
         with:
           service: 'eduedu-escola-backend-development'
           image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
-          image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
           region: us-central1
           env_vars: |-
             DATABASE_URL=${{ env.DATABASE_URL }}
