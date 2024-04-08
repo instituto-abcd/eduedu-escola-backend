@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env:
+      REGISTRY_NAME: eduedu-escola-backend
       IMAGE_NAME: eduedu-escola-backend-staging
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
-      REGISTRY_NAME: eduedu-escola-backend
       ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
       REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
@@ -58,10 +58,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: STAGING
     env:
+      REGISTRY_NAME: eduedu-escola-backend
       IMAGE_NAME: eduedu-escola-backend-staging
       PROJECT_ID: edueduescola-teste
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
-      REGISTRY_NAME: eduedu-escola-backend
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       MONGO_URI: ${{ secrets.MONGO_URI }}
       MONGO_USER: ${{ secrets.MONGO_USER }}
