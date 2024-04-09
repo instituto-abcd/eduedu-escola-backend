@@ -1,20 +1,19 @@
 ---
-name: DEVELOPMENT - CI/CD Pipeline
+name: DEVELOPMENT GCP - CI/CD Pipeline
 on:
   push:
-    branches: [ main, alpha ]
+    branches: [ main ]
 jobs:
   build-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     environment: development
     env:
-      IMAGE_NAME: eduedu-escola-backend
       PROJECT_ID: edueduescola-teste
-      REGISTRY_PREFIX: us-east1-docker.pkg.dev
+      IMAGE_NAME: eduedu-escola-backend
       REGISTRY_NAME: eduedu-escola-backend-development
+      REGISTRY_PREFIX: us-east1-docker.pkg.dev
       ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
-      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
     steps:
       - name: Checkout
@@ -44,11 +43,6 @@ jobs:
           docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
           docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
 
-      - name: Push Docker Image to Setup
-        run: |-
-          docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:development
-          docker push $REGISTRY_SETUP_REPOSITORY:development
-
     outputs:
       git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
 
@@ -56,12 +50,12 @@ jobs:
     name: Deploy New Revision
     needs: build-push
     runs-on: ubuntu-latest
-    environment: DEVELOPMENT
+    environment: development
     env:
-      IMAGE_NAME: eduedu-escola-backend
       PROJECT_ID: edueduescola-teste
-      REGISTRY_PREFIX: us-east1-docker.pkg.dev
+      IMAGE_NAME: eduedu-escola-backend
       REGISTRY_NAME: eduedu-escola-backend-development
+      REGISTRY_PREFIX: us-east1-docker.pkg.dev
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       MONGO_URI: ${{ secrets.MONGO_URI }}
       MONGO_USER: ${{ secrets.MONGO_USER }}
