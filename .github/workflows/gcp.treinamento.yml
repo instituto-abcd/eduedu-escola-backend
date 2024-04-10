@@ -10,8 +10,8 @@ jobs:
     environment: treinamento
     env:
       PROJECT_ID: edueduescola-teste
-      IMAGE_NAME: eduedu-escola-backend
-      REGISTRY_NAME: eduedu-escola-backend-treinamento
+      REGISTRY_NAME: eduedu-escola-backend
+      IMAGE_NAME: eduedu-escola-backend-treinamento
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
       REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
@@ -59,8 +59,8 @@ jobs:
     environment: TREINAMENTO
     env:
       PROJECT_ID: edueduescola-teste
-      IMAGE_NAME: eduedu-escola-backend
-      REGISTRY_NAME: eduedu-escola-backend-treinamento
+      REGISTRY_NAME: eduedu-escola-backend
+      IMAGE_NAME: eduedu-escola-backend-treinamento
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       MONGO_URI: ${{ secrets.MONGO_URI }}
