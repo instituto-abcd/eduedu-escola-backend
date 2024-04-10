@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UploadedFile,
   UseGuards,
@@ -53,6 +54,8 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
@@ -78,6 +81,7 @@ export class SchoolClassController {
   @Get('all')
   @ApiBearerAuth()
   async findAll(
+    @Req() req,
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
     @Query('name') name?: string,
@@ -88,6 +92,8 @@ export class SchoolClassController {
   ): Promise<PaginationResponse<SchoolClassResponseDto>> {
     const pageNumber = parseInt(page || '1');
     const pageSize = parseInt(limit || '10');
+    const user = req.user;
+
     const filters = {
       name,
       schoolGrade,
@@ -96,7 +102,7 @@ export class SchoolClassController {
       teacherName,
     };
 
-    return this.schoolClassService.findAll(pageNumber, pageSize, filters);
+    return this.schoolClassService.findAll(pageNumber, pageSize, filters, user);
   }
 
   @Get(':id')
