@@ -1,5 +1,5 @@
 ---
-name: DEVELOPMENT GCP - CI/CD Pipeline
+name: MAIN GCP - CI/CD Pipeline
 on:
   push:
     branches: [ main ]
