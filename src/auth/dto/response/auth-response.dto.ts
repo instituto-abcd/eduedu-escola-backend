@@ -22,6 +22,9 @@ export class AuthResponseDto {
   @ApiProperty({ description: 'Token de acesso', example: 'EDUEDU001' })
   accessToken: string;
 
+  @ApiProperty({ description: 'Tempo de Expiração', example: '' })
+  expiresIn: number;
+
   @ApiProperty({ description: 'Nome da Escola', example: 'Escola Pública' })
   schoolName: string;
 
@@ -31,6 +34,7 @@ export class AuthResponseDto {
     email: string,
     document: string,
     accessToken: string,
+    expiresIn: number,
     schoolName: string,
   ) {
     this.id = id;
@@ -38,6 +42,7 @@ export class AuthResponseDto {
     this.email = email;
     this.document = document;
     this.accessToken = accessToken;
+    this.expiresIn = expiresIn;
     this.schoolName = schoolName;
   }
 }

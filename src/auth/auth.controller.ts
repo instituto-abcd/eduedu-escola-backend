@@ -3,16 +3,16 @@ import {
   Controller,
   Post,
   Req,
-  UnauthorizedException,
-} from '@nestjs/common';
+  UnauthorizedException, UseGuards
+} from "@nestjs/common";
 import {
-  ApiBadRequestResponse,
+  ApiBadRequestResponse, ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOperation,
   ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+  ApiTags
+} from "@nestjs/swagger";
 import { AuthService } from './auth.service';
 import { AuthRequestDto } from './dto/request/auth-request.dto';
 import { AuthResponseDto } from './dto/response/auth-response.dto';
@@ -22,6 +22,7 @@ import { ResetPasswordResponseDto } from './dto/response/reset-password-response
 import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
 import { Request } from 'express';
 import { AuthAccessKeyDto } from './dto/request/AuthAccessKey.dto';
+import { UserGuard } from "./guard/user.guard";
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -91,5 +92,16 @@ export class AuthController {
   @ApiBody({ type: AuthAccessKeyDto })
   async authenticateAccessKey(@Body() body: AuthAccessKeyDto) {
     return this.authService.authenticateAccessKey(body.accessKey);
+  }
+
+  @Post('logout')
+  @UseGuards(UserGuard)
+  @ApiBearerAuth()
+  async logout(@Req() req: any) {
+    const userId = req.user.id;
+
+    await this.authService.logout(userId);
+
+    return { message: 'Usuário desconectado com sucesso' };
   }
 }

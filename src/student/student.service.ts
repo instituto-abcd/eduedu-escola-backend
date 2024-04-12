@@ -267,6 +267,15 @@ export class StudentService {
     return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
   }
 
+  async allClasses(): Promise<string[]> {
+    const uniqueClassIds = await this.prisma.userSchoolClass.findMany({
+      select: { schoolClassId: true },
+      distinct: ['schoolClassId'],
+    });
+
+    return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
+  }
+
   async findOne(id: string): Promise<StudentResponseDto> {
     const student = await this.prisma.student.findUnique({
       where: { id },

@@ -13,6 +13,7 @@ import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
+import { ExamService } from "../exam/exam.service";
 
 @Injectable()
 export class PlanetSyncService {
@@ -26,6 +27,7 @@ export class PlanetSyncService {
     private readonly firestoreService: FirestoreService,
     private readonly storageService: StorageService,
     private readonly studentService: StudentService,
+    private readonly examService: ExamService,
   ) {}
 
   async testStream() {
@@ -397,6 +399,7 @@ export class PlanetSyncProcessor {
     private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
+    private readonly examService: ExamService,
   ) {}
 
   @Process('planet-job')
@@ -427,6 +430,7 @@ export class PlanetSyncProcessor {
         promises.push(this.storageService.downloadFiles());
       }
 
+      promises.push(this.examService.syncExams());
       promises.push(this.studentService.syncPlanetStudent());
 
       const start = new Date();
