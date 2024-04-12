@@ -1,8 +1,10 @@
----
 name: DEVELOPMENT GCP - CI/CD Pipeline
+
 on:
   push:
-    branches: [ development ]
+    branches:
+      - development
+
 jobs:
   build-push:
     name: Build and Push Docker Image
@@ -28,23 +30,20 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
 
       - name: Build Docker Image
-        run: |-
+        run: |
           docker build \
           --build-arg ARG_FIRESTORE_READ_SERVICEACCOUNT=${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }} \
           -t $IMAGE_NAME:latest .
 
       - name: Configure Docker Client
-        run: |-
+        run: |
           gcloud auth configure-docker --quiet
           gcloud auth configure-docker $REGISTRY_PREFIX --quiet
 
       - name: Push Docker Image to Artifact Registry
-        run: |-
-          docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
-          docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
-
-    outputs:
-      git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
+        run: |
+          docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{ github.run_number }}
+          docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{ github.run_number }}
 
   deploy:
     name: Deploy New Revision
@@ -71,18 +70,30 @@ jobs:
           credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
 
       - name: Deploy
-        id: 'deploy'
-        uses: 'google-github-actions/deploy-cloudrun@v0'
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v0
         with:
           service: 'dev-eduedu-escola-backend'
           image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
           region: us-central1
-          env_vars: |-
+          env_vars: |
             DATABASE_URL=${{ env.DATABASE_URL }}
             MONGO_URI=${{ env.MONGO_URI }}
             MONGO_USER=${{ env.MONGO_USER }}
             MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
             RABBITMQ_URI=${{ env.RABBITMQ_URI }}
 
-      - name: 'App URL'
-        run: 'curl "${{ steps.deploy.outputs.url }}"'
+      - name: Check Deployment Status
+        id: deployment
+        run: |
+          echo "Deployment Status: ${{ steps.deploy.outputs.status }}"
+
+      - name: Display App URL
+        if: steps.deployment.outputs.status == 'success'
+        run: |
+          echo "App URL: ${{ steps.deploy.outputs.url }}"
+
+      - name: Deployment Rejected
+        if: steps.deployment.outputs.status == 'failure'
+        run: |
+          echo "Deployment was rejected or did not satisfy protection rules."
