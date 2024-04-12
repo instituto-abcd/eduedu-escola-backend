@@ -46,43 +46,43 @@ jobs:
     outputs:
       git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
 
-  deploy:
-    name: Deploy New Revision
-    needs: build-push
-    runs-on: ubuntu-latest
-    environment: development
-    env:
-      PROJECT_ID: edueduescola-teste
-      IMAGE_NAME: eduedu-escola-backend
-      REGISTRY_NAME: eduedu-escola-backend-development
-      REGISTRY_PREFIX: us-east1-docker.pkg.dev
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      MONGO_URI: ${{ secrets.MONGO_URI }}
-      MONGO_USER: ${{ secrets.MONGO_USER }}
-      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-      RABBITMQ_URI: ${{ secrets.RABBITMQ_URI }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
-
-      - name: Deploy
-        id: 'deploy'
-        uses: 'google-github-actions/deploy-cloudrun@v0'
-        with:
-          service: 'dev-eduedu-escola-backend'
-          image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
-          region: us-central1
-          env_vars: |-
-            DATABASE_URL=${{ env.DATABASE_URL }}
-            MONGO_URI=${{ env.MONGO_URI }}
-            MONGO_USER=${{ env.MONGO_USER }}
-            MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
-            RABBITMQ_URI=${{ env.RABBITMQ_URI }}
-
-      - name: 'App URL'
-        run: 'curl "${{ steps.deploy.outputs.url }}"'
+#  deploy:
+#    name: Deploy New Revision
+#    needs: build-push
+#    runs-on: ubuntu-latest
+#    environment: development
+#    env:
+#      PROJECT_ID: edueduescola-teste
+#      IMAGE_NAME: eduedu-escola-backend
+#      REGISTRY_NAME: eduedu-escola-backend-development
+#      REGISTRY_PREFIX: us-east1-docker.pkg.dev
+#      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+#      MONGO_URI: ${{ secrets.MONGO_URI }}
+#      MONGO_USER: ${{ secrets.MONGO_USER }}
+#      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+#      RABBITMQ_URI: ${{ secrets.RABBITMQ_URI }}
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - uses: 'google-github-actions/auth@v1'
+#        with:
+#          credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
+#
+#      - name: Deploy
+#        id: 'deploy'
+#        uses: 'google-github-actions/deploy-cloudrun@v0'
+#        with:
+#          service: 'dev-eduedu-escola-backend'
+#          image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
+#          region: us-central1
+#          env_vars: |-
+#            DATABASE_URL=${{ env.DATABASE_URL }}
+#            MONGO_URI=${{ env.MONGO_URI }}
+#            MONGO_USER=${{ env.MONGO_USER }}
+#            MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
+#            RABBITMQ_URI=${{ env.RABBITMQ_URI }}
+#
+#      - name: 'App URL'
+#        run: 'curl "${{ steps.deploy.outputs.url }}"'

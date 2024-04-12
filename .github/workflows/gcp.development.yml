@@ -1,20 +1,19 @@
 ---
-name: TREINAMENTO - CI/CD Pipeline
+name: DEVELOPMENT GCP - CI/CD Pipeline
 on:
   push:
-    branches: [ main ]
+    branches: [ development ]
 jobs:
   build-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    environment: treinamento
+    environment: development
     env:
       PROJECT_ID: edueduescola-teste
-      REGISTRY_NAME: eduedu-escola-backend
-      IMAGE_NAME: eduedu-escola-backend-treinamento
+      IMAGE_NAME: eduedu-escola-backend
+      REGISTRY_NAME: eduedu-escola-backend-development
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       ARG_FIRESTORE_READ_SERVICEACCOUNT: ${{ secrets.ARG_FIRESTORE_READ_SERVICEACCOUNT }}
-      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
 
     steps:
       - name: Checkout
@@ -44,11 +43,6 @@ jobs:
           docker tag $IMAGE_NAME:latest $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
           docker push $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}}
 
-      - name: Push Docker Image to Setup
-        run: |-
-          docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:treinamento
-          docker push $REGISTRY_SETUP_REPOSITORY:treinamento
-
     outputs:
       git-tag: ${{ steps.increment-git-tag.outputs.git-tag }}
 
@@ -56,11 +50,11 @@ jobs:
     name: Deploy New Revision
     needs: build-push
     runs-on: ubuntu-latest
-    environment: TREINAMENTO
+    environment: development
     env:
       PROJECT_ID: edueduescola-teste
-      REGISTRY_NAME: eduedu-escola-backend
-      IMAGE_NAME: eduedu-escola-backend-treinamento
+      IMAGE_NAME: eduedu-escola-backend
+      REGISTRY_NAME: eduedu-escola-backend-development
       REGISTRY_PREFIX: us-east1-docker.pkg.dev
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -80,7 +74,7 @@ jobs:
         id: 'deploy'
         uses: 'google-github-actions/deploy-cloudrun@v0'
         with:
-          service: 'eduedu-escola-backend-treinamento'
+          service: 'dev-eduedu-escola-backend'
           image: '${{ env.REGISTRY_PREFIX }}/${{ env.PROJECT_ID }}/${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}'
           region: us-central1
           env_vars: |-
