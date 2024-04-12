@@ -229,6 +229,10 @@ export const ErrorDetails = {
     message: 'Planeta não encontrado.',
     status: HttpStatus.NOT_FOUND,
   },
+  TOKEN_AUSENTE: {
+    message: 'Token de autenticação não fornecido',
+    status: HttpStatus.UNAUTHORIZED,
+  },
   KIDS_WITHOUT_PLANETS: {
     message: 'A criança não possui esse planeta.',
     status: HttpStatus.NOT_FOUND,

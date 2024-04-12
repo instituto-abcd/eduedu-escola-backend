@@ -30,6 +30,7 @@ import { StudentExamService } from '../student/studentExam.service';
 import { AwardsService } from '../awards/awards.service';
 import { StudentAwardService } from '../student/studentAward.service';
 import { StudentPlanetExecutionService } from '../student/studentPlanetExecution.service';
+import { ExamService } from '../exam/exam.service';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { StudentPlanetExecutionService } from '../student/studentPlanetExecution
     StudentResultService,
     StudentPlanetExecutionService,
     PerformanceResultUtilsService,
+    ExamService,
   ],
   exports: [
     PlanetSyncModule,
