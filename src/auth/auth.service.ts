@@ -71,7 +71,7 @@ export class AuthService {
     expiresIn?: number,
   ): Promise<{ accessToken: string; expiresIn: number }> {
     const payload = {
-      sub: user.id,
+      id: user.id,
       email: user.email,
       profile: user.profile,
       owner: user.owner,
