@@ -5,15 +5,19 @@ import { AuthToken, User } from '@prisma/client';
 import { AuthRequestDto } from './dto/request/auth-request.dto';
 import { AuthResponseDto } from './dto/response/auth-response.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
-import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
-import { ResetPasswordResponseDto } from './dto/response/reset-password-response.dto';
 import { DateApiService } from '../common/services/date-api.service';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { EmailService } from 'src/email/email.service';
 import { ValidationUtilsService } from 'src/common/utils/validation-utils.service';
+import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
+import { ResetPasswordResponseDto } from './dto/response/reset-password-response.dto';
 
 @Injectable()
 export class AuthService {
+  // private EXPIRES_IN: number = 24 * 3600 * 1000; // 24 horas em milissegundos
+  private EXPIRES_IN: number = 10 * 60; // Token expira em 10 minutos (em segundos)
+  // private EXPIRES_IN = 60; // Token expira em 1 minuto (em segundos)
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
@@ -27,7 +31,7 @@ export class AuthService {
     authRequestDto: AuthRequestDto,
   ): Promise<AuthResponseDto | null> {
     const { email, password } = authRequestDto;
-    const user = await this.prismaService.user.findFirst({
+    const user = await this.prismaService.user.findUnique({
       where: { email },
       include: { school: true },
     });
@@ -45,26 +49,63 @@ export class AuthService {
       throw new EduException('INVALID_EMAIL_OR_PASSWORD');
     }
 
-    const accessToken = this.generateAccessToken(user);
+    const { accessToken, expiresIn } = await this.generateAccessToken(user);
+
+    // Salvar o token na tabela AuthToken
+    const authToken = await this.saveAuthToken(user.id, accessToken, expiresIn);
+
     const { id, name, email: userEmail, document } = user;
     return new AuthResponseDto(
       id,
       name,
       userEmail,
       document,
-      accessToken,
+      authToken.token,
+      authToken.expiresAt.getTime(), // Convertendo para milissegundos
       user.school.name,
     );
   }
 
-  generateAccessToken(user: User): string {
+  async generateAccessToken(
+    user: User,
+    expiresIn?: number,
+  ): Promise<{ accessToken: string; expiresIn: number }> {
     const payload = {
-      id: user.id,
+      sub: user.id,
       email: user.email,
       profile: user.profile,
       owner: user.owner,
     };
-    return this.jwtService.sign(payload);
+
+    // Configura o tempo de expiração baseado no parâmetro expiresIn ou usa o padrão EXPIRES_IN
+    const tokenExpiresIn = expiresIn || this.EXPIRES_IN;
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: tokenExpiresIn,
+    });
+
+    return { accessToken, expiresIn: tokenExpiresIn };
+  }
+
+  async saveAuthToken(
+    userId: string,
+    token: string,
+    expiresIn: number,
+  ): Promise<AuthToken> {
+    const currentDateTime = new Date();
+    const expiresAt = new Date(currentDateTime.getTime() + expiresIn * 1000);
+
+    const authToken = await this.prismaService.authToken.create({
+      data: {
+        token,
+        expiresAt,
+        user: {
+          connect: { id: userId },
+        },
+      },
+    });
+
+    return authToken;
   }
 
   async resetPassword(
@@ -93,7 +134,7 @@ export class AuthService {
       throw new EduException('PASSWORDS_DO_NOT_MATCH');
     }
 
-    const currentDateTime = await this.externalApiService.getCurrentTime();
+    const currentDateTime = new Date();
     const authToken = await this.prismaService.authToken.findFirst({
       where: {
         token: token,
@@ -133,7 +174,7 @@ export class AuthService {
   }
 
   async generateAuthToken(userId: string): Promise<AuthToken> {
-    const currentDateTime = await this.externalApiService.getCurrentTime();
+    const currentDateTime = new Date();
 
     const existingToken = await this.prismaService.authToken.findFirst({
       where: {
@@ -143,26 +184,21 @@ export class AuthService {
     });
 
     if (existingToken) {
-      const newExpiresAt = new Date(currentDateTime.getTime() + 24 * 3600000);
+      const newExpiresAt = new Date(
+        currentDateTime.getTime() + this.EXPIRES_IN * 1000,
+      );
       return this.prismaService.authToken.update({
         where: { id: existingToken.id },
         data: { expiresAt: newExpiresAt },
       });
     }
 
-    const token = this.jwtService.sign({ userId }, { expiresIn: '24h' });
+    const { accessToken, expiresIn } = await this.generateAccessToken(
+      { id: userId } as User,
+      this.EXPIRES_IN,
+    );
 
-    const expiresAt = new Date(currentDateTime.getTime() + 24 * 3600000);
-
-    return this.prismaService.authToken.create({
-      data: {
-        token: token,
-        expiresAt: expiresAt,
-        user: {
-          connect: { id: userId },
-        },
-      },
-    });
+    return this.saveAuthToken(userId, accessToken, expiresIn);
   }
 
   async authenticateAccessKey(accessKey: string): Promise<AuthResponseDto> {
@@ -179,15 +215,28 @@ export class AuthService {
       throw new EduException('USER_NOT_CONFIRMED');
     }
 
-    const accessToken = this.generateAccessToken(user);
+    const { accessToken, expiresIn } = await this.generateAccessToken(user);
+
+    // Salvar o token na tabela AuthToken
+    const authToken = await this.saveAuthToken(user.id, accessToken, expiresIn);
 
     return {
-      accessToken,
+      accessToken: authToken.token,
+      expiresIn: authToken.expiresAt.getTime(), // Convertendo para milissegundos
       document: user.document,
       email: user.email,
       id: user.id,
       name: user.name,
       schoolName: user.school.name,
     };
+  }
+
+  async logout(userId: string): Promise<void> {
+    // Remover todos os tokens de autenticação associados ao usuário
+    await this.prismaService.authToken.deleteMany({
+      where: {
+        userId: userId,
+      },
+    });
   }
 }
