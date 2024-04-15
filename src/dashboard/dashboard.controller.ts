@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -25,8 +25,10 @@ export class DashboardController {
   })
   @ApiOperation({ summary: 'Obter dashboard por ano escolar' })
   async getDashboard(
+    @Req() req,
     @Param('schoolYear') schoolYear: number,
   ): Promise<DashboardDto> {
-    return this.dashboardService.getDashboard(schoolYear);
+    const user = req.user;
+    return this.dashboardService.getDashboard(schoolYear, user);
   }
 }

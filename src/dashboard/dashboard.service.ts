@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, SchoolGradeEnum } from '@prisma/client';
+import { Prisma, Profile, SchoolGradeEnum } from '@prisma/client';
 import {
   DashboardDto,
   ExamPerformanceDto,
@@ -23,34 +23,76 @@ export class DashboardService {
 
   private logger = new Logger(DashboardService.name);
 
-  async getDashboard(schoolYear: number): Promise<DashboardDto> {
+  async getDashboard(schoolYear: number, user: any): Promise<DashboardDto> {
     try {
-      const dashboard = await this.prisma.dashboard.findFirst({
-        where: {
-          schoolYear: parseInt(schoolYear.toString()),
-        },
-        include: {
-          dashboardSchoolGrades: {
+      let dashboard;
+
+      if (user.profile !== Profile.DIRECTOR) {
+        const classIds = await this.userClasses(user.id);
+
+        const schoolYearStr = schoolYear.toString();
+        const schoolYearInt = parseInt(schoolYearStr);
+
+        if (classIds.length > 0) {
+          dashboard = await this.prisma.dashboard.findFirst({
+            where: {
+              schoolYear: schoolYearInt,
+            },
             include: {
-              dashboardSchoolClass: {
+              dashboardSchoolGrades: {
+                where: {
+                  dashboardSchoolClass: {
+                    some: {
+                      id: {
+                        in: classIds,
+                      },
+                    },
+                  },
+                },
                 include: {
-                  dashboardPerformances: true,
+                  dashboardSchoolClass: {
+                    where: {
+                      id: {
+                        in: classIds,
+                      },
+                    },
+                    include: {
+                      dashboardPerformances: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+        }
+      } else {
+        dashboard = await this.prisma.dashboard.findFirst({
+          where: {
+            schoolYear: parseInt(schoolYear.toString()),
+          },
+          include: {
+            dashboardSchoolGrades: {
+              include: {
+                dashboardSchoolClass: {
+                  include: {
+                    dashboardPerformances: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
+        });
+      }
 
       if (!dashboard) {
         throw new EduException('DASHBOARD_NOT_FOUND');
       }
 
+      // Mapeia os dados para o formato desejado
       const schoolGrades: SchoolGradeDto[] = await Promise.all(
         dashboard.dashboardSchoolGrades.map(async (grade) => {
-          const schoolClasses = await this.getSchoolClassesByGrade(grade.id);
           const mappedSchoolClasses = await Promise.all(
-            schoolClasses.map(async (schoolClass) =>
+            grade.dashboardSchoolClass.map(async (schoolClass) =>
               this.mapSchoolClassDto(schoolClass),
             ),
           );
@@ -80,6 +122,16 @@ export class DashboardService {
         throw new EduException('UNKNOWN_ERROR');
       }
     }
+  }
+
+  async userClasses(userId: string): Promise<string[]> {
+    const uniqueClassIds = await this.prisma.userSchoolClass.findMany({
+      where: { userId },
+      select: { schoolClassId: true },
+      distinct: ['schoolClassId'],
+    });
+
+    return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
   }
 
   private async mapSchoolClassDto(schoolClass): Promise<SchoolClassDto> {
