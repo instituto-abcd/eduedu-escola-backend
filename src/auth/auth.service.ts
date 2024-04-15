@@ -5,24 +5,24 @@ import { AuthToken, User } from '@prisma/client';
 import { AuthRequestDto } from './dto/request/auth-request.dto';
 import { AuthResponseDto } from './dto/response/auth-response.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
-import { DateApiService } from '../common/services/date-api.service';
+import { ValidationUtilsService } from 'src/common/utils/validation-utils.service';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { EmailService } from 'src/email/email.service';
-import { ValidationUtilsService } from 'src/common/utils/validation-utils.service';
+import { DateApiService } from '../common/services/date-api.service';
 import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
 import { ResetPasswordResponseDto } from './dto/response/reset-password-response.dto';
 
 @Injectable()
 export class AuthService {
-  private EXPIRES_IN: number = 24 * 3600 * 1000; // 24 horas em milissegundos
+  private readonly EXPIRES_IN: number = 24 * 3600; // 24 horas em segundos
 
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
     private readonly validationUtilsService: ValidationUtilsService,
-    private readonly externalApiService: DateApiService,
     private readonly bcryptService: BcryptService,
     private readonly emailService: EmailService,
+    private readonly externalApiService: DateApiService,
   ) {}
 
   async authenticateUser(
