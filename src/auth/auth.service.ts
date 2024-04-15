@@ -14,9 +14,7 @@ import { ResetPasswordResponseDto } from './dto/response/reset-password-response
 
 @Injectable()
 export class AuthService {
-  // private EXPIRES_IN: number = 24 * 3600 * 1000; // 24 horas em milissegundos
-  private EXPIRES_IN: number = 10 * 60; // Token expira em 10 minutos (em segundos)
-  // private EXPIRES_IN = 60; // Token expira em 1 minuto (em segundos)
+  private EXPIRES_IN: number = 24 * 3600 * 1000; // 24 horas em milissegundos
 
   constructor(
     private readonly prismaService: PrismaService,
