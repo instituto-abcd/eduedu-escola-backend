@@ -62,6 +62,20 @@ export class SchoolClassController {
     private readonly schoolClassResultService: SchoolClassResultService,
   ) {}
 
+  @ApiOkResponse({
+    description: 'Obtém o desempenho da turma em provas agrupados por eixo',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-performance')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getExamsPerformance(
+    @Param('id') id: string,
+  ): Promise<SchoolClassDetailedSummaryDto[]> {
+    return this.schoolClassResultService.getSchoolClassDetailedSummary(id);
+  }
+
   @AuditGuard()
   @Post()
   @ApiOperation({ summary: 'Criar uma nova turma' })
@@ -309,20 +323,6 @@ export class SchoolClassController {
     @Param('id') id: string,
   ): Promise<SchoolClassPlanetResultDetailDto[]> {
     return this.schoolClassResultService.getSchoolClassPlanetResultDetail(id);
-  }
-
-  @ApiOkResponse({
-    description: 'Obtém o desempenho da turma em provas agrupados por eixo',
-    type: SchoolClassPlanetResultDetailDto,
-  })
-  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
-  @Get(':id/exams-performance')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async getExamsPerformance(
-    @Param('id') id: string,
-  ): Promise<SchoolClassDetailedSummaryDto[]> {
-    return this.schoolClassResultService.getSchoolClassDetailedSummary(id);
   }
 
   @ApiOkResponse({

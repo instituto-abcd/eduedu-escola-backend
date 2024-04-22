@@ -570,7 +570,7 @@ export class SchoolClassService {
     for (const studentData of studentsData) {
       const existingStudent = await this.prismaService.student.findFirst({
         where: {
-          id: studentData.id,
+          registry: studentData.registry,
         },
       });
 
