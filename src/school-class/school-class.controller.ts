@@ -62,6 +62,20 @@ export class SchoolClassController {
     private readonly schoolClassResultService: SchoolClassResultService,
   ) {}
 
+  @ApiOkResponse({
+    description: 'Obtém o desempenho da turma em provas agrupados por eixo',
+    type: SchoolClassPlanetResultDetailDto,
+  })
+  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
+  @Get(':id/exams-performance')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getExamsPerformance(
+    @Param('id') id: string,
+  ): Promise<SchoolClassDetailedSummaryDto[]> {
+    return this.schoolClassResultService.getSchoolClassDetailedSummary(id);
+  }
+
   @AuditGuard()
   @Post()
   @ApiOperation({ summary: 'Criar uma nova turma' })
@@ -312,32 +326,6 @@ export class SchoolClassController {
   }
 
   @ApiOkResponse({
-    description: 'Obtém o desempenho da turma em provas agrupados por eixo',
-    type: SchoolClassPlanetResultDetailDto,
-  })
-  @ApiParam({ name: 'id', description: 'ID da turma', example: 'uuid' })
-  @Get(':id/exams-performance')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async getExamsPerformance(
-    @Param('id') id: string,
-    @Query('studentName') studentName?: string,
-    @Query('examDate') examDate?: string, // Date format: DD/MM
-    @Query('cfo') cfo?: number,
-    @Query('lct') lct?: number,
-    @Query('sea') sea?: number,
-  ): Promise<ExamPerformanceResponse[]> {
-    return this.schoolClassResultService.examsPerformanceStudents(
-      id,
-      studentName,
-      examDate,
-      cfo,
-      lct,
-      sea,
-    );
-  }
-
-  @ApiOkResponse({
     description: 'Obtém o desempenho de alunos por Provas',
     type: ExamPerformanceResponse,
   })
@@ -347,20 +335,8 @@ export class SchoolClassController {
   @ApiBearerAuth()
   async examsPerformanceStudents(
     @Param('id') id: string,
-    @Query('studentName') studentName?: string,
-    @Query('examDate') examDate?: string, // Date format: DD/MM
-    @Query('cfo') cfo?: number,
-    @Query('sea') sea?: number,
-    @Query('lct') lct?: number,
   ): Promise<ExamPerformanceResponse[]> {
-    return await this.schoolClassResultService.examsPerformanceStudents(
-      id,
-      studentName,
-      examDate,
-      cfo,
-      sea,
-      lct,
-    );
+    return await this.schoolClassResultService.examsPerformanceStudents(id);
   }
 
   @ApiOkResponse({
