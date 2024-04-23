@@ -46,31 +46,40 @@ export class StudentExamService {
 
         let planetTrack: PlanetDto[] = [];
         for (let index = 0; index < studentExam.planetTrack.length; index++) {
-
           let currentPlanetResult = studentPlanetResult.find((item) =>
-            item.planetId == studentExam.planetTrack[index].planetId);
+            item.planetId === studentExam.planetTrack[index].planetId
+          );
           let currentPlanetStars = currentPlanetResult ? parseFloat(currentPlanetResult.stars.toString()) : 0;
 
-          let previousPlanetResult = index > 0 ? studentPlanetResult.find((item) =>
-            item.planetId == studentExam.planetTrack[index-1].planetId) : undefined;
+          let previousPlanetResult =
+            index > 0
+              ? studentPlanetResult.find((item) => item.planetId === studentExam.planetTrack[index - 1].planetId)
+              : undefined;
           let previousPlanetStars = previousPlanetResult ? parseFloat(previousPlanetResult.stars.toString()) : 0;
 
-          let planetAvailable = studentExam.planetTrack[index].availableAt != undefined &&
+          let planetAvailable =
+            studentExam.planetTrack[index].availableAt != undefined &&
             studentExam.planetTrack[index].availableAt <= new Date();
+
+          // Determina se o planeta atual deve estar habilitado
+          let enable = false;
+
+          // Verifica se é o primeiro planeta na trilha OU se tem estrelas maiores que 0 OU se o planeta anterior tem estrelas maiores que 0
+          if (index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0) {
+            enable = true; // Habilita se uma das condições acima for verdadeira
+          }
 
           const planetDto = {
             planetId: studentExam.planetTrack[index].planetId,
             planetName: studentExam.planetTrack[index].planetName,
             planetAvatar: studentExam.planetTrack[index].planetAvatar,
             stars: currentPlanetStars,
+            enable: enable,
             canExecutePlanet:
-              planetAvailable // O planeta está disponível
-              && (
-                index === 0 || // O planeta é o primeiro da trilha
-                currentPlanetStars > 0 || // O planeta já foi realizado pelo menos uma vez
-                (index > 0 && previousPlanetStars > 0) // O planeta anterior já foi realizado pelo menos uma vez
-              )
-          } as PlanetDto;
+              planetAvailable &&
+              (index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0), // Condições de execução do planeta
+          };
+
           planetTrack.push(planetDto);
         }
 
