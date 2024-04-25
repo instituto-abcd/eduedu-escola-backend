@@ -51,6 +51,7 @@ import { ExamPerformanceResponse } from './dto/response/exam-performance.respons
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { QueryFilter } from './dto/request/query.enum';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
@@ -335,8 +336,20 @@ export class SchoolClassController {
   @ApiBearerAuth()
   async examsPerformanceStudents(
     @Param('id') id: string,
+    @Query('studentName') studentName?: string,
+    @Query('examDate') examDate?: string, // Date format: DD/MM
+    @Query('cfo') cfo?: QueryFilter,
+    @Query('lct') lct?: QueryFilter,
+    @Query('sea') sea?: QueryFilter,
   ): Promise<ExamPerformanceResponse[]> {
-    return await this.schoolClassResultService.examsPerformanceStudents(id);
+    return await this.schoolClassResultService.examsPerformanceStudents(
+      id,
+      studentName,
+      examDate,
+      cfo,
+      lct,
+      sea,
+    );
   }
 
   @ApiOkResponse({
@@ -349,9 +362,19 @@ export class SchoolClassController {
   @ApiBearerAuth()
   async schoolClassPerformancePlanets(
     @Param('id') id: string,
+    @Query('studentName') studentName?: string,
+    @Query('examDate') examDate?: string, // Date format: DD/MM
+    @Query('cfo') cfo?: QueryFilter,
+    @Query('lct') lct?: QueryFilter,
+    @Query('sea') sea?: QueryFilter,
   ): Promise<PlanetsPerformanceResponse[]> {
     return await this.schoolClassResultService.schoolClassPerformancePlanets(
       id,
+      studentName,
+      examDate,
+      cfo,
+      lct,
+      sea,
     );
   }
 
