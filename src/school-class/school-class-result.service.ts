@@ -22,6 +22,7 @@ import { PerformanceResultUtilsService } from 'src/common/utils/performance-resu
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';
+import { QueryFilter, QueryType } from './dto/request/query.enum';
 
 @Injectable()
 export class SchoolClassResultService {
@@ -396,9 +397,17 @@ export class SchoolClassResultService {
 
   async examsPerformanceStudents(
     idSchoolClass: string,
+    studentName?: string,
+    examDate?: string,
+    cfo?: QueryFilter,
+    lct?: QueryFilter,
+    sea?: QueryFilter,
   ): Promise<ExamPerformanceResponse[]> {
     const students = await this.getStudentBySchoolClasses(idSchoolClass);
-    const studentIds = students.map((student) => student.id);
+
+    const studentsFiltered = this.filterStudentsByName(students, studentName);
+
+    const studentIds = studentsFiltered.map((student) => student.id);
     const filteredStudentExamResults = await this.getFilteredStudentExamResults(
       studentIds,
     );
@@ -407,14 +416,7 @@ export class SchoolClassResultService {
       filteredStudentExamResults,
     );
 
-    const studentsWithResultsAndExams = students.filter((student) =>
-      filteredStudentExamResults.some(
-        (result) =>
-          result.studentId === student.id && result.studentExamId !== null,
-      ),
-    );
-
-    return students.map((student) => {
+    const studentsWithPerformances = studentsFiltered.map((student) => {
       const performanceData = this.calculatePerformanceExam(
         student,
         resultsByStudent,
@@ -426,6 +428,129 @@ export class SchoolClassResultService {
         ...performanceData,
       };
     });
+
+    const studentsWithPerformancesFiltered = this.filterStudentsExamsWithPerformance(
+      studentsWithPerformances,
+      examDate,
+      cfo,
+      lct,
+      sea,
+    );
+
+    return studentsWithPerformancesFiltered
+  }
+
+  filterStudentsByName(students, studentName: string) {
+    if (studentName) {
+      students = students.filter((student) =>
+        student.name.toLowerCase().includes(studentName.toLowerCase()),
+      );
+    }
+
+    return students;
+  }
+
+  parsePercentageString(percentage: string): number {
+    const numericValue = parseFloat(percentage.replace('%', ''));
+    return isNaN(numericValue) ? 0 : numericValue;
+  }
+
+  orderExamsByFieldASC(array, field: string){
+    return array.sort((a, b) => 
+      this.parsePercentageString(a[field].percent) -
+        this.parsePercentageString(b[field].percent));
+  }
+
+  orderExamsByFieldDESC(array, field: string){
+    return array.sort((a, b) => 
+      this.parsePercentageString(b[field].percent) -
+        this.parsePercentageString(a[field].percent));
+  }
+
+  orderPlanetsByFieldASC(array, field: string){
+    return array.sort((a, b) => a[field].averageStars - b[field].averageStars);
+  }
+
+  orderPlanetsByFieldDESC(array, field: string){
+    return array.sort((a, b) => b[field].averageStars - a[field].averageStars);
+  }
+
+  filterStudentsExamsWithPerformance(
+    studentsWithPerformances,
+    examDate?: string,
+    cfo?: QueryFilter,
+    lct?: QueryFilter,
+    sea?: QueryFilter,
+  ){
+    if (examDate) {
+      studentsWithPerformances = 
+        studentsWithPerformances.filter((student) => student.lastExamDate === examDate);
+    }
+
+    if (cfo === QueryFilter.ASC) {
+      studentsWithPerformances = this.orderExamsByFieldASC(studentsWithPerformances, QueryType.CFO);
+    }
+
+    if (cfo === QueryFilter.DESC) {
+      studentsWithPerformances = this.orderExamsByFieldDESC(studentsWithPerformances, QueryType.CFO);
+    }
+
+    if (lct === QueryFilter.ASC) {
+      studentsWithPerformances = this.orderExamsByFieldASC(studentsWithPerformances, QueryType.LCT);
+    }
+
+    if (lct === QueryFilter.DESC) {
+      studentsWithPerformances = this.orderExamsByFieldDESC(studentsWithPerformances, QueryType.LCT);
+    }
+
+    if (sea === QueryFilter.ASC) {
+      studentsWithPerformances = this.orderExamsByFieldASC(studentsWithPerformances, QueryType.SEA);
+    }
+
+    if (sea === QueryFilter.DESC) {
+      studentsWithPerformances = this.orderExamsByFieldDESC(studentsWithPerformances, QueryType.SEA);
+    }
+
+    return studentsWithPerformances;
+  }
+
+  filterStudentsPlanetsWithPerformance(
+    studentsWithPerformances,
+    examDate?: string,
+    cfo?: QueryFilter,
+    lct?: QueryFilter,
+    sea?: QueryFilter,
+  ){
+    if (examDate) {
+      studentsWithPerformances = 
+        studentsWithPerformances.filter((student) => student.lastExamDate === examDate);
+    }
+
+    if (cfo === QueryFilter.ASC) {
+      studentsWithPerformances = this.orderPlanetsByFieldASC(studentsWithPerformances, QueryType.CFO);
+    }
+
+    if (cfo === QueryFilter.DESC) {
+      studentsWithPerformances = this.orderPlanetsByFieldDESC(studentsWithPerformances, QueryType.CFO);
+    }
+
+    if (lct === QueryFilter.ASC) {
+      studentsWithPerformances = this.orderPlanetsByFieldASC(studentsWithPerformances, QueryType.LCT);
+    }
+
+    if (lct === QueryFilter.DESC) {
+      studentsWithPerformances = this.orderPlanetsByFieldDESC(studentsWithPerformances, QueryType.LCT);
+    }
+
+    if (sea === QueryFilter.ASC) {
+      studentsWithPerformances = this.orderPlanetsByFieldASC(studentsWithPerformances, QueryType.SEA);
+    }
+
+    if (sea === QueryFilter.DESC) {
+      studentsWithPerformances = this.orderPlanetsByFieldDESC(studentsWithPerformances, QueryType.SEA);
+    }
+
+    return studentsWithPerformances;
   }
 
   organizeResultsByStudent(filteredStudentExamResults) {
@@ -555,9 +680,17 @@ export class SchoolClassResultService {
 
   async schoolClassPerformancePlanets(
     idSchoolClass: string,
+    studentName?: string,
+    examDate?: string,
+    cfo?: QueryFilter,
+    lct?: QueryFilter,
+    sea?: QueryFilter,
   ): Promise<PlanetsPerformanceResponse[]> {
     const students = await this.getStudentBySchoolClasses(idSchoolClass);
-    const studentIds = students.map((student) => student.id);
+
+    const studentsFiltered = this.filterStudentsByName(students, studentName);
+
+    const studentIds = studentsFiltered.map((student) => student.id);
     const filteredStudentPlanetResults =
       await this.getFilteredStudentPlanetResults(studentIds);
 
@@ -565,13 +698,13 @@ export class SchoolClassResultService {
       filteredStudentPlanetResults,
     );
 
-    const studentsWithResultsAndPlanets = students.filter((student) =>
+    const studentsWithResultsAndPlanets = studentsFiltered.filter((student) =>
       filteredStudentPlanetResults.some(
         (result) => result.studentId === student.id && result.planetId !== null,
       ),
     );
 
-    return studentsWithResultsAndPlanets.map((student) => {
+    const studentsWithResultsAndPlanetsAndPerfomances = studentsWithResultsAndPlanets.map((student) => {
       const performanceData = this.calculatePerformancePlanet(
         student,
         resultsByStudent,
@@ -599,6 +732,17 @@ export class SchoolClassResultService {
         ...performanceData,
       };
     });
+
+    const studentsWithResultsAndPlanetsAndPerfomancesFiltered =
+      this.filterStudentsPlanetsWithPerformance(
+        studentsWithResultsAndPlanetsAndPerfomances,
+        examDate,
+        cfo,
+        lct,
+        sea,
+      );
+
+    return studentsWithResultsAndPlanetsAndPerfomancesFiltered;
   }
 
   organizeResultsByPlanetStudent(filteredStudentExamResults) {
