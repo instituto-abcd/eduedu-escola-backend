@@ -404,7 +404,6 @@ export class StudentController {
   ): Promise<StudentDetailedSummaryDto> {
     return await this.studentResultService.getStudentDetailedSummary(id);
   }
-
   @Get(':id/planets/:planetId')
   @ApiResponse({
     status: 200,
