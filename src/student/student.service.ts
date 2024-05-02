@@ -2166,4 +2166,27 @@ export class StudentService {
       throw new EduException('DATABASE_ERROR');
     }
   }
+
+  async getStudentLevels(studentId: string) {
+    try {
+      const levelESPromise = this.findStudentLevel(studentId, 'ES');
+      const levelEAPromise = this.findStudentLevel(studentId, 'EA');
+      const levelLCPromise = this.findStudentLevel(studentId, 'LC');
+
+      const [levelES, levelEA, levelLC] = await Promise.all([
+        levelESPromise,
+        levelEAPromise,
+        levelLCPromise,
+      ]);
+
+      return {
+        levelES,
+        levelEA,
+        levelLC,
+      };
+    } catch (error) {
+      console.error('Erro ao obter os níveis do estudante:', error);
+      throw error;
+    }
+  }
 }

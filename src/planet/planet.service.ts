@@ -1,20 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { PlanetDto } from './dto/planet.dto';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import {
-  Planet,
-  PlanetDocument,
-  Question,
-} from 'src/planet-sync/schemas/planet.schema';
-import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { StudentService } from '../student/student.service';
-import {
-  StudentExam,
-  StudentExamDocument,
-} from '../student/schemas/studentExam.schema';
+import { Inject, Injectable } from "@nestjs/common";
+import { PlanetDto } from "./dto/planet.dto";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Planet, PlanetDocument, Question } from "src/planet-sync/schemas/planet.schema";
+import { Exam, ExamDocument } from "src/exam/schemas/exam.schema";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
+import { StudentService } from "../student/student.service";
+import { StudentExam, StudentExamDocument } from "../student/schemas/studentExam.schema";
 
 @Injectable()
 export class PlanetService {
@@ -326,5 +319,22 @@ export class PlanetService {
     const uniqueModels = models.filter((n, i) => models.indexOf(n) === i);
 
     return uniqueModels;
+  }
+
+  getOne(planetId: string): Promise<PlanetDocument> {
+    return this.planetModel.findOne({
+      id: planetId,
+    });
+  }
+
+  async getByNamePartial(planetName: string): Promise<PlanetDocument[]> {
+    try {
+      return await this.planetModel.find({
+        title: { $regex: planetName, $options: 'i' },
+      });
+    } catch (error) {
+      console.error('Erro ao buscar planetas:', error);
+      throw error;
+    }
   }
 }
