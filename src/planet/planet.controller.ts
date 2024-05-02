@@ -2,12 +2,33 @@ import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
 import { PlanetService } from './planet.service';
 import { PlanetDto } from './dto/planet.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Question } from 'src/planet-sync/schemas/planet.schema';
+import {
+  PlanetDocument,
+  Question,
+} from 'src/planet-sync/schemas/planet.schema';
 
 @Controller('planet')
 @ApiTags('Planetas')
 export class PlanetController {
   constructor(private readonly planetService: PlanetService) {}
+
+  @Get('/:id')
+  @ApiResponse({
+    status: 201,
+    description: 'Recuperar Planeta pelo Id ',
+  })
+  getPlanet(@Param('id') id: string): Promise<PlanetDocument> {
+    return this.planetService.getOne(id);
+  }
+
+  @Get('/name/:name')
+  @ApiResponse({
+    status: 201,
+    description: 'Recuperar planetas pelo nome ',
+  })
+  getByNamePartial(@Param('name') name: string): Promise<PlanetDocument[]> {
+    return this.planetService.getByNamePartial(name);
+  }
 
   @Get('/assign-all-planets/:id')
   @ApiResponse({

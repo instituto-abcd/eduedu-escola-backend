@@ -420,4 +420,26 @@ export class StudentController {
   ): Promise<StudentPlanetStarsDto> {
     return await this.studentResultService.studentPlanetStars(id, planetId);
   }
+
+  @Get('find-level/:studentId')
+  @ApiOperation({ summary: 'Obter níveis de um estudante por ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Níveis do estudante encontrados com sucesso',
+    type: StudentResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
+  async getStudentLevels(
+    @Param('studentId') studentId: string,
+  ): Promise<{ levelLC: string; levelEA: string; levelES: string }> {
+    try {
+      const levels = await this.studentService.getStudentLevels(studentId);
+      if (!levels) {
+        throw new NotFoundException('Estudante não encontrado');
+      }
+      return levels;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
