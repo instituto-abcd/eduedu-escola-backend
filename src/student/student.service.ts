@@ -702,6 +702,39 @@ export class StudentService {
     }
   }
 
+  async syncPlanetByStudent(studentId: string): Promise<void> {
+    try {
+      console.log(
+        `Sync Planet Student - Sincronizando Planetas do Aluno: ${studentId}`,
+      );
+
+      const studentExam = await this.studentExamModel.findOne({
+        studentId: studentId,
+        current: true,
+        examDate: { $ne: null },
+      });
+
+      if (studentExam) {
+        const axisCodes = ['ES', 'EA', 'LC'];
+        const planets: PlanetDocument[] = [];
+
+        for (const axisCode of axisCodes) {
+          const studentLevel = await this.findStudentLevel(studentId, axisCode);
+          const axisPlanets = await this.getPlanetsByAxisAndLevel(
+            axisCode,
+            studentLevel,
+          );
+          planets.push(...axisPlanets);
+        }
+
+        await this.generateAndSavePlanetTrack(studentId, planets);
+      }
+      console.log('Sync Planet Student - Planetas do Aluno Sincronizados');
+    } catch (error) {
+      console.error('Erro ao sincronizar alunos e planetas:', error);
+    }
+  }
+
   async getAllStudents(): Promise<Student[]> {
     try {
       return await this.prisma.student.findMany();

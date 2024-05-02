@@ -67,10 +67,18 @@ export class StudentController {
     private readonly studentResultService: StudentResultService,
   ) {}
 
-  @Get('sync-planet-student')
+  @Post('sync-planet-student')
   @ApiOperation({ summary: 'Sincronizar Trilha de Planetas do Aluno' })
   async syncPlanetStudent(): Promise<any> {
     return await this.studentService.syncPlanetStudent();
+  }
+
+  @Post('sync-planets-by-student/:studentId')
+  @ApiOperation({ summary: 'Sincronizar Trilha de Planetas por Aluno' })
+  async syncPlanetByStudent(
+    @Param('studentId') studentId: string,
+  ): Promise<any> {
+    return await this.studentService.syncPlanetByStudent(studentId);
   }
 
   @AuditGuard()
