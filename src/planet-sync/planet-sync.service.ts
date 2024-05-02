@@ -13,7 +13,7 @@ import { Queue } from 'bull';
 import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
-import { ExamService } from "../exam/exam.service";
+import { ExamService } from '../exam/exam.service';
 
 @Injectable()
 export class PlanetSyncService {
@@ -151,23 +151,30 @@ export class PlanetSyncService {
 
     const planetsInsertedOrUpdated = [];
     for (let index = 0; index < planetsFromFirestore.length; index++) {
-      const planet = await this.parsePlanetOriginToPlanet(
-        planetsFromFirestore[index],
-      );
+      try {
+        const planet = await this.parsePlanetOriginToPlanet(
+          planetsFromFirestore[index],
+        );
 
-      await this.planetModel
-        .findOneAndUpdate({ id: planet.id }, planet, {
-          upsert: true,
-          new: true,
-        })
-        .exec();
+        await this.planetModel
+          .findOneAndUpdate({ id: planet.id }, planet, {
+            upsert: true,
+            new: true,
+          })
+          .exec();
 
-      planetsInsertedOrUpdated.push(planet);
-      this.cacheManager.set(
-        'sync-synced-planets',
-        planetsInsertedOrUpdated.length,
-        0,
-      );
+        planetsInsertedOrUpdated.push(planet);
+        this.cacheManager.set(
+          'sync-synced-planets',
+          planetsInsertedOrUpdated.length,
+          0,
+        );
+      } catch (error) {
+        console.log(
+          `Erro ao processar planeta ${planetsFromFirestore[index].title}:`,
+        );
+        console.error(error);
+      }
     }
 
     await this.cacheManager.set(
