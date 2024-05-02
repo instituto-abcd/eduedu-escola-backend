@@ -663,46 +663,42 @@ export class StudentService {
     return null;
   }
 
-  async syncPlanetStudent(): Promise<void> {
+  async syncPlanetStudent(): Promise<{ success: boolean }> {
     try {
       console.log('Sync Planet Student - Sincronizando Planetas do Aluno');
       const allStudents = await this.getAllStudents();
 
-      await Promise.all(
-        allStudents.map(async (student) => {
-          const studentExam = await this.studentExamModel.findOne({
-            studentId: student.id,
-            current: true,
-            examDate: { $ne: null },
-          });
+      const batchSize = 10; // Tamanho máximo do lote de operações a serem processadas de cada vez
 
-          if (studentExam) {
-            const axisCodes = ['ES', 'EA', 'LC'];
-            const planets: PlanetDocument[] = [];
+      for (let i = 0; i < allStudents.length; i += batchSize) {
+        const batchStudents = allStudents.slice(i, i + batchSize); // Obter um lote de alunos para processamento
 
-            for (const axisCode of axisCodes) {
-              const studentLevel = await this.findStudentLevel(
-                student.id,
-                axisCode,
+        // Executar operações de sincronização para o lote atual de alunos
+        await Promise.all(
+          batchStudents.map(async (student) => {
+            try {
+              await this.syncPlanetByStudent(student.id);
+            } catch (error) {
+              console.error(
+                `Erro ao sincronizar planetas para o aluno ${student.id}:`,
+                error,
               );
-              const axisPlanets = await this.getPlanetsByAxisAndLevel(
-                axisCode,
-                studentLevel,
-              );
-              planets.push(...axisPlanets);
             }
+          }),
+        );
 
-            await this.generateAndSavePlanetTrack(student.id, planets);
-          }
-        }),
-      );
+        console.log(`Sync Planet Batch ${i / batchSize + 1} concluído`);
+      }
+
       console.log('Sync Planet Student - Planetas do Aluno Sincronizados');
+      return { success: true }; // Retornar um objeto indicando sucesso
     } catch (error) {
       console.error('Erro ao sincronizar alunos e planetas:', error);
+      return { success: false }; // Retornar um objeto indicando falha
     }
   }
 
-  async syncPlanetByStudent(studentId: string): Promise<void> {
+  async syncPlanetByStudent(studentId: string): Promise<boolean> {
     try {
       console.log(
         `Sync Planet Student - Sincronizando Planetas do Aluno: ${studentId}`,
@@ -714,24 +710,37 @@ export class StudentService {
         examDate: { $ne: null },
       });
 
-      if (studentExam) {
-        const axisCodes = ['ES', 'EA', 'LC'];
-        const planets: PlanetDocument[] = [];
-
-        for (const axisCode of axisCodes) {
-          const studentLevel = await this.findStudentLevel(studentId, axisCode);
-          const axisPlanets = await this.getPlanetsByAxisAndLevel(
-            axisCode,
-            studentLevel,
-          );
-          planets.push(...axisPlanets);
-        }
-
-        await this.generateAndSavePlanetTrack(studentId, planets);
+      if (!studentExam) {
+        console.log(`Não há exame válido para o aluno ${studentId}`);
+        return false; // Retorna false se não houver exame válido para o aluno
       }
-      console.log('Sync Planet Student - Planetas do Aluno Sincronizados');
+
+      const axisCodes = ['ES', 'EA', 'LC'];
+      const planets: PlanetDocument[] = [];
+
+      for (const axisCode of axisCodes) {
+        const studentLevel = await this.findStudentLevel(studentId, axisCode);
+        const axisPlanets = await this.getPlanetsByAxisAndLevel(
+          axisCode,
+          studentLevel,
+        );
+        planets.push(...axisPlanets);
+      }
+
+      if (planets.length > 0) {
+        await this.generateAndSavePlanetTrack(studentId, planets);
+        console.log('Sync Planet Student - Planetas do Aluno Sincronizados');
+        return true; // Retorna true se a sincronização foi bem-sucedida
+      } else {
+        console.log(`Não foram encontrados planetas para o aluno ${studentId}`);
+        return false; // Retorna false se nenhum planeta foi encontrado
+      }
     } catch (error) {
-      console.error('Erro ao sincronizar alunos e planetas:', error);
+      console.error(
+        `Erro ao sincronizar planetas para o aluno ${studentId}:`,
+        error,
+      );
+      return false; // Retorna false em caso de erro durante a sincronização
     }
   }
 
