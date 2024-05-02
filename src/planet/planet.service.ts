@@ -1,13 +1,20 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { PlanetDto } from "./dto/planet.dto";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { Planet, PlanetDocument, Question } from "src/planet-sync/schemas/planet.schema";
-import { Exam, ExamDocument } from "src/exam/schemas/exam.schema";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Cache } from "cache-manager";
-import { StudentService } from "../student/student.service";
-import { StudentExam, StudentExamDocument } from "../student/schemas/studentExam.schema";
+import { Inject, Injectable } from '@nestjs/common';
+import { PlanetDto } from './dto/planet.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import {
+  Planet,
+  PlanetDocument,
+  Question,
+} from 'src/planet-sync/schemas/planet.schema';
+import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { StudentService } from '../student/student.service';
+import {
+  StudentExam,
+  StudentExamDocument,
+} from '../student/schemas/studentExam.schema';
 
 @Injectable()
 export class PlanetService {
@@ -32,30 +39,31 @@ export class PlanetService {
     level: number,
   ): Promise<any> {
     try {
+      // Consulta os planetas filtrando por código de eixo e nível
       const planets = await this.planetModel
         .find({ axis_code: axisCode, level: level })
         .exec();
-      const summary = {
-        totalPlanets: planets.length,
+
+      // Calcula o total de planetas encontrados
+      const totalPlanets = planets.length;
+
+      // Mapeia os planetas para um formato desejado
+      const populatedPlanets = planets.map((planet) => ({
+        id: planet.id,
+        title: planet.title,
+        enable: planet.enable,
+        level: planet.level,
+        axis_code: planet.axis_code,
+        position: planet.position,
+      }));
+
+      // Retorna um objeto com o resumo e a lista de planetas no formato mapeado
+      return {
+        summary: { totalPlanets },
+        planets: populatedPlanets,
       };
-
-      const planetList = planets.map(async (planet) => {
-        const students = await this.getStudentsForPlanet(planet.id);
-        return {
-          id: planet.id,
-          title: planet.title,
-          enable: planet.enable,
-          level: planet.level,
-          axis_code: planet.axis_code,
-          position: planet.position,
-          students: students,
-        };
-      });
-
-      const populatedPlanets = await Promise.all(planetList);
-
-      return { summary, planets: populatedPlanets };
     } catch (error) {
+      // Captura e relança qualquer erro ocorrido durante a execução
       throw error;
     }
   }

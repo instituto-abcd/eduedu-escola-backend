@@ -39,7 +39,7 @@ export class PlanetController {
     return this.planetService.assignAllPlanetsToUser(studentId);
   }
 
-  @Get(':axisCode/level/:level')
+  @Get('/axis-code/:axisCode/level/:level')
   @ApiResponse({
     status: 200,
     description: 'Retorna todos os planetas por eixo e nível',
