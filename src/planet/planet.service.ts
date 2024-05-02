@@ -44,18 +44,41 @@ export class PlanetService {
         .find({ axis_code: axisCode, level: level })
         .exec();
 
-      // Calcula o total de planetas encontrados
-      const totalPlanets = planets.length;
+      // Mapeia os planetas em uma lista de promessas que obtêm os estudantes para cada planeta
+      const populatedPlanetsPromises = planets.map(async (planet) => {
+        try {
+          const students = await this.getStudentsForPlanet(planet.id);
+          return {
+            id: planet.id,
+            title: planet.title,
+            enable: planet.enable,
+            level: planet.level,
+            axis_code: planet.axis_code,
+            position: planet.position,
+            students: students,
+          };
+        } catch (error) {
+          console.error(
+            `Erro ao obter estudantes para o planeta ${planet.id}:`,
+            error,
+          );
+          return {
+            id: planet.id,
+            title: planet.title,
+            enable: planet.enable,
+            level: planet.level,
+            axis_code: planet.axis_code,
+            position: planet.position,
+            students: [], // Retorna uma lista vazia em caso de erro ao obter os estudantes
+          };
+        }
+      });
 
-      // Mapeia os planetas para um formato desejado
-      const populatedPlanets = planets.map((planet) => ({
-        id: planet.id,
-        title: planet.title,
-        enable: planet.enable,
-        level: planet.level,
-        axis_code: planet.axis_code,
-        position: planet.position,
-      }));
+      // Aguarda todas as promessas de planetas populados serem resolvidas
+      const populatedPlanets = await Promise.all(populatedPlanetsPromises);
+
+      // Calcula o total de planetas encontrados
+      const totalPlanets = populatedPlanets.length;
 
       // Retorna um objeto com o resumo e a lista de planetas no formato mapeado
       return {
@@ -63,8 +86,8 @@ export class PlanetService {
         planets: populatedPlanets,
       };
     } catch (error) {
-      // Captura e relança qualquer erro ocorrido durante a execução
-      throw error;
+      console.error('Erro ao encontrar planetas por eixo e nível:', error);
+      throw error; // Relança o erro para ser tratado em um nível superior
     }
   }
 
@@ -73,18 +96,34 @@ export class PlanetService {
       const students = await this.studentExamModel
         .find({ 'planetTrack.planetId': planetId })
         .exec();
-      return students.map((studentExam) => ({
-        studentId: studentExam.studentId,
-        examId: studentExam.examId,
-        examDate: studentExam.examDate,
-        current: studentExam.current,
-        examPerformed: studentExam.examPerformed,
-        lastExam: studentExam.lastExam,
-        createdAt: studentExam.createdAt,
-        updatedAt: studentExam.updatedAt,
-      }));
+
+      // Filtra os estudantes com sucesso, ignorando aqueles que causaram erros
+      const filteredStudents = students.map((studentExam) => {
+        try {
+          return {
+            studentId: studentExam.studentId,
+            examId: studentExam.examId,
+            examDate: studentExam.examDate,
+            current: studentExam.current,
+            examPerformed: studentExam.examPerformed,
+            lastExam: studentExam.lastExam,
+            createdAt: studentExam.createdAt,
+            updatedAt: studentExam.updatedAt,
+          };
+        } catch (error) {
+          console.error(
+            `Erro ao processar studentExam ${studentExam.id}:`,
+            error,
+          );
+          return null; // Retorna null para indicar que houve um erro com este studentExam
+        }
+      });
+
+      // Filtra os estudantes bem-sucedidos (não retornam null)
+      return filteredStudents.filter((student) => student !== null);
     } catch (error) {
-      throw error;
+      console.error('Erro ao obter estudantes para o planeta:', error);
+      return []; // Retorna uma lista vazia em caso de erro ao obter os estudantes
     }
   }
 

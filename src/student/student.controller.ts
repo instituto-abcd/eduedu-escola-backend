@@ -68,6 +68,7 @@ export class StudentController {
   ) {}
 
   @Get('sync-planet-student')
+  @ApiOperation({ summary: 'Sincronizar Trilha de Planetas do Aluno' })
   async syncPlanetStudent(): Promise<any> {
     return await this.studentService.syncPlanetStudent();
   }
