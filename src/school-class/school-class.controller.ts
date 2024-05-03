@@ -163,10 +163,12 @@ export class SchoolClassController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async remove(
+    @Req() req,
     @Body() requestDto: DeleteSchoolClassRequestDto,
   ): Promise<DeleteSchoolClassResponseDto> {
     const { ids } = requestDto;
-    return this.schoolClassService.remove(ids);
+    const user = req.user;
+    return this.schoolClassService.remove(ids, user);
   }
 
   @AuditGuard()
