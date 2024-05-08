@@ -330,11 +330,23 @@ export class SchoolClassService {
     };
   }
 
-  async remove(ids: string[]): Promise<DeleteUserResponseDto> {
+  async remove(ids: string[], user: any): Promise<DeleteUserResponseDto> {
+    if (user.profile !== Profile.DIRECTOR) {
+      throw new EduException('INVALID_PROFILE');
+    }
+
     if (!ids || ids.length === 0) {
       throw new EduException('IDS_REQUIRED');
     }
 
+    await this.prismaService.schoolClassStudent.deleteMany({
+      where: {
+        schoolClassId: {
+          in: ids,
+        },
+      },
+    });
+    
     await this.prismaService.userSchoolClass.deleteMany({
       where: {
         schoolClassId: {
