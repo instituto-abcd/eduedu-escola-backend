@@ -732,4 +732,41 @@ export class SchoolClassService {
 
     return schoolClass.schoolYear.name;
   }
+
+  async findOneSchoolClassesByUser(userId: any): Promise<{ names: string }> {
+    const ids = await this.userClasses(userId);
+
+    // Buscar informações completas das classes
+    const schoolClasses = await this.prismaService.userSchoolClass.findMany({
+      where: {
+        schoolClassId: {
+          in: ids,
+        },
+      },
+      include: {
+        schoolClass: {
+          select: {
+            name: true,
+            schoolYear: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Formatar os nomes das classes no formato desejado (SchoolClass Name - SchoolYear Name)
+    const formattedNames = schoolClasses.map((userSchoolClass) => {
+      const className = userSchoolClass.schoolClass.name;
+      const yearName = userSchoolClass.schoolClass.schoolYear.name;
+      return `${className} - ${yearName}`;
+    });
+
+    // Concatenar os nomes usando ", " para separar os diferentes nomes
+    const concatenatedNames = formattedNames.join(', ');
+
+    return { names: concatenatedNames };
+  }
 }
