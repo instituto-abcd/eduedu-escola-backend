@@ -346,7 +346,7 @@ export class SchoolClassService {
         },
       },
     });
-    
+
     await this.prismaService.userSchoolClass.deleteMany({
       where: {
         schoolClassId: {
@@ -748,7 +748,6 @@ export class SchoolClassService {
   async findOneSchoolClassesByUser(userId: any): Promise<{ names: string }> {
     const ids = await this.userClasses(userId);
 
-    // Buscar informações completas das classes
     const schoolClasses = await this.prismaService.userSchoolClass.findMany({
       where: {
         schoolClassId: {
@@ -769,15 +768,18 @@ export class SchoolClassService {
       },
     });
 
-    // Formatar os nomes das classes no formato desejado (SchoolClass Name - SchoolYear Name)
-    const formattedNames = schoolClasses.map((userSchoolClass) => {
+    const uniqueNames = new Set<string>();
+
+    schoolClasses.forEach((userSchoolClass) => {
       const className = userSchoolClass.schoolClass.name;
       const yearName = userSchoolClass.schoolClass.schoolYear.name;
-      return `${className} - ${yearName}`;
+      const formattedName = `${className} - ${yearName}`;
+      uniqueNames.add(formattedName);
     });
 
-    // Concatenar os nomes usando ", " para separar os diferentes nomes
-    const concatenatedNames = formattedNames.join(', ');
+    const sortedUniqueNames = Array.from(uniqueNames).sort();
+
+    const concatenatedNames = sortedUniqueNames.join(', ');
 
     return { names: concatenatedNames };
   }
