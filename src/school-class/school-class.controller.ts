@@ -134,6 +134,24 @@ export class SchoolClassController {
     return this.schoolClassService.findOne(id);
   }
 
+  @Get('user/:userId')
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Recupera os nomes das salas associadas ao usuário',
+    type: SchoolClassResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Turma não encontrada' })
+  @ApiOperation({
+    summary: 'Recupera os nomes das salas associadas ao usuário',
+  })
+  @UseGuards(JwtAuthGuard)
+  async findOneSchoolClassesByUser(
+    @Param('userId') userId: string,
+  ): Promise<{ names: string }> {
+    return this.schoolClassService.findOneSchoolClassesByUser(userId);
+  }
+
   @Patch(':id')
   @ApiBearerAuth()
   @ApiResponse({
