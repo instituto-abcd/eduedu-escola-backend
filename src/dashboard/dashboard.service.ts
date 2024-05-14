@@ -143,34 +143,58 @@ export class DashboardService {
       where: { id: schoolClass.schoolGrade },
     });
 
-    const examPerformance: ExamPerformanceDto[] =
-      schoolClass.dashboardPerformances
-        .filter((performance) => performance.type === 'EXAM')
-        .map((performance) => ({
-          axis: performance.axis,
-          percentage: Math.round(performance.result),
-          color:
-            this.performanceResultUtilsService.getStudentClassificationColor(
-              this.mapSchoolGradeToNumeric(schoolClassEntity.schoolGrade),
-              performance.axis,
-              performance.level,
-            ),
-        }));
+    // Objeto para armazenar performances de exame e planetas agrupadas por eixo
+    const performancesMap = {
+      examPerformances: [],
+      planetPerformances: {
+        ES: { axis: 'ES', percentage: '0' },
+        EA: { axis: 'EA', percentage: '0' },
+        LS: { axis: 'LS', percentage: '0' },
+      },
+    };
 
-    const planetPerformance: PlanetPerformanceDto[] =
-      schoolClass.dashboardPerformances
-        .filter((performance) => performance.type === 'PLANET')
-        .map((performance) => ({
+    // Filtrar e mapear as performances
+    schoolClass.dashboardPerformances.forEach((performance) => {
+      if (performance.type === 'EXAM') {
+        const color =
+          this.performanceResultUtilsService.getStudentClassificationColor(
+            this.mapSchoolGradeToNumeric(schoolClassEntity.schoolGrade),
+            performance.axis,
+            performance.level,
+          );
+        performancesMap.examPerformances.push({
           axis: performance.axis,
           percentage: Math.round(performance.result),
-        }));
+          color,
+        });
+      } else if (performance.type === 'PLANET') {
+        // Atualizar a performance do planeta no mapa, evitando duplicidades
+        if (performance.axis in performancesMap.planetPerformances) {
+          // Verificar se a nova performance tem um percentual maior
+          const currentPercentage =
+            performancesMap.planetPerformances[performance.axis].percentage;
+          const newPercentage = Math.round(performance.result);
+          if (newPercentage > currentPercentage) {
+            performancesMap.planetPerformances[performance.axis] = {
+              axis: performance.axis,
+              percentage: newPercentage,
+            };
+          }
+        }
+      }
+    });
+
+    // Converter o mapa de planetPerformances em uma matriz para a saída
+    const planetPerformanceArray = Object.values(
+      performancesMap.planetPerformances,
+    );
 
     return {
       id: schoolClass.id,
       name: schoolClass.name,
       studentsCounter: schoolClass.studentsCounter,
-      examPerformance,
-      planetPerformance,
+      examPerformance: performancesMap.examPerformances,
+      planetPerformance: planetPerformanceArray,
     };
   }
 
