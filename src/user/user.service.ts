@@ -141,6 +141,7 @@ export class UserService {
           where,
           skip: (pageNumber - 1) * pageSize,
           take: pageSize,
+          orderBy: { name: 'asc' },
         }),
       ]);
 
