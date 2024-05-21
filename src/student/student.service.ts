@@ -163,14 +163,12 @@ export class StudentService {
       },
     };
 
-    // If the user is a director, no need to filter by user classes
     if (user.profile !== Profile.DIRECTOR) {
       const classIds = await this.userClasses(user.id);
       where.schoolClasses.some.schoolClassId = { in: classIds };
     }
 
     try {
-      // Retrieve students
       const [students, totalCount] = await Promise.all([
         this.prisma.student.findMany({
           where,
@@ -181,6 +179,9 @@ export class StudentService {
               orderBy: { examDate: 'desc' },
               take: 3,
             },
+          },
+          orderBy: {
+            name: 'asc',
           },
           skip: (pageNumber - 1) * pageSize,
           take: pageSize,

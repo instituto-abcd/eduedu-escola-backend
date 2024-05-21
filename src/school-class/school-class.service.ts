@@ -101,33 +101,34 @@ export class SchoolClassService {
       }
     };
 
-    const buildWhereClause = async () => {
-      const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } =
-        filters;
-      const where: Prisma.SchoolClassWhereInput = {};
+    const buildWhereClause =
+      async (): Promise<Prisma.SchoolClassWhereInput> => {
+        const { name, schoolGrade, schoolPeriod, schoolYearName, teacherName } =
+          filters;
+        const where: Prisma.SchoolClassWhereInput = {};
 
-      if (name) where.name = { contains: name };
-      if (schoolGrade) where.schoolGrade = { equals: schoolGrade };
-      if (schoolPeriod) where.schoolPeriod = { equals: schoolPeriod };
-      if (schoolYearName) {
-        const schoolYear = await this.prismaService.schoolYear.findFirst({
-          where: { name: Number(schoolYearName) },
-          select: { id: true },
-        });
-        if (schoolYear) where.schoolYearId = schoolYear.id;
-      }
-      if (teacherName) {
-        const teachers = await this.prismaService.user.findMany({
-          where: { name: { contains: teacherName } },
-          select: { id: true },
-        });
-        if (teachers.length > 0) {
-          const teacherIds = teachers.map((teacher) => teacher.id);
-          where.users = { some: { userId: { in: teacherIds } } };
+        if (name) where.name = { contains: name, mode: 'insensitive' };
+        if (schoolGrade) where.schoolGrade = { equals: schoolGrade };
+        if (schoolPeriod) where.schoolPeriod = { equals: schoolPeriod };
+        if (schoolYearName) {
+          const schoolYear = await this.prismaService.schoolYear.findFirst({
+            where: { name: Number(schoolYearName) },
+            select: { id: true },
+          });
+          if (schoolYear) where.schoolYearId = schoolYear.id;
         }
-      }
-      return where;
-    };
+        if (teacherName) {
+          const teachers = await this.prismaService.user.findMany({
+            where: { name: { contains: teacherName, mode: 'insensitive' } },
+            select: { id: true },
+          });
+          if (teachers.length > 0) {
+            const teacherIds = teachers.map((teacher) => teacher.id);
+            where.users = { some: { userId: { in: teacherIds } } };
+          }
+        }
+        return where;
+      };
 
     const retrieveClasses = async (where: Prisma.SchoolClassWhereInput) => {
       const totalCount = await this.prismaService.schoolClass.count({ where });
@@ -135,6 +136,7 @@ export class SchoolClassService {
         where,
         skip: (pageNumber - 1) * pageSize,
         take: pageSize,
+        orderBy: { name: 'asc' },
         include: {
           schoolYear: true,
           students: true,
@@ -146,10 +148,12 @@ export class SchoolClassService {
 
     try {
       validatePaginationParameters();
+
       const where =
         user.profile === Profile.DIRECTOR
           ? await buildWhereClause()
           : { id: { in: await this.userClasses(user.id) } };
+
       const { totalCount, schoolClasses } = await retrieveClasses(where);
       const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -377,9 +381,10 @@ export class SchoolClassService {
     const skip = (pageNumber - 1) * pageSize;
 
     try {
+      // Contagem total de estudantes para paginação
       const totalCount = await this.prismaService.schoolClassStudent.count({
         where: {
-          schoolClassId: schoolClassId,
+          schoolClassId,
           student: {
             name: name ? { contains: name, mode: 'insensitive' } : undefined,
           },
@@ -390,9 +395,9 @@ export class SchoolClassService {
 
       const pagination = {
         totalItems: totalCount,
-        pageSize: pageSize,
-        pageNumber: pageNumber,
-        totalPages: totalPages,
+        pageSize,
+        pageNumber,
+        totalPages,
         previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
         nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
         lastPage: totalPages,
@@ -400,16 +405,22 @@ export class SchoolClassService {
         hasNextPage: pageNumber < totalPages,
       };
 
+      // Busca estudantes com paginação e ordenação
       const schoolClassStudents =
         await this.prismaService.schoolClassStudent.findMany({
           where: {
-            schoolClassId: schoolClassId,
+            schoolClassId,
             student: {
               name: name ? { contains: name, mode: 'insensitive' } : undefined,
             },
           },
           skip,
           take: pageSize,
+          orderBy: {
+            student: {
+              name: 'asc',
+            },
+          },
           include: {
             student: true,
             schoolClass: true,
@@ -430,7 +441,7 @@ export class SchoolClassService {
               registry: student.registry,
               status: student.status,
               reserved: scs.reserved,
-              examPerformed: examPerformed,
+              examPerformed,
               firstAccess: scs.firstAccess,
               schoolGrade: scs.schoolClass.schoolGrade,
               schoolPeriod: scs.schoolClass.schoolPeriod,

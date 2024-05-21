@@ -141,6 +141,7 @@ export class UserService {
           where,
           skip: (pageNumber - 1) * pageSize,
           take: pageSize,
+          orderBy: { name: 'asc' },
         }),
       ]);
 
@@ -466,6 +467,9 @@ export class UserService {
       select: {
         id: true,
         name: true,
+      },
+      orderBy: {
+        name: 'asc',
       },
     });
 
