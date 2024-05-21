@@ -377,9 +377,10 @@ export class SchoolClassService {
     const skip = (pageNumber - 1) * pageSize;
 
     try {
+      // Contagem total de estudantes para paginação
       const totalCount = await this.prismaService.schoolClassStudent.count({
         where: {
-          schoolClassId: schoolClassId,
+          schoolClassId,
           student: {
             name: name ? { contains: name, mode: 'insensitive' } : undefined,
           },
@@ -390,9 +391,9 @@ export class SchoolClassService {
 
       const pagination = {
         totalItems: totalCount,
-        pageSize: pageSize,
-        pageNumber: pageNumber,
-        totalPages: totalPages,
+        pageSize,
+        pageNumber,
+        totalPages,
         previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
         nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
         lastPage: totalPages,
@@ -400,16 +401,22 @@ export class SchoolClassService {
         hasNextPage: pageNumber < totalPages,
       };
 
+      // Busca estudantes com paginação e ordenação
       const schoolClassStudents =
         await this.prismaService.schoolClassStudent.findMany({
           where: {
-            schoolClassId: schoolClassId,
+            schoolClassId,
             student: {
               name: name ? { contains: name, mode: 'insensitive' } : undefined,
             },
           },
           skip,
           take: pageSize,
+          orderBy: {
+            student: {
+              name: 'asc',
+            },
+          },
           include: {
             student: true,
             schoolClass: true,
@@ -430,7 +437,7 @@ export class SchoolClassService {
               registry: student.registry,
               status: student.status,
               reserved: scs.reserved,
-              examPerformed: examPerformed,
+              examPerformed,
               firstAccess: scs.firstAccess,
               schoolGrade: scs.schoolClass.schoolGrade,
               schoolPeriod: scs.schoolClass.schoolPeriod,

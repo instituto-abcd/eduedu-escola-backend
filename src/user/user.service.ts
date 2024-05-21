@@ -467,6 +467,9 @@ export class UserService {
         id: true,
         name: true,
       },
+      orderBy: {
+        name: 'asc',
+      },
     });
 
     return classes;
