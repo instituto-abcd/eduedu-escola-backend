@@ -2,8 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Profile, SchoolGradeEnum } from '@prisma/client';
 import {
   DashboardDto,
-  ExamPerformanceDto,
-  PlanetPerformanceDto,
   SchoolClassDto,
   SchoolGradeDto,
 } from './dto/dashboard.dto';
@@ -19,7 +17,7 @@ export class DashboardService {
     private readonly prisma: PrismaService,
     private readonly externalApiService: DateApiService,
     private readonly performanceResultUtilsService: PerformanceResultUtilsService,
-  ) {}
+  ) { }
 
   private logger = new Logger(DashboardService.name);
 
@@ -149,7 +147,7 @@ export class DashboardService {
       planetPerformances: {
         ES: { axis: 'ES', percentage: '0' },
         EA: { axis: 'EA', percentage: '0' },
-        LS: { axis: 'LS', percentage: '0' },
+        LC: { axis: 'LC', percentage: '0' },
       },
     };
 
@@ -305,7 +303,7 @@ export class DashboardService {
 
       const performance: Prisma.DashboardPerformanceCreateManyInput[] = [];
 
-      const axisCode = ['ES', 'EA', 'LS'];
+      const axisCode = ['ES', 'EA', 'LC'];
       if (grade !== SchoolGradeEnum.CHILDREN) {
         axisCode.forEach((axis) => {
           performance.push({
