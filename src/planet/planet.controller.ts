@@ -12,31 +12,53 @@ import {
 export class PlanetController {
   constructor(private readonly planetService: PlanetService) {}
 
-  @Get('/:id')
+  @Delete('/reset-cache-all-models')
   @ApiResponse({
-    status: 201,
-    description: 'Recuperar Planeta pelo Id ',
+    status: 200,
+    description: 'Reset cache',
   })
-  getPlanet(@Param('id') id: string): Promise<PlanetDocument> {
-    return this.planetService.getOne(id);
+  resetAllPlanetQuestionsCache(): Promise<any> {
+    return this.planetService.resetAllPlanetQuestionsCache();
   }
 
-  @Get('/name/:name')
+  @Get('/all-models')
   @ApiResponse({
     status: 201,
-    description: 'Recuperar planetas pelo nome ',
+    description: 'Retorna os modelos de questão utilizados em planetas',
+    type: PlanetDto,
   })
-  getByNamePartial(@Param('name') name: string): Promise<PlanetDocument[]> {
-    return this.planetService.getByNamePartial(name);
+  findAllPlanetModels(@Query('planetId') planetIds: string[]): Promise<any[]> {
+    return this.planetService.findAllPlanetModels(planetIds);
   }
 
-  @Get('/assign-all-planets/:id')
+  @Get('/all-questions')
   @ApiResponse({
     status: 201,
-    description: 'Atribuir todos planetas ao usuário ',
+    description: 'Retorna as questões de planetas',
+    type: PlanetDto,
   })
-  assignAllPlanetsToUser(@Param('id') studentId: string): Promise<any[]> {
-    return this.planetService.assignAllPlanetsToUser(studentId);
+  findAllPlanetQuestion(@Query('modelId') modelId: string): Promise<any> {
+    return this.planetService.findAllPlanetQuestions(modelId);
+  }
+
+  @Get('/question-models')
+  @ApiResponse({
+    status: 201,
+    description: 'Retorna todos os modelos das questões de todos os planetas',
+    type: PlanetDto,
+  })
+  findPlanetModels(): Promise<any> {
+    return this.planetService.findPlanetModels();
+  }
+
+  @Get('/test-questions')
+  @ApiResponse({
+    status: 201,
+    description: 'Retorna as questões de planetas PARA TESTE',
+    type: PlanetDto,
+  })
+  findAllPlanetQuestionTest(@Query('modelId') modelId: string): Promise<any[]> {
+    return this.planetService.findAllPlanetQuestionsTest(modelId);
   }
 
   @Get('/axis-code/:axisCode/level/:level')
@@ -52,34 +74,13 @@ export class PlanetController {
     return this.planetService.findAllPlanetsByAxisAndLevel(axisCode, level);
   }
 
-  @Get()
+  @Get('/assign-all-planets/:id')
   @ApiResponse({
     status: 201,
-    description: 'Retorna todos os planetas',
-    type: PlanetDto,
+    description: 'Atribuir todos planetas ao usuário ',
   })
-  findAll(): Promise<PlanetDto[]> {
-    return this.planetService.findAll();
-  }
-
-  @Get('question-models')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna todos os modelos das questões de todos os planetas',
-    type: PlanetDto,
-  })
-  findPlanetModels(): Promise<any> {
-    return this.planetService.findPlanetModels();
-  }
-
-  @Get(':id/questions')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna as questões de planetas',
-    type: PlanetDto,
-  })
-  findPlanetQuestions(@Param('id') planetId: string): Promise<Question[]> {
-    return this.planetService.findPlanetQuestions(planetId);
+  assignAllPlanetsToUser(@Param('id') studentId: string): Promise<any[]> {
+    return this.planetService.assignAllPlanetsToUser(studentId);
   }
 
   @Get(':id/questions/:questionId')
@@ -95,42 +96,41 @@ export class PlanetController {
     return this.planetService.findPlanetQuestion(planetId, questionId);
   }
 
-  @Get('/all-questions?')
+  @Get(':id/questions')
   @ApiResponse({
     status: 201,
     description: 'Retorna as questões de planetas',
     type: PlanetDto,
   })
-  findAllPlanetQuestion(@Query('modelId') modelId: string): Promise<any[]> {
-    return this.planetService.findAllPlanetQuestions(modelId);
+  findPlanetQuestions(@Param('id') planetId: string): Promise<Question[]> {
+    return this.planetService.findPlanetQuestions(planetId);
   }
 
-  @Get('/test-questions?')
+  @Get('/name/:name')
   @ApiResponse({
     status: 201,
-    description: 'Retorna as questões de planetas PARA TESTE',
-    type: PlanetDto,
+    description: 'Recuperar planetas pelo nome ',
   })
-  findAllPlanetQuestionTest(@Query('modelId') modelId: string): Promise<any[]> {
-    return this.planetService.findAllPlanetQuestionsTest(modelId);
+  getByNamePartial(@Param('name') name: string): Promise<PlanetDocument[]> {
+    return this.planetService.getByNamePartial(name);
   }
 
-  @Get('/all-models?')
+  @Get('/:id')
   @ApiResponse({
     status: 201,
-    description: 'Retorna os modelos de questão utilizados em planetas',
-    type: PlanetDto,
+    description: 'Recuperar Planeta pelo Id ',
   })
-  findAllPlanetModels(@Query('planetId') planetIds: string[]): Promise<any[]> {
-    return this.planetService.findAllPlanetModels(planetIds);
+  getPlanet(@Param('id') id: string): Promise<PlanetDocument> {
+    return this.planetService.getOne(id);
   }
 
-  @Delete('/reset-cache-all-models')
+  @Get('/')
   @ApiResponse({
-    status: 200,
-    description: 'Reset cache',
+    status: 201,
+    description: 'Retorna todos os planetas',
+    type: PlanetDto,
   })
-  resetAllPlanetQuestionsCache(): Promise<any> {
-    return this.planetService.resetAllPlanetQuestionsCache();
+  findAll(): Promise<PlanetDto[]> {
+    return this.planetService.findAll();
   }
 }
