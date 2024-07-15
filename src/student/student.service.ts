@@ -226,15 +226,9 @@ export class StudentService {
           schoolClassName: student.schoolClasses[0]?.schoolClass.name,
           schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
           schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfoResult
-            ? `${Math.round(cfoResult.percent.toNumber())}%`
-            : '0%',
-          sea: seaResult
-            ? `${Math.round(seaResult.percent.toNumber())}%`
-            : '0%',
-          lct: lctResult
-            ? `${Math.round(lctResult.percent.toNumber())}%`
-            : '0%',
+          cfo: cfoResult ? `${Math.round(cfoResult.percent.toNumber())}%` : '—',
+          sea: seaResult ? `${Math.round(seaResult.percent.toNumber())}%` : '—',
+          lct: lctResult ? `${Math.round(lctResult.percent.toNumber())}%` : '—',
           status: student.status,
         };
       });
