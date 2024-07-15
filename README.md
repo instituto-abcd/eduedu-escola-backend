@@ -1,77 +1,23 @@
-[![DEVELOPMENT - CI/CD Pipeline](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/ci-pipeline.yml/badge.svg?branch=main)](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/ci-pipeline.yml)
+# EduEdu+ &mdash; Backend
 
----
+Webserver para os serviços do EduEdu+, usando o framework [Nest.js](https://docs.nestjs.com/v5/). Utilizamos Docker para empacotar em container o servidor e _os_ bancos de dados.
 
-[![STAGING - CI/CD Pipeline](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/gcp.staging.yml/badge.svg?branch=staging)](https://github.com/instituto-abcd/eduedu-escola-backend/actions/workflows/gcp.staging.yml)
+## Instruções de inicialização
 
-[![Swagger UI](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=Swagger&logoColor=white)](https://eduedu-escola-backend-3djofcpyaq-uc.a.run.app/swagger)
+Após clonado o projeto, siga as instruções para executá-lo:
 
----
+1. `npm install`;
+2. `npm run env:login`
+3. Siga as instruções no terminal para logar-se no [vault.dotenv.org](https://vault.dotenv.org/). Importante que já tenha recebido o invite para o workspace _EduEdu+_.
+4. `npm run env:pull`
 
-## Gestão de Branches
+**Certifique-se de que o daemon do Docker está rodando em sua máquina.**
 
-Fluxo utilizado: **Git Flow**
+5. `npm run start:dev-full`;
 
-![git-flow](https://i.imgur.com/Wk7LfaW.png)
+Ao seguir essas etapas o projeto será iniciado.
 
----
+### Próximos passos
 
-## Arquitetura
-
-Diagramas arquiteturais (Modelo C4) :point_right:
-https://instituto-abcd.github.io/eduedu-escola-docs/
-
----
-
-# Tutoriais
-
-## Executar a sincronização de planetas/artefatos localmente
-
-**_Atenção: Apontar as connection strings para o ambiente local_**
-
-1. Excluir a pasta dist
-
-2. Parar e remover todos os containers
-```
-docker container stop $(docker container list -qa) && docker container rm $(docker container list -qa)
-```
-
-3. Parar todos os containers e limpar os dados do Docker
-```
-docker system prune -a -f && docker system prune --volumes -f
-```
-
-4. Atualizar os pacotes da aplicação
-```
-npm install
-```
-
-5. Subir os container auxiliares à aplicação
-```
-docker-compose up -d
-```
-
-6. Executar as migrations
-```
-npm run migrations
-```
-
-7. Executar a aplicação
-```
-npm run start:dev
-```
-
-8. Executar a request de sincronização de planetas
-```
-  curl -X 'POST' \
-    'http://localhost:3000/planet-sync/sync-all' \
-    -H 'accept: application/json' \
-    -d ''
-```
-
-9. Verificar status da sincronização de planetas
-```
-  curl -X 'GET' \
-    'http://localhost:3000/planet-sync/sync-status' \
-    -H 'accept: */*'
-```
+Solicite invite ao nosso workspace no Postman para ter acesso a documentação da API.
+Clone e rode os clients frontend ([admin](https://github.com/instituto-abcd/eduedu-escola-admin) e [aluno](https://github.com/instituto-abcd/eduedu-escola-aluno)) e aponte as variáveis de ambiente de ambos para a url local onde está rodando o seu backend, pra ter o projeto completo em desenvolvimento.
