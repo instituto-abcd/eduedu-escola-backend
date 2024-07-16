@@ -40,6 +40,7 @@ import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-re
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
+import { AwardsService } from '../awards/awards.service';
 import { StudentAwardService } from './studentAward.service';
 import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
 
@@ -48,6 +49,7 @@ export class StudentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dashboard: DashboardService,
+    private readonly awards: AwardsService,
     private readonly studentAward: StudentAwardService,
     private readonly studentPlanetExecution: StudentPlanetExecutionService,
     @InjectModel(Exam.name)
@@ -657,9 +659,11 @@ export class StudentService {
 
     await this.generateAndSavePlanetTrack(studentId, planets);
 
+    const oldAwards = await this.awards.getStudentAwards(studentId);
     await this.studentAward.verifyAndGenerateExamAwards(studentId);
+    const newAwards = await this.awards.getStudentNewAwards(studentId, oldAwards);
 
-    return null;
+    return { newAwards };
   }
 
   async syncPlanetStudent(): Promise<{ success: boolean }> {
@@ -2119,13 +2123,17 @@ export class StudentService {
       stars,
     );
 
+    const oldAwards = await this.awards.getStudentAwards(studentId);
     await this.studentAward.verifyAndGeneratePlanetAwards(studentId);
+    const newAwards = await this.awards.getStudentNewAwards(studentId, oldAwards);
+
     await this.dashboard.updateDashboardPerformancePlanet(studentId, 'PLANET');
 
     return {
       planetCompleted: true,
       previousQuestionIsCorrect: previousQuestionIsCorrect,
       progress: 100,
+      newAwards: newAwards,
     };
   }
 

@@ -34,4 +34,15 @@ export class AwardsService {
 
     return studentAwards.studentAwards.map((sa) => sa.award);
   }
+
+  async getStudentNewAwards(
+    studentId: string,
+    oldAwards: Award[],
+  ): Promise<Award[]> {
+    const currentAwards = await this.getStudentAwards(studentId);
+
+    return currentAwards.filter(
+      award => !oldAwards.find(item => item.id === award.id)
+    );
+  }
 }
