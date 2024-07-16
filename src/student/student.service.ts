@@ -657,7 +657,7 @@ export class StudentService {
       }
     }
 
-    if (!planets) {
+    if (planets.length == 0) {
       planets = await this.getPlanetsForIdeal(schoolGradeYear);
     }
 
