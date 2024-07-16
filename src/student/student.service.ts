@@ -651,6 +651,10 @@ export class StudentService {
       }
     }
 
+    if (planets.length == 0) {
+      planets = await this.getPlanetsForIdeal(schoolGradeYear);
+    }
+
     await this.generateAndSavePlanetTrack(studentId, planets);
 
     await this.studentAward.verifyAndGenerateExamAwards(studentId);
@@ -844,6 +848,102 @@ export class StudentService {
       level: level,
     });
     return planets;
+  }
+
+  private async getPlanetsForIdeal(
+    schoolGrade: SchoolGradeEnum,
+  ): Promise<PlanetDocument[]> {
+    let planets: PlanetDocument[] = [];
+
+    const items = this.getAxisCodesAndLevelsForIdeal(schoolGrade);
+    for (const item of items) {
+      planets = [
+        ...planets,
+        ...(await this.getPlanetsByAxisAndLevel(
+          item.axis_code,
+          item.level,
+        )),
+      ];
+    }
+
+    return planets;
+  }
+
+  private getAxisCodesAndLevelsForIdeal(
+    schoolGrade: SchoolGradeEnum,
+  ): Array<{
+    axis_code: string,
+    level: string,
+  }> {
+    if (schoolGrade === SchoolGradeEnum.CHILDREN) {
+      return [
+        {
+          axis_code: 'ES',
+          level: '0',
+        },
+        {
+          axis_code: 'EA',
+          level: '0',
+        },
+        {
+          axis_code: 'LC',
+          level: '0',
+        },
+      ];
+    }
+    if (schoolGrade === SchoolGradeEnum.FIRST_GRADE) {
+      return [
+        {
+          axis_code: 'ES',
+          level: '1',
+        },
+        {
+          axis_code: 'ES',
+          level: '2',
+        },
+        {
+          axis_code: 'EA',
+          level: '1',
+        },
+        {
+          axis_code: 'EA',
+          level: '2',
+        },
+        {
+          axis_code: 'LC',
+          level: '1',
+        },
+        {
+          axis_code: 'LC',
+          level: '2',
+        },
+      ];
+    }
+    if (schoolGrade === SchoolGradeEnum.SECOND_GRADE) {
+      return [
+        {
+          axis_code: 'EA',
+          level: '3',
+        },
+        {
+          axis_code: 'LC',
+          level: '3',
+        },
+      ];
+    }
+    if (schoolGrade === SchoolGradeEnum.THIRD_GRADE) {
+      return [
+        {
+          axis_code: 'EA',
+          level: '4',
+        },
+        {
+          axis_code: 'LC',
+          level: '4',
+        },
+      ];
+    }
+    return [];
   }
 
   // Criar trilha de planetas para o aluno
