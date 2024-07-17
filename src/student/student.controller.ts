@@ -36,7 +36,7 @@ import { PaginationResponse } from '../common/pagination/pagination-response.dto
 import { AuditGuard } from 'src/common/guard/audit.guard';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { StudentExamService } from './studentExam.service';
-import { AwardDto, StudentAwardsResponseDto } from '../awards/dto/awards.dto';
+import { AwardDto } from '../awards/dto/awards.dto';
 import { AwardsService } from '../awards/awards.service';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
@@ -65,7 +65,7 @@ export class StudentController {
     private readonly studentExamService: StudentExamService,
     private readonly awardsService: AwardsService,
     private readonly studentResultService: StudentResultService,
-  ) {}
+  ) { }
 
   @Post('sync-planet-student')
   @ApiOperation({ summary: 'Sincronizar Trilha de Planetas do Aluno' })
