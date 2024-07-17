@@ -36,7 +36,7 @@ import { PaginationResponse } from '../common/pagination/pagination-response.dto
 import { AuditGuard } from 'src/common/guard/audit.guard';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { StudentExamService } from './studentExam.service';
-import { StudentAwardsResponseDto } from '../awards/dto/awards.dto';
+import { AwardDto, StudentAwardsResponseDto } from '../awards/dto/awards.dto';
 import { AwardsService } from '../awards/awards.service';
 import { AnswersResponseDto } from '../exam/dto/response/answers-response.dto';
 import { AnswerRequestDto } from '../exam/dto/request/answers-request.dto';
@@ -228,19 +228,16 @@ export class StudentController {
   @ApiResponse({
     status: 200,
     description: 'Lista de prêmios do estudante',
-    type: StudentAwardsResponseDto,
+    type: [AwardDto],
   })
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
   @ApiResponse({
     status: ErrorDetails.STUDENT_NOT_FOUND.status,
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
-  async getStudentAwards(
-    @Param('id') studentId: string,
-  ): Promise<StudentAwardsResponseDto> {
+  async getStudentAwards(@Param('id') studentId: string): Promise<AwardDto[]> {
     try {
-      const awards = await this.awardsService.getStudentAwards(studentId);
-      return { awards };
+      return await this.awardsService.getStudentAwards(studentId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new EduException('STUDENT_NOT_FOUND');
