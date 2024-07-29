@@ -9,7 +9,10 @@ import {
   Put,
   Query,
   Req,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
@@ -28,6 +31,8 @@ import { PaginationResponse } from '../common/pagination/pagination-response.dto
 import { ErrorDetails } from '../common/exceptions/edu-school.exception';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { UserResponseDto } from './dto/response/user-response.dto';
+import { AddUsersDto } from './dto/add-users.dto';
+import { AddUsersResponseDto } from './dto/response/add-users-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
@@ -37,7 +42,11 @@ import { UserGuard } from 'src/auth/guard/user.guard';
 import { UpdatePasswordRequestDto } from './dto/request/update-password-request.dto';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { AuditGuard } from 'src/common/guard/audit.guard';
+import { EduException } from '../common/exceptions/edu-school.exception';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
+import { Response } from 'express';
+import { join } from 'path';
 import { UserSchoolClassesDto } from './dto/response/user-classes.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
@@ -75,6 +84,50 @@ export class UserController {
       schoolId,
       request.headers.origin,
     );
+  }
+
+  @AuditGuard()
+  @Post('/spreadsheet')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Adicionar usuários por meio de uma planilha' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async addUsersFromSpreadsheet(
+    @SchoolId() schoolId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() request: Request,
+  ): Promise<AddUsersResponseDto> {
+    const usersData: AddUsersDto[] =
+      await this.userService.parseSpreadsheet(file);
+
+    return await this.userService.addUsers(
+      usersData,
+      schoolId,
+      request.headers.origin,
+    );
+  }
+
+  @Get('/spreadsheet-template')
+  @ApiOperation({
+    summary: 'Download do modelo de planilha para upload de usuários',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Modelo de planilha baixado com sucesso',
+  })
+  downloadSpreadsheetTemplate(@Res() res: Response): void {
+    try {
+      const templateFilePath = join(
+        __dirname,
+        '..',
+        '..',
+        'templates',
+        'eduedu-escola-usuario-template.xlsx',
+      );
+      res.download(templateFilePath, 'eduedu-escola-usuario-template.xlsx');
+    } catch (e) {
+      throw new EduException('UNKNOWN_ERROR');
+    }
   }
 
   @Get('all')

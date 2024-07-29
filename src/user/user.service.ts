@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
+import { AddUsersDto } from './dto/add-users.dto';
+import { AddUsersResponseDto, AddUsersResponseErrorDto } from './dto/response/add-users-response.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
-import { EduException } from '../common/exceptions/edu-school.exception';
+import { EduException, ErrorDetails } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { Prisma, Profile, Status, User, UserSchoolClass } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
@@ -17,6 +19,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { EmailService } from 'src/email/email.service';
+import * as xlsx from 'xlsx';
 
 @Injectable()
 export class UserService {
@@ -33,39 +36,19 @@ export class UserService {
     createUserDto: CreateUserRequestDto,
     schoolId: string,
     origin: string,
+    useValidation: boolean = true,
   ): Promise<UserResponseDto> {
-    const { name, email, profile, password } = createUserDto;
+    const { profile, password } = createUserDto;
     let { document } = createUserDto;
-
-    if (!name || !email || !document || !profile) {
-      throw new EduException('MISSING_REQUIRED_FIELDS');
-    }
-
-    if (!this.validationUtilsService.isValidEmail(email)) {
-      throw new EduException('INVALID_EMAIL');
-    }
-
     document = document.replace(/-/g, '');
-    if (!this.validationUtilsService.isValidDocument(document)) {
-      throw new EduException('INVALID_DOCUMENT');
-    }
+    
+    if (useValidation) {
+      const createValidationErrorCode: keyof typeof ErrorDetails =
+        await this.getCreateValidationErrorCode(createUserDto);
 
-    if (!this.validationUtilsService.isValidProfile(profile)) {
-      throw new EduException('INVALID_PROFILE');
-    }
-
-    const existingEmail = await this.prismaService.user.findUnique({
-      where: { email },
-    });
-    if (existingEmail) {
-      throw new EduException('EMAIL_CONFLICT');
-    }
-
-    const existingPersonalDocument = await this.prismaService.user.findUnique({
-      where: { document },
-    });
-    if (existingPersonalDocument) {
-      throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
+      if (createValidationErrorCode) {
+        throw new EduException(createValidationErrorCode);
+      }
     }
 
     const hashedPassword = password
@@ -106,6 +89,180 @@ export class UserService {
     });
 
     return createdUser;
+  }
+
+  async getCreateValidationErrorCode(
+    createUserDto: CreateUserRequestDto,
+  ): Promise<keyof typeof ErrorDetails> {
+    const { name, email, profile } = createUserDto;
+    let { document } = createUserDto;
+
+    if (!name || !email || !document || !profile) {
+      return 'MISSING_REQUIRED_FIELDS';
+    }
+
+    if (!this.validationUtilsService.isValidEmail(email)) {
+      return 'INVALID_EMAIL';
+    }
+
+    document = document.replace(/-/g, '');
+    if (!this.validationUtilsService.isValidDocument(document)) {
+      return 'INVALID_DOCUMENT';
+    }
+
+    if (!this.validationUtilsService.isValidProfile(profile)) {
+      return 'INVALID_PROFILE';
+    }
+
+    const existingEmail = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    if (existingEmail) {
+      return 'EMAIL_CONFLICT';
+    }
+
+    const existingPersonalDocument = await this.prismaService.user.findUnique({
+      where: { document },
+    });
+    if (existingPersonalDocument) {
+      return 'PERSONAL_DOCUMENT_CONFLICT';
+    }
+
+    return null;
+  }
+
+  async parseSpreadsheet(
+    file: Express.Multer.File,
+  ): Promise<AddUsersDto[]> {
+    return new Promise((resolve) => {
+      const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const usersData: string[][] = xlsx.utils.sheet_to_json(worksheet, {
+        header: 1,
+        blankrows: false,
+      }) as string[][];
+
+      const headerRow = usersData[0];
+      const nameColumnIndex = headerRow.findIndex((column) =>
+        /nome|nome completo|nome do usuário/i.test(column),
+      );
+      const emailColumnIndex = headerRow.findIndex((column) =>
+        /email|e-mail/i.test(column),
+      );
+      const documentColumnIndex = headerRow.findIndex((column) =>
+        /cpf/i.test(column),
+      );
+      const profileColumnIndex = headerRow.findIndex((column) =>
+        /perfil/i.test(column),
+      );
+      
+      const profileMappings = {
+        diretor: Profile.DIRECTOR,
+        diretora: Profile.DIRECTOR,
+        professor: Profile.TEACHER,
+        professora: Profile.TEACHER,
+      };
+
+      const users: AddUsersDto[] = usersData
+        .slice(1)
+        .map((row, index) => {
+          if (row.length === 0) {
+            return null;
+          }
+
+          const name =
+            row[nameColumnIndex]?.toString().trim();
+          const email =
+            row[emailColumnIndex]?.toString().trim();
+          const document =
+            row[documentColumnIndex]?.toString().trim().replace(/\D/g, '').padStart(11, '0');
+          const normalizedProfile =
+            row[profileColumnIndex]?.toString().trim().toLocaleLowerCase();
+          
+          let profile: Profile = null;
+          if (normalizedProfile in profileMappings) {
+            profile = profileMappings[normalizedProfile];
+          }
+
+          const userData: CreateUserRequestDto = {
+            name,
+            password: null,
+            email,
+            document,
+            profile,
+          };
+
+          return {
+            line: index + 2,
+            userData,
+          }
+        })
+        .filter((item) => item);
+
+      resolve(users);
+    });
+  }
+
+  async addUsers(
+    usersData: AddUsersDto[],
+    schoolId: string,
+    origin: string,
+  ): Promise<AddUsersResponseDto> {
+    let countCreated: number = 0;
+    let errors: AddUsersResponseErrorDto[] = [];
+
+    const errorMappings = {
+      MISSING_REQUIRED_FIELDS: 'Necessário preencher todos os campos.',
+      INVALID_EMAIL: 'E-mail inválido.',
+      INVALID_DOCUMENT: 'CPF inválido.',
+      INVALID_PROFILE: 'Perfil inválido, permitido apenas diretor ou professor.',
+      EMAIL_CONFLICT: 'E-mail já cadastrado.',
+      PERSONAL_DOCUMENT_CONFLICT: 'CPF já cadastrado.',
+    };
+
+    for (const item of usersData) {
+      const { line, userData } = item;
+
+      try {
+        if (!userData.profile) {
+          errors.push({
+            line,
+            message: errorMappings['INVALID_PROFILE'],
+          });
+          continue;
+        }
+
+        const createValidationErrorCode: keyof typeof ErrorDetails =
+          await this.getCreateValidationErrorCode(userData);
+      
+        if (createValidationErrorCode) {
+          errors.push({
+            line,
+            message: errorMappings[createValidationErrorCode],
+          });
+          continue;
+        }
+
+        await this.create(
+          userData,
+          schoolId,
+          origin,
+          false,
+        );
+
+        countCreated++;
+      } catch (e) {
+        errors.push({
+          line,
+          message: 'Erro ao criar registro.',
+        });
+      }
+    }
+
+    return {
+      countCreated,
+      errors,
+    };
   }
 
   async findAll(

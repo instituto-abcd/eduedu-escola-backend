@@ -56,12 +56,11 @@ import { QueryFilter } from './dto/request/query.enum';
 @ApiTags('Turma')
 @Controller('schoolClass')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
     private readonly schoolClassResultService: SchoolClassResultService,
-  ) {}
+  ) { }
 
   @ApiOkResponse({
     description: 'Obtém o desempenho da turma em provas agrupados por eixo',
@@ -85,6 +84,7 @@ export class SchoolClassController {
     type: SchoolClassResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async create(
     @Body() createSchoolClassDto: CreateSchoolClassDto,
@@ -95,6 +95,7 @@ export class SchoolClassController {
 
   @Get('all')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async findAll(
     @Req() req,
     @Query('page-number') page?: string,
@@ -122,6 +123,7 @@ export class SchoolClassController {
 
   @Get(':id')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiResponse({
     status: 200,
     description: 'Turma encontrada com sucesso',
@@ -136,6 +138,7 @@ export class SchoolClassController {
 
   @Get('user/:userId')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiResponse({
     status: 200,
     description: 'Recupera os nomes das salas associadas ao usuário',
@@ -153,7 +156,6 @@ export class SchoolClassController {
   }
 
   @Patch(':id')
-  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Turma atualizada com sucesso',

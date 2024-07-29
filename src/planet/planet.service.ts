@@ -241,6 +241,10 @@ export class PlanetService {
       const modelId = models[index];
       await this.cacheManager.del(`DEBUG_QUESTIONS_${modelId}`);
     }
+
+    return {
+      message: 'Questions cache reset',
+    };
   }
 
   async findAllPlanetQuestions(modelId: string): Promise<any[]> {

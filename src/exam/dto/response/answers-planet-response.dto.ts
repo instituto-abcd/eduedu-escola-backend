@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Award } from '@prisma/client';
 
 export class AnswersPlanetResponseDto {
   @ApiProperty({ description: 'Prova do Planeta Finaliada?', example: true })
@@ -9,4 +10,7 @@ export class AnswersPlanetResponseDto {
 
   @ApiProperty()
   previousQuestionIsCorrect: boolean = false;
+
+  @ApiProperty()
+  newAwards?: Award[] = [];
 }

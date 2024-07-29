@@ -39,3 +39,7 @@ lerna-debug.log*
 .env.*.local
 
 assets-data
+.env*
+.flaskenv*
+!.env.project
+!.env.vault
