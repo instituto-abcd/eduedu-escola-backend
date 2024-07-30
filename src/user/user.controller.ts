@@ -50,10 +50,8 @@ import { join } from 'path';
 import { UserSchoolClassesDto } from './dto/response/user-classes.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
-@ApiBearerAuth()
 @ApiTags('Usuário')
 @Controller('user')
-@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -74,6 +72,8 @@ export class UserController {
     description: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.message,
   })
   @ApiOperation({ summary: 'Criar um novo usuário' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async createUser(
     @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,
@@ -142,6 +142,8 @@ export class UserController {
     description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
   })
   @ApiOperation({ summary: 'Obter todos os usuários' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async findAll(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
@@ -173,6 +175,8 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiOperation({ summary: 'Obter usuário por ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
@@ -186,6 +190,8 @@ export class UserController {
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
   @ApiOperation({ summary: 'Atualizar usuário por ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserRequestDto,
@@ -201,6 +207,8 @@ export class UserController {
     type: DeleteUserResponseDto,
   })
   @ApiOperation({ summary: 'Excluir usuários' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async remove(
     @Body() requestDto: DeleteUserRequestDto,
   ): Promise<DeleteUserResponseDto> {
@@ -215,6 +223,8 @@ export class UserController {
     description: 'Usuários desativados com sucesso',
     type: InativeUserRequestDto,
   })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async deactivateUsers(
     @Body() requestDto: InativeUserRequestDto,
   ): Promise<InativeUserResponseDto> {
@@ -229,6 +239,8 @@ export class UserController {
     description: 'Código de Acesso do Usuário',
     type: UserAccessCodeResponseDto,
   })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async getAccessCode(
     @Param('id') userId: string,
   ): Promise<UserAccessCodeResponseDto> {
@@ -243,6 +255,8 @@ export class UserController {
     description: 'Código de Acesso atualizado do Usuário',
     type: UserAccessCodeResponseDto,
   })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async updateAccessCode(
     @Param('id') userId: string,
   ): Promise<UserAccessCodeResponseDto> {
@@ -256,6 +270,7 @@ export class UserController {
     type: AuthResponseDto,
   })
   @UseGuards(UserGuard)
+  @ApiBearerAuth()
   @Put('password')
   async updatePassword(
     @Req() request,
@@ -267,12 +282,14 @@ export class UserController {
       newPassword,
     );
   }
+  
   @ApiOperation({ summary: 'Turmas do usuário logado' })
   @ApiResponse({
     status: 200,
     type: [UserSchoolClassesDto],
   })
   @UseGuards(UserGuard)
+  @ApiBearerAuth()
   @Get('school-classes/all')
   async schoolClasses(@Req() req) {
     const user: User = req.user;

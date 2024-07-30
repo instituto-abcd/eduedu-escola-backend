@@ -36,19 +36,39 @@ export class UserService {
     createUserDto: CreateUserRequestDto,
     schoolId: string,
     origin: string,
-    useValidation: boolean = true,
   ): Promise<UserResponseDto> {
-    const { profile, password } = createUserDto;
+    const { name, email, profile, password } = createUserDto;
     let { document } = createUserDto;
-    document = document.replace(/-/g, '');
-    
-    if (useValidation) {
-      const createValidationErrorCode: keyof typeof ErrorDetails =
-        await this.getCreateValidationErrorCode(createUserDto);
 
-      if (createValidationErrorCode) {
-        throw new EduException(createValidationErrorCode);
-      }
+    if (!name || !email || !document || !profile) {
+      throw new EduException('MISSING_REQUIRED_FIELDS');
+    }
+
+    if (!this.validationUtilsService.isValidEmail(email)) {
+      throw new EduException('INVALID_EMAIL');
+    }
+
+    document = document.replace(/-/g, '');
+    if (!this.validationUtilsService.isValidDocument(document)) {
+      throw new EduException('INVALID_DOCUMENT');
+    }
+
+    if (!this.validationUtilsService.isValidProfile(profile)) {
+      throw new EduException('INVALID_PROFILE');
+    }
+
+    const existingEmail = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    if (existingEmail) {
+      throw new EduException('EMAIL_CONFLICT');
+    }
+
+    const existingPersonalDocument = await this.prismaService.user.findUnique({
+      where: { document },
+    });
+    if (existingPersonalDocument) {
+      throw new EduException('PERSONAL_DOCUMENT_CONFLICT');
     }
 
     const hashedPassword = password
@@ -89,46 +109,6 @@ export class UserService {
     });
 
     return createdUser;
-  }
-
-  async getCreateValidationErrorCode(
-    createUserDto: CreateUserRequestDto,
-  ): Promise<keyof typeof ErrorDetails> {
-    const { name, email, profile } = createUserDto;
-    let { document } = createUserDto;
-
-    if (!name || !email || !document || !profile) {
-      return 'MISSING_REQUIRED_FIELDS';
-    }
-
-    if (!this.validationUtilsService.isValidEmail(email)) {
-      return 'INVALID_EMAIL';
-    }
-
-    document = document.replace(/-/g, '');
-    if (!this.validationUtilsService.isValidDocument(document)) {
-      return 'INVALID_DOCUMENT';
-    }
-
-    if (!this.validationUtilsService.isValidProfile(profile)) {
-      return 'INVALID_PROFILE';
-    }
-
-    const existingEmail = await this.prismaService.user.findUnique({
-      where: { email },
-    });
-    if (existingEmail) {
-      return 'EMAIL_CONFLICT';
-    }
-
-    const existingPersonalDocument = await this.prismaService.user.findUnique({
-      where: { document },
-    });
-    if (existingPersonalDocument) {
-      return 'PERSONAL_DOCUMENT_CONFLICT';
-    }
-
-    return null;
   }
 
   async parseSpreadsheet(
@@ -225,36 +205,20 @@ export class UserService {
 
       try {
         if (!userData.profile) {
-          errors.push({
-            line,
-            message: errorMappings['INVALID_PROFILE'],
-          });
-          continue;
-        }
-
-        const createValidationErrorCode: keyof typeof ErrorDetails =
-          await this.getCreateValidationErrorCode(userData);
-      
-        if (createValidationErrorCode) {
-          errors.push({
-            line,
-            message: errorMappings[createValidationErrorCode],
-          });
-          continue;
+          throw new EduException('INVALID_PROFILE');
         }
 
         await this.create(
           userData,
           schoolId,
           origin,
-          false,
         );
 
         countCreated++;
       } catch (e) {
         errors.push({
           line,
-          message: 'Erro ao criar registro.',
+          message: errorMappings[e.code] || 'Erro ao criar registro.',
         });
       }
     }
