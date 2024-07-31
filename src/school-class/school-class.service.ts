@@ -186,7 +186,10 @@ export class SchoolClassService {
         },
       };
     } catch (error) {
-      throw new NotFoundException('Turmas não encontradas');
+      return {
+        items: [],
+        pagination: null,
+      };
     }
   }
 
