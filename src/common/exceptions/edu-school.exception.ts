@@ -80,6 +80,17 @@ export const ErrorDetails = {
     message: 'Senha inválida.',
     status: HttpStatus.BAD_REQUEST,
   },
+
+  UNKNOWN_ACCESS_CODE_ALGORITHM: {
+    message: 'Algoritmo de código de acesso desconhecido.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+
+  LIMIT_EXCEEDED_ACCESS_CODE: {
+    message: 'Limite de códigos de acesso atingido.',
+    status: HttpStatus.BAD_REQUEST,
+  },
+
   SCHOOL_YEAR_IS_ALREADY_ACTIVE: {
     message: 'O ano letivo já está ativo.',
     status: HttpStatus.BAD_REQUEST,

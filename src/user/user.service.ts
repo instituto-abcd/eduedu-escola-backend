@@ -14,7 +14,8 @@ import { InativeUserResponseDto } from './dto/response/inative-user-response.dto
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
-import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
+import { AlgorithmAccessKeyEnum } from './enums/algorithm-access-key.enum';
+import { ObjectAccessKeyEnum } from './enums/object-access-key.enum';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { DashboardService } from '../dashboard/dashboard.service';
@@ -75,7 +76,7 @@ export class UserService {
       ? await this.bcryptService.hashPassword(password)
       : null;
 
-    const accessKey = this.generateUniqueAccessKey();
+    const accessKey = await this.generateUniqueAccessKey();
 
     const createdUser = await this.prismaService.user.create({
       data: {
@@ -175,7 +176,7 @@ export class UserService {
           return {
             line: index + 2,
             userData,
-          }
+          };
         })
         .filter((item) => item);
 
@@ -215,10 +216,10 @@ export class UserService {
         );
 
         countCreated++;
-      } catch (e) {
+      } catch (error) {
         errors.push({
           line,
-          message: errorMappings[e.code] || 'Erro ao criar registro.',
+          message: errorMappings[error.code] || 'Erro ao criar registro.',
         });
       }
     }
@@ -460,8 +461,50 @@ export class UserService {
     }
   }
 
+  private async generateUniqueAccessKey(
+    algorithm: AlgorithmAccessKeyEnum = AlgorithmAccessKeyEnum.WITHOUT_OBJECT,
+  ): Promise<string> {
+    if (algorithm === AlgorithmAccessKeyEnum.WITHOUT_OBJECT) {
+      return await this.generateUniqueAccessKeyWithoutObject();
+    }
+
+    if (algorithm === AlgorithmAccessKeyEnum.WITH_OBJECT) {
+      return this.generateUniqueAccessKeyWithObject();
+    }
+
+    throw new EduException('UNKNOWN_ACCESS_CODE_ALGORITHM');
+  }
+
+  private async generateUniqueAccessKeyWithoutObject(
+    digits: number = 4,
+  ): Promise<string> {
+    const allUsers = await this.prismaService.user.findMany({
+      select: {
+        accessKey: true,
+      },
+    });
+
+    const usedKeys = new Set(
+      allUsers.map((user) => user.accessKey)
+    );
+    const notUsedKeys: string[] = Array.from(
+      { length: 10 ** digits - 1 },
+      (_, index) => String(index + 1).padStart(digits, '0')
+    ).filter(
+      (key) => !usedKeys.has(key)
+    );
+
+    if (notUsedKeys.length === 0) {
+      throw new EduException('LIMIT_EXCEEDED_ACCESS_CODE');
+    }
+
+    return notUsedKeys[
+      this.generateRandomNumber(0, notUsedKeys.length - 1)
+    ];
+  }
+
   // Podem ser Gerados até 1.000.000 sem repetição
-  private generateUniqueAccessKey(): string {
+  private generateUniqueAccessKeyWithObject(): string {
     const object = this.getRandomObject();
     const number = this.generateRandomNumber(1, 9999);
 
@@ -518,7 +561,7 @@ export class UserService {
     }
 
     const data = {
-      accessKey: this.generateUniqueAccessKey(),
+      accessKey: await this.generateUniqueAccessKey(),
     };
 
     try {
