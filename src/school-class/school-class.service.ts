@@ -188,7 +188,17 @@ export class SchoolClassService {
     } catch (error) {
       return {
         items: [],
-        pagination: null,
+        pagination: {
+          totalItems: 0,
+          pageSize,
+          pageNumber,
+          totalPages: 0,
+          previousPage: 0,
+          nextPage: 0,
+          lastPage: 0,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        },
       };
     }
   }
