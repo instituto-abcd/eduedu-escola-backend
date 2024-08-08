@@ -4,7 +4,7 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { AddUsersDto } from './dto/add-users.dto';
 import { AddUsersResponseDto, AddUsersResponseErrorDto } from './dto/response/add-users-response.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
-import { EduException, ErrorDetails } from '../common/exceptions/edu-school.exception';
+import { EduException } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { Prisma, Profile, SchoolGradeEnum, Status, User, UserSchoolClass } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
