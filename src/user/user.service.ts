@@ -4,9 +4,9 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { AddUsersDto } from './dto/add-users.dto';
 import { AddUsersResponseDto, AddUsersResponseErrorDto } from './dto/response/add-users-response.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
-import { EduException, ErrorDetails } from '../common/exceptions/edu-school.exception';
+import { EduException } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma, Profile, Status, User, UserSchoolClass } from '@prisma/client';
+import { Prisma, Profile, SchoolGradeEnum, Status, User, UserSchoolClass } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
@@ -613,7 +613,11 @@ export class UserService {
   async userClasses(
     userId: string,
     userProfile: Profile,
-  ): Promise<{ name: string; id: string }[]> {
+  ): Promise<{
+    id: string,
+    name: string,
+    schoolGrade: SchoolGradeEnum,
+  }[]> {
     let classesByUser: UserSchoolClass[];
 
     if (userProfile === Profile.TEACHER) {
@@ -631,6 +635,7 @@ export class UserService {
       select: {
         id: true,
         name: true,
+        schoolGrade: true,
       },
       orderBy: {
         name: 'asc',
