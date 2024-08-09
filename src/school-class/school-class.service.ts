@@ -10,6 +10,7 @@ import {
   Prisma,
   Profile,
   SchoolClassStudent,
+  SchoolGradeEnum,
   Status,
   Student,
 } from '@prisma/client';
@@ -23,6 +24,7 @@ import { UpdateStudentReservedResponseDto } from './dto/response/update-student-
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';
 import { StudentExamService } from '../student/studentExam.service';
+import { CountSchoolGradeResponseDto } from './dto/response/count-school-grade-response';
 
 @Injectable()
 export class SchoolClassService {
@@ -806,5 +808,24 @@ export class SchoolClassService {
     const concatenatedNames = sortedUniqueNames.join(', ');
 
     return { names: concatenatedNames };
+  }
+
+  async countSchoolGrade(): Promise<CountSchoolGradeResponseDto[]> {
+    const response: CountSchoolGradeResponseDto[] = [];
+
+    for (const schoolGrade of Object.values(SchoolGradeEnum)) {
+      const count: number = await this.prismaService.schoolClass.count({
+        where: {
+          schoolGrade,
+        }
+      })
+      
+      response.push({
+        schoolGrade,
+        count,
+      });
+    }
+    
+    return response;
   }
 }
