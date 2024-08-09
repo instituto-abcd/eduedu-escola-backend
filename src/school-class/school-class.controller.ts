@@ -52,10 +52,10 @@ import { PlanetsPerformanceResponse } from './dto/response/planets-performance.d
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { QueryFilter } from './dto/request/query.enum';
+import { CountSchoolGradeResponseDto } from './dto/response/count-school-grade-response';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
-@ApiBearerAuth()
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
@@ -131,7 +131,6 @@ export class SchoolClassController {
   })
   @ApiNotFoundResponse({ description: 'Turma não encontrada' })
   @ApiOperation({ summary: 'Obter turma por ID' })
-  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string): Promise<SchoolClassResponseDto> {
     return this.schoolClassService.findOne(id);
   }
@@ -148,7 +147,6 @@ export class SchoolClassController {
   @ApiOperation({
     summary: 'Recupera os nomes das salas associadas ao usuário',
   })
-  @UseGuards(JwtAuthGuard)
   async findOneSchoolClassesByUser(
     @Param('userId') userId: string,
   ): Promise<{ names: string }> {
@@ -304,6 +302,18 @@ export class SchoolClassController {
       studentId,
       reserved,
     );
+  }
+
+  @Get('/count/school-grade')
+  @ApiOperation({
+    summary: 'Obter o total de turmas por série',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Sucesso ao obter total de turmas por série',
+  })
+  async countSchoolGrade(): Promise<CountSchoolGradeResponseDto[]> {
+    return await this.schoolClassService.countSchoolGrade();
   }
 
   @ApiOkResponse({
