@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { SchoolGradeEnum } from '@prisma/client';
 
 export class CreateSchoolClassResponseDto {
   @ApiProperty({ description: 'ID da classe escolar' })
@@ -9,9 +10,9 @@ export class CreateSchoolClassResponseDto {
 
   @ApiProperty({
     description: 'Série escolar',
-    enum: ['CHILDREN', 'FIRST_GRADE', 'SECOND_GRADE', 'THIRD_GRADE'],
+    enum: Object.values(SchoolGradeEnum),
   })
-  schoolGrade: 'CHILDREN' | 'FIRST_GRADE' | 'SECOND_GRADE' | 'THIRD_GRADE';
+  schoolGrade: SchoolGradeEnum;
 
   @ApiProperty({
     description: 'Período escolar',
