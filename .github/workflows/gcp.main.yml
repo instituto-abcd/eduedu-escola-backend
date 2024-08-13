@@ -69,13 +69,6 @@ jobs:
       - uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
-      
-      - name: Run Prisma Migrations
-        run: |-
-          docker run --rm \
-          -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-          $REGISTRY_PREFIX/$PROJECT_ID/$REGISTRY_NAME/$IMAGE_NAME:${{github.run_number}} \
-          npx prisma migrate deploy
 
       - name: Deploy
         id: 'deploy'
