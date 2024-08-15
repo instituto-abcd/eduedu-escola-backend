@@ -76,6 +76,10 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
 
+      - name: Run Prisma Migrations
+        run: |-
+          npx prisma migrate deploy
+
       - name: Deploy
         id: 'deploy'
         uses: 'google-github-actions/deploy-cloudrun@v0'
