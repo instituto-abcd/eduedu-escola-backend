@@ -96,6 +96,7 @@ export class SchoolClassController {
   @Get('all')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Este endpoint está depreciado', deprecated: true })
   async findAll(
     @Req() req,
     @Query('page-number') page?: string,
@@ -119,6 +120,30 @@ export class SchoolClassController {
     };
 
     return this.schoolClassService.findAll(pageNumber, pageSize, filters, user);
+  }
+
+  @Get('all-no-auth')
+  async findAllWithoutAuth(
+    @Query('page-number') page?: string,
+    @Query('page-size') limit?: string,
+    @Query('name') name?: string,
+    @Query('schoolGrade') schoolGrade?: string,
+    @Query('schoolPeriod') schoolPeriod?: string,
+    @Query('schoolYearName') schoolYearName?: number,
+    @Query('teacherName') teacherName?: string,
+  ): Promise<PaginationResponse<SchoolClassResponseDto>> {
+    const pageNumber = parseInt(page || '1');
+    const pageSize = parseInt(limit || '10');
+
+    const filters = {
+      name,
+      schoolGrade,
+      schoolPeriod,
+      schoolYearName,
+      teacherName,
+    };
+
+    return this.schoolClassService.findAllNoAuth(pageNumber, pageSize, filters);
   }
 
   @Get(':id')
