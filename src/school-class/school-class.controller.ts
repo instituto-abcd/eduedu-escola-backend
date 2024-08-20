@@ -123,7 +123,7 @@ export class SchoolClassController {
   }
 
   @Get('all-no-auth')
-  async findAllWithoutAuth(
+  async findAllNoAuth(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
     @Query('name') name?: string,
