@@ -38,6 +38,7 @@ import { DeleteUserRequestDto } from './dto/request/delete-user-request.dto';
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
+import { UserAccessCodeOptionResponseDto } from './dto/response/user-access-code-option-response.dto';
 import { UserGuard } from 'src/auth/guard/user.guard';
 import { UpdatePasswordRequestDto } from './dto/request/update-password-request.dto';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
@@ -261,6 +262,21 @@ export class UserController {
     @Param('id') userId: string,
   ): Promise<UserAccessCodeResponseDto> {
     return await this.userService.updateAccessCode(userId);
+  }
+
+  @Get(':schoolClassId/access-key-options')
+  @ApiOperation({ summary: 'Obter Alternativas de Código de Acesso do Usuário' })
+  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Alternativas de Código de Acesso do Usuário',
+    type: UserAccessCodeOptionResponseDto,
+  })
+  async getAccessCodeOptions(
+    @Param('schoolClassId') schoolClassId: string,
+  ): Promise<UserAccessCodeOptionResponseDto[]> {
+    const userId = await this.userService.getFirstUserIdBySchoolClassId(schoolClassId);
+    return await this.userService.getAccessCodeOptions(userId);
   }
 
   @ApiOperation({ summary: 'Trocar a senha do usuário logado' })

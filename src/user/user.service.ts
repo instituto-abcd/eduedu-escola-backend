@@ -14,6 +14,7 @@ import { InativeUserResponseDto } from './dto/response/inative-user-response.dto
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
+import { UserAccessCodeOptionResponseDto } from './dto/response/user-access-code-option-response.dto';
 import { AlgorithmAccessKeyEnum } from './enums/algorithm-access-key.enum';
 import { ObjectAccessKeyEnum } from './enums/object-access-key.enum';
 import { AuthService } from 'src/auth/auth.service';
@@ -607,6 +608,62 @@ export class UserService {
     return await this.authService.authenticateUser({
       email: user.email,
       password: newPassword,
+    });
+  }
+
+  async getFirstUserIdBySchoolClassId(schoolClassId: string): Promise<string> {
+    const user = await this.prismaService.userSchoolClass.findFirst(
+      {
+        where: {
+          schoolClassId,
+        },
+        select: {
+          userId: true,
+        },
+      },
+    );
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    return user.userId;
+  }
+
+  async getAccessCodeOptions(
+    id: string,
+    totalOptions: number = 4,
+    digits: number = 4,
+  ): Promise<UserAccessCodeOptionResponseDto[]> {
+    const user = await this.prismaService.user.findUnique({ where: { id } });
+    
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+    
+    const correctAnswerPosition = this.generateRandomNumber(0, totalOptions - 1);
+    
+    const availableKeys = Array.from(
+      { length: 10 ** digits - 1 },
+      (_, index) => String(index + 1).padStart(digits, '0')
+    ).filter(
+      (key) => key !== user.accessKey
+    );
+
+    return Array.from({ length: totalOptions }).map((_, position) => {
+      if (position == correctAnswerPosition) {
+        return {
+          accessKey: user.accessKey,
+          correctAnswer: true,
+        };
+      }
+
+      const randomIndex = this.generateRandomNumber(0, availableKeys.length - 1);
+      const accessKey = availableKeys.splice(randomIndex, 1)[0];
+      return {
+        accessKey,
+        correctAnswer: false,
+      };
     });
   }
 
