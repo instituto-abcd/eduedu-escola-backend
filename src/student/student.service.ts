@@ -264,6 +264,130 @@ export class StudentService {
     return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
   }
 
+  async findAllNoAuth(
+    pageNumber: number,
+    pageSize: number,
+    filters: any,
+  ): Promise<PaginationResponse<StudentResponseDto>> {
+    // Validate pagination parameters
+    if (
+      !Number.isInteger(pageNumber) ||
+      pageNumber <= 0 ||
+      !Number.isInteger(pageSize) ||
+      pageSize <= 0
+    ) {
+      throw new EduException('INVALID_PAGINATION_PARAMETERS');
+    }
+
+    const where: Prisma.StudentWhereInput = {
+      name: filters?.name
+        ? { contains: filters.name, mode: 'insensitive' }
+        : undefined,
+      status: filters?.status ? { equals: filters.status } : undefined,
+      schoolClasses: {
+        some: {
+          schoolClass: {
+            id: filters?.schoolClassId
+              ? { equals: filters.schoolClassId }
+              : undefined,
+            name: filters?.schoolClassName
+              ? { contains: filters.schoolClassName, mode: 'insensitive' }
+              : undefined,
+            schoolPeriod: filters?.schoolPeriod
+              ? { equals: filters.schoolPeriod }
+              : undefined,
+            schoolGrade: filters?.schoolGrade
+              ? { equals: filters.schoolGrade }
+              : undefined,
+          },
+        },
+      },
+    };
+
+    try {
+      const [students, totalCount] = await Promise.all([
+        this.prisma.student.findMany({
+          where,
+          include: {
+            schoolClasses: { include: { schoolClass: true } },
+            examResults: {
+              where: { axisCode: { in: ['LC', 'EA', 'ES'] } },
+              orderBy: { examDate: 'desc' },
+              take: 3,
+            },
+          },
+          orderBy: {
+            name: 'asc',
+          },
+          skip: (pageNumber - 1) * pageSize,
+          take: pageSize,
+        }),
+        this.prisma.student.count({ where }),
+      ]);
+
+      // Calculate pagination
+      const totalPages = Math.ceil(totalCount / pageSize);
+      const pagination = {
+        totalItems: totalCount,
+        pageSize,
+        pageNumber,
+        totalPages,
+        previousPage: pageNumber > 1 ? pageNumber - 1 : 0,
+        nextPage: pageNumber < totalPages ? pageNumber + 1 : 0,
+        lastPage: totalPages,
+        hasPreviousPage: pageNumber > 1,
+        hasNextPage: pageNumber < totalPages,
+      };
+
+      // Transform student data to DTO format
+      const responseStudents: StudentResponseDto[] = students.map((student) => {
+        const cfoResult = student.examResults.find(
+          (result) =>
+            result.studentId === student.id && result.axisCode === 'ES',
+        );
+        const seaResult = student.examResults.find(
+          (result) =>
+            result.studentId === student.id && result.axisCode === 'EA',
+        );
+        const lctResult = student.examResults.find(
+          (result) =>
+            result.studentId === student.id && result.axisCode === 'LC',
+        );
+
+        return {
+          id: student.id,
+          name: student.name,
+          registry: student.registry,
+          schoolClassId: student.schoolClasses[0]?.schoolClass.id,
+          schoolClassName: student.schoolClasses[0]?.schoolClass.name,
+          schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
+          schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
+          cfo: cfoResult ? `${Math.round(cfoResult.percent.toNumber())}%` : '—',
+          sea: seaResult ? `${Math.round(seaResult.percent.toNumber())}%` : '—',
+          lct: lctResult ? `${Math.round(lctResult.percent.toNumber())}%` : '—',
+          status: student.status,
+        };
+      });
+
+      // Filter students based on criteria
+      const filteredStudents = responseStudents.filter((student) => {
+        const cfoValue = parseFloat(student.cfo.replace('%', ''));
+        const seaValue = parseFloat(student.sea.replace('%', ''));
+        const lctValue = parseFloat(student.lct.replace('%', ''));
+
+        return (
+          (filters.cfo === undefined || cfoValue >= filters.cfo) &&
+          (filters.sea === undefined || seaValue >= filters.sea) &&
+          (filters.lct === undefined || lctValue >= filters.lct)
+        );
+      });
+
+      return new PaginationResponse(filteredStudents, pagination);
+    } catch (error) {
+      throw new EduException('DATABASE_ERROR');
+    }
+  }
+
   async allClasses(): Promise<string[]> {
     const uniqueClassIds = await this.prisma.userSchoolClass.findMany({
       select: { schoolClassId: true },

@@ -57,8 +57,6 @@ import { StudentPlanetStarsDto } from './student-planet-stars.dto';
 
 @Controller('student')
 @ApiTags('Estudante')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class StudentController {
   constructor(
     private readonly studentService: StudentService,
@@ -69,12 +67,16 @@ export class StudentController {
 
   @Post('sync-planet-student')
   @ApiOperation({ summary: 'Sincronizar Trilha de Planetas do Aluno' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async syncPlanetStudent(): Promise<any> {
     return await this.studentService.syncPlanetStudent();
   }
 
   @Post('sync-planets-by-student/:studentId')
   @ApiOperation({ summary: 'Sincronizar Trilha de Planetas por Aluno' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async syncPlanetByStudent(
     @Param('studentId') studentId: string,
   ): Promise<any> {
@@ -89,6 +91,8 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiOperation({ summary: 'Criar um novo estudante' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   create(
     @Body() createStudentDto: CreateStudentRequestDto,
   ): Promise<StudentResponseDto> {
@@ -106,7 +110,9 @@ export class StudentController {
     status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
     description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
   })
-  @ApiOperation({ summary: 'Obter todos os estudantes' })
+  @ApiOperation({ summary: 'Obter todos os estudantes', deprecated: true })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   findAll(
     @Req() req,
     @Query('page-number') page?: string,
@@ -138,6 +144,49 @@ export class StudentController {
     return this.studentService.findAll(pageNumber, pageSize, filters, user);
   }
 
+  @Get('all-no-auth')
+  @ApiResponse({
+    status: 200,
+    description: 'Estudantes encontrados com sucesso',
+    type: PaginationResponse,
+  })
+  @ApiBadRequestResponse({ description: 'Erro na requisição' })
+  @ApiResponse({
+    status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
+    description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
+  })
+  @ApiOperation({ summary: 'Obter todos os estudantes' })
+  findAllNoAuth(
+    @Query('page-number') page?: string,
+    @Query('page-size') limit?: string,
+    @Query('name') name?: string,
+    @Query('schoolClassId') schoolClassId?: string,
+    @Query('schoolClassName') schoolClassName?: string,
+    @Query('schoolPeriod') schoolPeriod?: string,
+    @Query('schoolGrade') schoolGrade?: string,
+    @Query('cfo') cfo?: string,
+    @Query('sea') sea?: string,
+    @Query('lct') lct?: string,
+    @Query('status') status?: string,
+  ): Promise<PaginationResponse<StudentResponseDto>> {
+    const pageNumber = parseInt(page || '1');
+    const pageSize = parseInt(limit || '10');
+
+    const filters = {
+      name,
+      schoolClassId,
+      schoolClassName,
+      schoolPeriod,
+      schoolGrade,
+      cfo,
+      sea,
+      lct,
+      status,
+    };
+
+    return this.studentService.findAllNoAuth(pageNumber, pageSize, filters);
+  }
+
   @Get(':id')
   @ApiResponse({
     status: 200,
@@ -146,6 +195,8 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiOperation({ summary: 'Obter estudante por ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string): Promise<StudentResponseDto> {
     return this.studentService.findOne(id);
   }
@@ -159,6 +210,8 @@ export class StudentController {
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiBadRequestResponse({ description: 'Erro na requisição' })
   @ApiOperation({ summary: 'Atualizar estudante por ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('id') id: string,
     @Body() updateStudentDto: UpdateStudentRequestDto,
@@ -174,6 +227,8 @@ export class StudentController {
     type: DeleteStudentResponseDto,
   })
   @ApiOperation({ summary: 'Excluir estudantes' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   remove(
     @Body() requestDto: DeleteStudentRequestDto,
   ): Promise<DeleteStudentResponseDto> {
@@ -188,6 +243,8 @@ export class StudentController {
     description: 'Estudantes desativados com sucesso',
     type: InativeStudentResponseDto,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async deactivateStudents(
     @Body() requestDto: InativeStudantRequestDto,
   ): Promise<InativeStudentResponseDto> {
@@ -206,6 +263,8 @@ export class StudentController {
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
   @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getPlanetTrack(
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
@@ -217,6 +276,8 @@ export class StudentController {
     status: 200,
     description: 'Status da operação',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async releasePlanets(
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
@@ -235,6 +296,8 @@ export class StudentController {
     status: ErrorDetails.STUDENT_NOT_FOUND.status,
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getStudentAwards(@Param('id') studentId: string): Promise<AwardDto[]> {
     try {
       return await this.awardsService.getStudentAwards(studentId);
@@ -255,6 +318,8 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiOperation({ summary: 'Obter estudante por ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   getFirstQuestionForStudent(@Param('id') id: string): Promise<any> {
     return this.studentService.getFirstQuestionForStudent(id);
   }
@@ -266,6 +331,8 @@ export class StudentController {
     description: 'Resposta do estudante enviada com sucesso',
     type: StudentResponseDto,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async answer(
     @Param('id') studentId: string,
     @Param('examId') examId: string,
@@ -282,6 +349,8 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiOperation({ summary: 'Submete a avaliação da prova do aluno' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   evaluation(@Param('id') id: string): Promise<any> {
     return this.studentService.handleExamEvaluation(id);
   }
@@ -293,6 +362,8 @@ export class StudentController {
     description: 'Nova prova liberada para os Estudantes',
     type: AuthorizeNewExamResponseDto,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async authorizeNewExam(
     @Body() requestDto: AuthorizeNewExamRequestDto,
   ): Promise<AuthorizeNewExamResponseDto> {
@@ -307,6 +378,8 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Student not found' })
   @ApiOperation({ summary: 'Get student by ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getFirstQuestionPlanetForStudent(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
@@ -324,6 +397,8 @@ export class StudentController {
     description: 'Resposta do estudante enviada com sucesso',
     type: StudentResponseDto,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async answerPlanet(
     @Param('id') studentId: string,
     @Param('planetId') planetId: string,
@@ -345,6 +420,8 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getExamExecutions(@Param('id') id: string): Promise<StudentExamDto[]> {
     return await this.studentExamService.getStudentExams(id);
   }
@@ -358,6 +435,8 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getExamExecution(
     @Param('id') id: string,
     @Param('studentExamId') studentExamId: string,
@@ -379,6 +458,8 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async planetsChart(@Param('id') id: string): Promise<ChartStudentResponse> {
     return await this.studentResultService.planetsChart(id);
   }
@@ -392,6 +473,8 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém os sumarizados por eixo, com a lista de provas',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async examsChart(@Param('id') id: string): Promise<ChartStudentResponse> {
     return await this.studentResultService.examsChart(id);
   }
@@ -405,11 +488,14 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém os resultados e resumos de prova por eixo de um aluno',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getStudentDetailedSummary(
     @Param('id') id: string,
   ): Promise<StudentDetailedSummaryDto> {
     return await this.studentResultService.getStudentDetailedSummary(id);
   }
+
   @Get(':id/planets/:planetId')
   @ApiResponse({
     status: 200,
@@ -419,6 +505,8 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém as estrelas do aluno no planeta',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async studentPlanetStars(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
@@ -434,6 +522,8 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async getStudentLevels(
     @Param('studentId') studentId: string,
   ): Promise<{ levelLC: string; levelEA: string; levelES: string }> {
