@@ -280,8 +280,12 @@ export class StudentService {
     }
 
     const where: Prisma.StudentWhereInput = {
-      name: filters?.name
-        ? { contains: filters.name, mode: 'insensitive' }
+      name: filters?.name || filters?.initialLetter
+        ? {
+            contains: filters?.name || undefined,
+            startsWith: filters?.initialLetter || undefined,
+            mode: 'insensitive',
+          }
         : undefined,
       status: filters?.status ? { equals: filters.status } : undefined,
       schoolClasses: {

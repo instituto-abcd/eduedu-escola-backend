@@ -160,6 +160,7 @@ export class StudentController {
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
     @Query('name') name?: string,
+    @Query('initialLetter') initialLetter?: string,
     @Query('schoolClassId') schoolClassId?: string,
     @Query('schoolClassName') schoolClassName?: string,
     @Query('schoolPeriod') schoolPeriod?: string,
@@ -174,6 +175,7 @@ export class StudentController {
 
     const filters = {
       name,
+      initialLetter,
       schoolClassId,
       schoolClassName,
       schoolPeriod,
