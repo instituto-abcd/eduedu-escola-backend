@@ -835,6 +835,8 @@ export class StudentService {
         `Sync Planet Student - Sincronizando Planetas do Aluno: ${studentId}`,
       );
 
+      const schoolGradeYear = await this.getSchoolGradeByStudentId(studentId);
+
       const studentExam = await this.studentExamModel.findOne({
         studentId: studentId,
         current: true,
@@ -847,7 +849,7 @@ export class StudentService {
       }
 
       const axisCodes = ['ES', 'EA', 'LC'];
-      const planets: PlanetDocument[] = [];
+      let planets: PlanetDocument[] = [];
 
       for (const axisCode of axisCodes) {
         const studentLevel = await this.findStudentLevel(studentId, axisCode);
@@ -856,6 +858,10 @@ export class StudentService {
           studentLevel,
         );
         planets.push(...axisPlanets);
+      }
+
+      if (planets.length == 0) {
+        planets = await this.getPlanetsForIdeal(schoolGradeYear);
       }
 
       if (planets.length > 0) {
