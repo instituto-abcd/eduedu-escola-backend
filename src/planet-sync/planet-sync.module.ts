@@ -31,6 +31,7 @@ import { AwardsService } from '../awards/awards.service';
 import { StudentAwardService } from '../student/studentAward.service';
 import { StudentPlanetExecutionService } from '../student/studentPlanetExecution.service';
 import { ExamService } from '../exam/exam.service';
+import { LastSync, LastSyncSchema } from './schemas/last-sync.schema';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ExamService } from '../exam/exam.service';
       { name: StudentExam.name, schema: StudentExamSchema },
       { name: Planet.name, schema: PlanetSchema },
       { name: PlanetSync.name, schema: PlanetSyncSchema },
+      { name: LastSync.name, schema: LastSyncSchema },
       { name: DownloadedFile.name, schema: DownloadedFileSchema },
       { name: Exam.name, schema: ExamSchema },
     ]),
