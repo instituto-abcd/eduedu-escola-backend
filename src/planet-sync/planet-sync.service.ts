@@ -14,12 +14,15 @@ import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
 import { ExamService } from '../exam/exam.service';
+import { LastSync } from './schemas/last-sync.schema';
+import { LastSyncResponseDto } from './dto/last-sync-response.dto';
 
 @Injectable()
 export class PlanetSyncService {
   constructor(
     @InjectModel(Planet.name) private planetModel: Model<Planet>,
     @InjectModel(PlanetSync.name) private planetSyncModel: Model<PlanetSync>,
+    @InjectModel(LastSync.name) private lastSyncModel: Model<LastSync>,
     @InjectModel(DownloadedFile.name)
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -146,6 +149,9 @@ export class PlanetSyncService {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
+    
+    await this.updateLastSync();
+    
     const planetsFromFirestore = await this.firestoreService.getPlanets();
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
@@ -194,6 +200,30 @@ export class PlanetSyncService {
     };
   }
 
+  async getLastSync(): Promise<LastSyncResponseDto> {
+    const lastSync = await this.lastSyncModel.findOneAndUpdate();
+    
+    const syncedAt = lastSync?.syncedAt ?? null;
+    const daysSinceLastSync = syncedAt
+      ? Math.floor((new Date().getTime() - new Date(syncedAt).getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    const showReminder = daysSinceLastSync === null || daysSinceLastSync >= 60;
+
+    return {
+      syncedAt,
+      daysSinceLastSync,
+      showReminder,
+    };
+  }
+
+  async updateLastSync(): Promise<Model<LastSync>> {
+    return await this.lastSyncModel.findOneAndUpdate(
+      {},
+      { syncedAt: new Date() },
+      { upsert: true, new: true, returnDocument: 'after' },
+    );
+  }
+
   async addToSyncList(planetId: string) {
     return await this.planetSyncModel.findOneAndUpdate(
       { planetId },
@@ -203,6 +233,8 @@ export class PlanetSyncService {
   }
 
   async sync() {
+    await this.updateLastSync();
+
     const planetsToSync = await this.planetSyncModel
       .find({ synced: false }, { planetId: 1, _id: 0 })
       .lean(true);
