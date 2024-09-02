@@ -265,8 +265,6 @@ export class StudentController {
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
   @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getPlanetTrack(
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
@@ -298,8 +296,6 @@ export class StudentController {
     status: ErrorDetails.STUDENT_NOT_FOUND.status,
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getStudentAwards(@Param('id') studentId: string): Promise<AwardDto[]> {
     try {
       return await this.awardsService.getStudentAwards(studentId);
