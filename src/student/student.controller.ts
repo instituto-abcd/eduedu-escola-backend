@@ -320,11 +320,11 @@ export class StudentController {
     summary: 'Atualizar campo reserved de um aluno',
   })
   async updateStudentReserved(
-    @Param('id') schoolClassId: string,
+    @Param('id') id: string,
     @Body() requestDto: ReservedStudentRequestDto,
   ): Promise<UpdateStudentReservedResponseDto> {
     return await this.studentService.updateStudentReserved(
-      schoolClassId,
+      id,
       requestDto.reserved,
     );
   }
