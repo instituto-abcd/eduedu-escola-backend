@@ -54,6 +54,8 @@ import { ChartStudentResponse } from './dto/response/chart-studant-response.dto'
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { StudentPlanetStarsDto } from './student-planet-stars.dto';
+import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
+import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 
 @Controller('student')
 @ApiTags('Estudante')
@@ -308,6 +310,25 @@ export class StudentController {
     }
   }
 
+  @Patch(':id/reserved')
+  @ApiResponse({
+    status: 200,
+    description: 'Valor do campo reserved atualizado com sucesso',
+  })
+  @ApiNotFoundResponse({ description: 'Aluno não encontrado' })
+  @ApiOperation({
+    summary: 'Atualizar campo reserved de um aluno',
+  })
+  async updateStudentReserved(
+    @Param('id') schoolClassId: string,
+    @Body() requestDto: ReservedStudentRequestDto,
+  ): Promise<UpdateStudentReservedResponseDto> {
+    return await this.studentService.updateStudentReserved(
+      schoolClassId,
+      requestDto.reserved,
+    );
+  }
+
   @Get(':id/exam-questions/first')
   @ApiResponse({
     status: 200,
@@ -316,8 +337,6 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiOperation({ summary: 'Obter estudante por ID' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   getFirstQuestionForStudent(@Param('id') id: string): Promise<any> {
     return this.studentService.getFirstQuestionForStudent(id);
   }
@@ -329,8 +348,6 @@ export class StudentController {
     description: 'Resposta do estudante enviada com sucesso',
     type: StudentResponseDto,
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async answer(
     @Param('id') studentId: string,
     @Param('examId') examId: string,

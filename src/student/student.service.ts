@@ -44,6 +44,7 @@ import { AwardsService } from '../awards/awards.service';
 import { StudentAwardService } from './studentAward.service';
 import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
 import { StudentExamService } from './studentExam.service';
+import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 
 @Injectable()
 export class StudentService {
@@ -461,6 +462,38 @@ export class StudentService {
       schoolGrade,
       status,
     };
+  }
+
+  async updateStudentReserved(
+    id: string,
+    reserved: boolean,
+  ): Promise<UpdateStudentReservedResponseDto> {
+    try {
+      const student: StudentResponseDto = await this.findOne(id);
+
+      const updatedSchoolClassStudent =
+        await this.prisma.schoolClassStudent.updateMany({
+          where: {
+            schoolClassId: student.schoolClassId,
+            studentId: id,
+          },
+          data: {
+            reserved,
+          },
+        });
+
+      if (updatedSchoolClassStudent.count == 0) {
+        throw new EduException('STUDENT_NOT_FOUND');
+      }
+      
+      return { success: true };
+    } catch (error) {
+      if (error instanceof EduException) {
+        throw error;
+      } else {
+        throw new EduException('DATABASE_ERROR');
+      }
+    }
   }
 
   async getSchoolGradeByStudentId(id: string): Promise<SchoolGradeEnum> {
