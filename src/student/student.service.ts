@@ -43,6 +43,7 @@ import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-re
 import { AwardsService } from '../awards/awards.service';
 import { StudentAwardService } from './studentAward.service';
 import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
+import { StudentExamService } from './studentExam.service';
 
 @Injectable()
 export class StudentService {
@@ -51,6 +52,7 @@ export class StudentService {
     private readonly dashboard: DashboardService,
     private readonly awards: AwardsService,
     private readonly studentAward: StudentAwardService,
+    private readonly studentExam: StudentExamService,
     private readonly studentPlanetExecution: StudentPlanetExecutionService,
     @InjectModel(Exam.name)
     private examModel: Model<ExamDocument>,
@@ -344,34 +346,57 @@ export class StudentService {
       };
 
       // Transform student data to DTO format
-      const responseStudents: StudentResponseDto[] = students.map((student) => {
-        const cfoResult = student.examResults.find(
-          (result) =>
-            result.studentId === student.id && result.axisCode === 'ES',
-        );
-        const seaResult = student.examResults.find(
-          (result) =>
-            result.studentId === student.id && result.axisCode === 'EA',
-        );
-        const lctResult = student.examResults.find(
-          (result) =>
-            result.studentId === student.id && result.axisCode === 'LC',
-        );
+      const responseStudents: StudentResponseDto[] =
+        await Promise.all(
+          students.map(async (student) => {
+            const schoolClassId = student.schoolClasses[0]?.schoolClass.id;
+            const schoolClassName = student.schoolClasses[0]?.schoolClass.name;
+            const schoolPeriod = student.schoolClasses[0]?.schoolClass.schoolPeriod;
+            const schoolGrade = student.schoolClasses[0]?.schoolClass.schoolGrade;
 
-        return {
-          id: student.id,
-          name: student.name,
-          registry: student.registry,
-          schoolClassId: student.schoolClasses[0]?.schoolClass.id,
-          schoolClassName: student.schoolClasses[0]?.schoolClass.name,
-          schoolPeriod: student.schoolClasses[0]?.schoolClass.schoolPeriod,
-          schoolGrade: student.schoolClasses[0]?.schoolClass.schoolGrade,
-          cfo: cfoResult ? `${Math.round(cfoResult.percent.toNumber())}%` : '—',
-          sea: seaResult ? `${Math.round(seaResult.percent.toNumber())}%` : '—',
-          lct: lctResult ? `${Math.round(lctResult.percent.toNumber())}%` : '—',
-          status: student.status,
-        };
-      });
+            const cfoResult = student.examResults.find(
+              (result) =>
+                result.studentId === student.id && result.axisCode === 'ES',
+            );
+            const seaResult = student.examResults.find(
+              (result) =>
+                result.studentId === student.id && result.axisCode === 'EA',
+            );
+            const lctResult = student.examResults.find(
+              (result) =>
+                result.studentId === student.id && result.axisCode === 'LC',
+            );
+
+            const [schoolClassStudent, examPerformed] = await Promise.all([
+              this.prisma.schoolClassStudent.findFirst({
+                where: {
+                  schoolClassId,
+                  studentId: student.id,
+                },
+              }),
+              this.studentExam.getExamPerformedStatusByStudentId(
+                student.id,
+              ),
+            ]);
+
+            return {
+              id: student.id,
+              name: student.name,
+              registry: student.registry,
+              reserved: schoolClassStudent.reserved,
+              examPerformed,
+              firstAccess: schoolClassStudent.firstAccess,
+              schoolClassId,
+              schoolClassName,
+              schoolPeriod,
+              schoolGrade,
+              cfo: cfoResult ? `${Math.round(cfoResult.percent.toNumber())}%` : '—',
+              sea: seaResult ? `${Math.round(seaResult.percent.toNumber())}%` : '—',
+              lct: lctResult ? `${Math.round(lctResult.percent.toNumber())}%` : '—',
+              status: student.status,
+            };
+          })
+        );
 
       // Filter students based on criteria
       const filteredStudents = responseStudents.filter((student) => {

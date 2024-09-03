@@ -13,6 +13,15 @@ export class StudentResponseDto {
   @ApiProperty({ description: 'Registro', example: '1234' })
   registry: string;
 
+  @ApiProperty({ description: 'Reservado', example: true })
+  reserved?: boolean;
+
+  @ApiProperty({ description: 'Prova realizada', example: true })
+  examePerformed?: boolean;
+
+  @ApiProperty({ description: 'Primeiro acesso', example: true })
+  firstAccess?: boolean;
+
   @ApiProperty({
     description: 'Identificador da Turma',
     example: 'f2032caa-e8f8-48b4-a109-daef805ee24b',

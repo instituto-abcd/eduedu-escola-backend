@@ -104,8 +104,6 @@ export class StudentExamService {
       const result = await this.studentExamModel
         .findOne({ studentId, current: true });
 
-      console.log('Result:', result);
-
       if (result && result.examPerformed !== null) {
         return Boolean(result.examPerformed);
       }
