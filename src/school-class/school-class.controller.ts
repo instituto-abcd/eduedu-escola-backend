@@ -314,9 +314,8 @@ export class SchoolClassController {
   @ApiNotFoundResponse({ description: 'Turma ou aluno não encontrado' })
   @ApiOperation({
     summary: 'Atualizar campo reserved de um aluno em uma turma',
+    deprecated: true,
   })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   async updateStudentReserved(
     @Param('id') schoolClassId: string,
     @Param('studentId') studentId: string,
