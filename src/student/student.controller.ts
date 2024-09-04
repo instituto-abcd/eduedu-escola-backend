@@ -391,8 +391,6 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Student not found' })
   @ApiOperation({ summary: 'Get student by ID' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getFirstQuestionPlanetForStudent(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
@@ -410,8 +408,6 @@ export class StudentController {
     description: 'Resposta do estudante enviada com sucesso',
     type: StudentResponseDto,
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async answerPlanet(
     @Param('id') studentId: string,
     @Param('planetId') planetId: string,
