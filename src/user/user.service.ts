@@ -4,9 +4,9 @@ import { CreateUserRequestDto } from './dto/request/create-user-request.dto';
 import { AddUsersDto } from './dto/add-users.dto';
 import { AddUsersResponseDto, AddUsersResponseErrorDto } from './dto/response/add-users-response.dto';
 import { UpdateUserRequestDto } from './dto/request/update-user-request.dto';
-import { EduException, ErrorDetails } from '../common/exceptions/edu-school.exception';
+import { EduException } from '../common/exceptions/edu-school.exception';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { Prisma, Profile, Status, User, UserSchoolClass } from '@prisma/client';
+import { Prisma, Profile, SchoolGradeEnum, Status, User, UserSchoolClass } from '@prisma/client';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import { DeleteUserResponseDto } from './dto/response/delete-user-response.dto';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
@@ -14,7 +14,9 @@ import { InativeUserResponseDto } from './dto/response/inative-user-response.dto
 import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
-import { ObjectAccessKeyEnum } from './dto/objectAccessKeyEnum';
+import { UserAccessCodeOptionResponseDto } from './dto/response/user-access-code-option-response.dto';
+import { AlgorithmAccessKeyEnum } from './enums/algorithm-access-key.enum';
+import { ObjectAccessKeyEnum } from './enums/object-access-key.enum';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
 import { DashboardService } from '../dashboard/dashboard.service';
@@ -75,7 +77,7 @@ export class UserService {
       ? await this.bcryptService.hashPassword(password)
       : null;
 
-    const accessKey = this.generateUniqueAccessKey();
+    const accessKey = await this.generateUniqueAccessKey();
 
     const createdUser = await this.prismaService.user.create({
       data: {
@@ -175,7 +177,7 @@ export class UserService {
           return {
             line: index + 2,
             userData,
-          }
+          };
         })
         .filter((item) => item);
 
@@ -215,10 +217,10 @@ export class UserService {
         );
 
         countCreated++;
-      } catch (e) {
+      } catch (error) {
         errors.push({
           line,
-          message: errorMappings[e.code] || 'Erro ao criar registro.',
+          message: errorMappings[error.code] || 'Erro ao criar registro.',
         });
       }
     }
@@ -460,8 +462,50 @@ export class UserService {
     }
   }
 
+  private async generateUniqueAccessKey(
+    algorithm: AlgorithmAccessKeyEnum = AlgorithmAccessKeyEnum.WITHOUT_OBJECT,
+  ): Promise<string> {
+    if (algorithm === AlgorithmAccessKeyEnum.WITHOUT_OBJECT) {
+      return await this.generateUniqueAccessKeyWithoutObject();
+    }
+
+    if (algorithm === AlgorithmAccessKeyEnum.WITH_OBJECT) {
+      return this.generateUniqueAccessKeyWithObject();
+    }
+
+    throw new EduException('UNKNOWN_ACCESS_CODE_ALGORITHM');
+  }
+
+  private async generateUniqueAccessKeyWithoutObject(
+    digits: number = 4,
+  ): Promise<string> {
+    const allUsers = await this.prismaService.user.findMany({
+      select: {
+        accessKey: true,
+      },
+    });
+
+    const usedKeys = new Set(
+      allUsers.map((user) => user.accessKey)
+    );
+    const notUsedKeys: string[] = Array.from(
+      { length: 10 ** digits - 1 },
+      (_, index) => String(index + 1).padStart(digits, '0')
+    ).filter(
+      (key) => !usedKeys.has(key)
+    );
+
+    if (notUsedKeys.length === 0) {
+      throw new EduException('LIMIT_EXCEEDED_ACCESS_CODE');
+    }
+
+    return notUsedKeys[
+      this.generateRandomNumber(0, notUsedKeys.length - 1)
+    ];
+  }
+
   // Podem ser Gerados até 1.000.000 sem repetição
-  private generateUniqueAccessKey(): string {
+  private generateUniqueAccessKeyWithObject(): string {
     const object = this.getRandomObject();
     const number = this.generateRandomNumber(1, 9999);
 
@@ -518,7 +562,7 @@ export class UserService {
     }
 
     const data = {
-      accessKey: this.generateUniqueAccessKey(),
+      accessKey: await this.generateUniqueAccessKey(),
     };
 
     try {
@@ -567,10 +611,70 @@ export class UserService {
     });
   }
 
+  async getFirstUserIdBySchoolClassId(schoolClassId: string): Promise<string> {
+    const user = await this.prismaService.userSchoolClass.findFirst(
+      {
+        where: {
+          schoolClassId,
+        },
+        select: {
+          userId: true,
+        },
+      },
+    );
+
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+
+    return user.userId;
+  }
+
+  async getAccessCodeOptions(
+    id: string,
+    totalOptions: number = 4,
+    digits: number = 4,
+  ): Promise<UserAccessCodeOptionResponseDto[]> {
+    const user = await this.prismaService.user.findUnique({ where: { id } });
+    
+    if (!user) {
+      throw new EduException('USER_NOT_FOUND');
+    }
+    
+    const correctAnswerPosition = this.generateRandomNumber(0, totalOptions - 1);
+    
+    const availableKeys = Array.from(
+      { length: 10 ** digits - 1 },
+      (_, index) => String(index + 1).padStart(digits, '0')
+    ).filter(
+      (key) => key !== user.accessKey
+    );
+
+    return Array.from({ length: totalOptions }).map((_, position) => {
+      if (position == correctAnswerPosition) {
+        return {
+          accessKey: user.accessKey,
+          correctAnswer: true,
+        };
+      }
+
+      const randomIndex = this.generateRandomNumber(0, availableKeys.length - 1);
+      const accessKey = availableKeys.splice(randomIndex, 1)[0];
+      return {
+        accessKey,
+        correctAnswer: false,
+      };
+    });
+  }
+
   async userClasses(
     userId: string,
     userProfile: Profile,
-  ): Promise<{ name: string; id: string }[]> {
+  ): Promise<{
+    id: string,
+    name: string,
+    schoolGrade: SchoolGradeEnum,
+  }[]> {
     let classesByUser: UserSchoolClass[];
 
     if (userProfile === Profile.TEACHER) {
@@ -588,6 +692,7 @@ export class UserService {
       select: {
         id: true,
         name: true,
+        schoolGrade: true,
       },
       orderBy: {
         name: 'asc',

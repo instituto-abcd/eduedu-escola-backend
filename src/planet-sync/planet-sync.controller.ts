@@ -7,6 +7,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { LastSyncResponseDto } from './dto/last-sync-response.dto';
 // import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Sincronizar Planetas')
@@ -64,5 +65,16 @@ export class PlanetSyncController {
   })
   getPlanetSyncStatus() {
     return this.planetSyncService.getPlanetSyncStatus();
+  }
+
+  @Get('last-sync')
+  @ApiOperation({
+    summary: 'Retorna a última data de sincronização',
+  })
+  @ApiResponse({
+    status: 200,
+  })
+  getLastSync(): Promise<LastSyncResponseDto> {
+    return this.planetSyncService.getLastSync();
   }
 }

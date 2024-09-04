@@ -52,10 +52,10 @@ import { PlanetsPerformanceResponse } from './dto/response/planets-performance.d
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { QueryFilter } from './dto/request/query.enum';
+import { CountSchoolGradeResponseDto } from './dto/response/count-school-grade-response';
 
 @ApiTags('Turma')
 @Controller('schoolClass')
-@ApiBearerAuth()
 export class SchoolClassController {
   constructor(
     private readonly schoolClassService: SchoolClassService,
@@ -96,6 +96,7 @@ export class SchoolClassController {
   @Get('all')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Este endpoint está depreciado', deprecated: true })
   async findAll(
     @Req() req,
     @Query('page-number') page?: string,
@@ -121,6 +122,30 @@ export class SchoolClassController {
     return this.schoolClassService.findAll(pageNumber, pageSize, filters, user);
   }
 
+  @Get('all-no-auth')
+  async findAllNoAuth(
+    @Query('page-number') page?: string,
+    @Query('page-size') limit?: string,
+    @Query('name') name?: string,
+    @Query('schoolGrade') schoolGrade?: string,
+    @Query('schoolPeriod') schoolPeriod?: string,
+    @Query('schoolYearName') schoolYearName?: number,
+    @Query('teacherName') teacherName?: string,
+  ): Promise<PaginationResponse<SchoolClassResponseDto>> {
+    const pageNumber = parseInt(page || '1');
+    const pageSize = parseInt(limit || '10');
+
+    const filters = {
+      name,
+      schoolGrade,
+      schoolPeriod,
+      schoolYearName,
+      teacherName,
+    };
+
+    return this.schoolClassService.findAllNoAuth(pageNumber, pageSize, filters);
+  }
+
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -131,7 +156,6 @@ export class SchoolClassController {
   })
   @ApiNotFoundResponse({ description: 'Turma não encontrada' })
   @ApiOperation({ summary: 'Obter turma por ID' })
-  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string): Promise<SchoolClassResponseDto> {
     return this.schoolClassService.findOne(id);
   }
@@ -148,7 +172,6 @@ export class SchoolClassController {
   @ApiOperation({
     summary: 'Recupera os nomes das salas associadas ao usuário',
   })
-  @UseGuards(JwtAuthGuard)
   async findOneSchoolClassesByUser(
     @Param('userId') userId: string,
   ): Promise<{ names: string }> {
@@ -291,9 +314,8 @@ export class SchoolClassController {
   @ApiNotFoundResponse({ description: 'Turma ou aluno não encontrado' })
   @ApiOperation({
     summary: 'Atualizar campo reserved de um aluno em uma turma',
+    deprecated: true,
   })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   async updateStudentReserved(
     @Param('id') schoolClassId: string,
     @Param('studentId') studentId: string,
@@ -304,6 +326,18 @@ export class SchoolClassController {
       studentId,
       reserved,
     );
+  }
+
+  @Get('/count/school-grade')
+  @ApiOperation({
+    summary: 'Obter o total de turmas por série',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Sucesso ao obter total de turmas por série',
+  })
+  async countSchoolGrade(): Promise<CountSchoolGradeResponseDto[]> {
+    return await this.schoolClassService.countSchoolGrade();
   }
 
   @ApiOkResponse({
