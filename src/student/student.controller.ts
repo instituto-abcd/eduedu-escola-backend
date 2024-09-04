@@ -364,8 +364,6 @@ export class StudentController {
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
   @ApiOperation({ summary: 'Submete a avaliação da prova do aluno' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   evaluation(@Param('id') id: string): Promise<any> {
     return this.studentService.handleExamEvaluation(id);
   }
