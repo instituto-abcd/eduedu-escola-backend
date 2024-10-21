@@ -38,6 +38,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from './common/utils/utils.module';
 import { LottieModule } from './lottie/lottie.module';
+import { BackupModule } from './backup/backup.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { LottieModule } from './lottie/lottie.module';
     ReportModule,
     UtilsModule,
     LottieModule,
+    BackupModule,
   ],
   providers: [
     PrismaService,
