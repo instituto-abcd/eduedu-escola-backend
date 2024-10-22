@@ -1042,6 +1042,8 @@ export class StudentService {
     const planets = await this.planetModel.find({
       axis_code: axis_code,
       level: level,
+    }).sort({
+      position: 1,
     });
     return planets;
   }
