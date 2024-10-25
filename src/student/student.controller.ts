@@ -278,8 +278,6 @@ export class StudentController {
     status: 200,
     description: 'Status da operação',
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async releasePlanets(
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
@@ -429,8 +427,6 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getExamExecutions(@Param('id') id: string): Promise<StudentExamDto[]> {
     return await this.studentExamService.getStudentExams(id);
   }
@@ -514,8 +510,6 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém as estrelas do aluno no planeta',
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async studentPlanetStars(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
@@ -531,8 +525,6 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getStudentLevels(
     @Param('studentId') studentId: string,
   ): Promise<{ levelLC: string; levelEA: string; levelES: string }> {
