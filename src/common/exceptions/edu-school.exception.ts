@@ -125,7 +125,7 @@ export const ErrorDetails = {
   },
   INVALID_EMAIL_OR_PASSWORD: {
     message: 'Email ou senha inválidos.',
-    status: HttpStatus.UNAUTHORIZED,
+    status: HttpStatus.BAD_REQUEST,
   },
   INVALID_TOKEN: {
     message: 'Token inválido.',
