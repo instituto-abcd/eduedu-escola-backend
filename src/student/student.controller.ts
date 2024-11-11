@@ -273,6 +273,24 @@ export class StudentController {
     return this.studentExamService.getPlanetTrack(studentId);
   }
 
+  @Get('/:id/planet-track-without-availability')
+  @ApiResponse({
+    status: 200,
+    description: 'Rota do planeta recuperada com sucesso',
+    type: PlanetTrackDto,
+  })
+  @ApiBadRequestResponse({ description: 'Requsição inválida' })
+  @ApiResponse({
+    status: ErrorDetails.STUDENT_NOT_FOUND.status,
+    description: ErrorDetails.STUDENT_NOT_FOUND.message,
+  })
+  @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno sem considerar disponibilidade de planeta' })
+  async getPlanetTrackWithoutAvailability(
+    @Param('id') studentId: string,
+  ): Promise<PlanetTrackDto> {
+    return this.studentExamService.getPlanetTrack(studentId, false);
+  }
+
   @Put('/:id/release-planets')
   @ApiResponse({
     status: 200,

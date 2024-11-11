@@ -25,75 +25,75 @@ export class StudentExamService {
     return result;
   }
 
-  async getPlanetTrack(studentId: string): Promise<PlanetTrackDto> {
+  async getPlanetTrack(
+    studentId: string,
+    usePlanetAvailability: boolean = true,
+  ): Promise<PlanetTrackDto> {
     try {
       const studentExam = await this.studentExamModel
         .findOne({ studentId, lastExam: true });
 
-      if (studentExam) {
-        studentExam.planetTrack = studentExam.planetTrack.sort((a: any, b: any) => {
-          if (a.order < b.order) return -1;
-          if (a.order > b.order) return 1;
-          return 0;
-        });
+      if (!studentExam) {
+        throw new EduException('STUDENT_NOT_FOUND');
+      }
 
-        let studentPlanetResult = await this.prisma.studentPlanetResult.findMany({
-          where: {
-            studentId: studentId,
-            studentExamId: studentExam.id,
-          }
-        });
+      studentExam.planetTrack = studentExam.planetTrack.sort((a: any, b: any) => {
+        if (a.order < b.order) return -1;
+        if (a.order > b.order) return 1;
+        return 0;
+      });
 
-        let planetTrack: PlanetDto[] = [];
-        for (let index = 0; index < studentExam.planetTrack.length; index++) {
-          let currentPlanetResult = studentPlanetResult.find((item) =>
-            item.planetId === studentExam.planetTrack[index].planetId
-          );
-          let currentPlanetStars = currentPlanetResult ? parseFloat(currentPlanetResult.stars.toString()) : 0;
+      let studentPlanetResult = await this.prisma.studentPlanetResult.findMany({
+        where: {
+          studentId: studentId,
+          studentExamId: studentExam.id,
+        }
+      });
 
-          let previousPlanetResult =
-            index > 0
-              ? studentPlanetResult.find((item) => item.planetId === studentExam.planetTrack[index - 1].planetId)
-              : undefined;
-          let previousPlanetStars = previousPlanetResult ? parseFloat(previousPlanetResult.stars.toString()) : 0;
+      let planetTrack: PlanetDto[] = [];
+      for (let index = 0; index < studentExam.planetTrack.length; index++) {
+        let currentPlanetResult = studentPlanetResult.find((item) =>
+          item.planetId === studentExam.planetTrack[index].planetId
+        );
+        let currentPlanetStars = currentPlanetResult ? parseFloat(currentPlanetResult.stars.toString()) : 0;
 
+        let previousPlanetResult =
+          index > 0
+            ? studentPlanetResult.find((item) => item.planetId === studentExam.planetTrack[index - 1].planetId)
+            : undefined;
+        let previousPlanetStars = previousPlanetResult ? parseFloat(previousPlanetResult.stars.toString()) : 0;
+
+        // Determina se o planeta atual deve estar habilitado
+        let enable = index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0;
+
+        let canExecutePlanet = enable;
+        if (usePlanetAvailability) {
           let planetAvailable =
             studentExam.planetTrack[index].availableAt != undefined &&
             studentExam.planetTrack[index].availableAt <= new Date();
-
-          // Determina se o planeta atual deve estar habilitado
-          let enable = false;
-
-          // Verifica se é o primeiro planeta na trilha OU se tem estrelas maiores que 0 OU se o planeta anterior tem estrelas maiores que 0
-          if (index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0) {
-            enable = true; // Habilita se uma das condições acima for verdadeira
-          }
-
-          const planetDto = {
-            planetId: studentExam.planetTrack[index].planetId,
-            planetName: studentExam.planetTrack[index].planetName,
-            planetAvatar: studentExam.planetTrack[index].planetAvatar,
-            stars: currentPlanetStars,
-            enable: enable,
-            canExecutePlanet:
-              planetAvailable &&
-              (index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0), // Condições de execução do planeta
-          };
-
-          planetTrack.push(planetDto);
+          canExecutePlanet &&= planetAvailable;
         }
 
-        return {
-          examPerformed: studentExam.examPerformed,
-          studentId: studentExam.studentId,
-          examId: studentExam.examId,
-          examDate: studentExam.examDate,
-          current: studentExam.current,
-          planetTrack,
+        const planetDto = {
+          planetId: studentExam.planetTrack[index].planetId,
+          planetName: studentExam.planetTrack[index].planetName,
+          planetAvatar: studentExam.planetTrack[index].planetAvatar,
+          stars: currentPlanetStars,
+          enable,
+          canExecutePlanet,
         };
+
+        planetTrack.push(planetDto);
       }
 
-      throw new EduException('STUDENT_NOT_FOUND');
+      return {
+        examPerformed: studentExam.examPerformed,
+        studentId: studentExam.studentId,
+        examId: studentExam.examId,
+        examDate: studentExam.examDate,
+        current: studentExam.current,
+        planetTrack,
+      };
     } catch (error) {
       throw error;
     }
