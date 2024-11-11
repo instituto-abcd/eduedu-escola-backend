@@ -84,6 +84,10 @@ export class StudentExamService {
         };
 
         planetTrack.push(planetDto);
+
+        if (!enable && !canExecutePlanet) {
+          break;
+        }
       }
 
       return {
