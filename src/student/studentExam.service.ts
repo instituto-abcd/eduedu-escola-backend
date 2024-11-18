@@ -28,6 +28,7 @@ export class StudentExamService {
   async getPlanetTrack(
     studentId: string,
     usePlanetAvailability: boolean = true,
+    hideLastPlanets: boolean = true,
   ): Promise<PlanetTrackDto> {
     try {
       const studentExam = await this.studentExamModel
@@ -85,7 +86,7 @@ export class StudentExamService {
 
         planetTrack.push(planetDto);
 
-        if (!enable && !canExecutePlanet) {
+        if (hideLastPlanets && !enable && !canExecutePlanet) {
           break;
         }
       }
