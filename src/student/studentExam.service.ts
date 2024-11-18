@@ -29,6 +29,7 @@ export class StudentExamService {
     studentId: string,
     usePlanetAvailability: boolean = true,
     hideLastPlanets: boolean = true,
+    canExecuteAnyPlanet: boolean = false,
   ): Promise<PlanetTrackDto> {
     try {
       const studentExam = await this.studentExamModel
@@ -73,6 +74,9 @@ export class StudentExamService {
             studentExam.planetTrack[index].availableAt != undefined &&
             studentExam.planetTrack[index].availableAt <= new Date();
           canExecutePlanet &&= planetAvailable;
+        }
+        if (canExecuteAnyPlanet) {
+          canExecutePlanet = true;
         }
 
         const planetDto = {
