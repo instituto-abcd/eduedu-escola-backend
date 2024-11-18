@@ -65,17 +65,16 @@ export class StudentExamService {
             : undefined;
         let previousPlanetStars = previousPlanetResult ? parseFloat(previousPlanetResult.stars.toString()) : 0;
 
-        // Determina se o planeta atual deve estar habilitado
-        let enable = index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0;
-
-        let canExecutePlanet = enable;
-        if (usePlanetAvailability) {
-          let planetAvailable =
-            studentExam.planetTrack[index].availableAt != undefined &&
-            studentExam.planetTrack[index].availableAt <= new Date();
-          canExecutePlanet &&= planetAvailable;
-        }
-        if (canExecuteAnyPlanet) {
+        let canExecutePlanet: boolean;
+        if (!canExecuteAnyPlanet) {
+          canExecutePlanet = index === 0 || currentPlanetStars > 0 || previousPlanetStars > 0;
+          if (usePlanetAvailability) {
+            let planetAvailable =
+              studentExam.planetTrack[index].availableAt != undefined &&
+              studentExam.planetTrack[index].availableAt <= new Date();
+            canExecutePlanet &&= planetAvailable;
+          }
+        } else {
           canExecutePlanet = true;
         }
 
@@ -84,13 +83,12 @@ export class StudentExamService {
           planetName: studentExam.planetTrack[index].planetName,
           planetAvatar: studentExam.planetTrack[index].planetAvatar,
           stars: currentPlanetStars,
-          enable,
           canExecutePlanet,
         };
 
         planetTrack.push(planetDto);
 
-        if (hideLastPlanets && !enable && !canExecutePlanet) {
+        if (hideLastPlanets && !canExecutePlanet) {
           break;
         }
       }
