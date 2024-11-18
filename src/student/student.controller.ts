@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   NotFoundException,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Put,
@@ -21,6 +23,7 @@ import {
   ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -267,28 +270,36 @@ export class StudentController {
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
   @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
+  @ApiQuery({
+    name: 'usePlanetAvailability',
+    description: 'Considerar disponibilidade de planeta',
+    type: Boolean,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'hideLastPlanets',
+    description: 'Ocultar últimos planetas',
+    type: Boolean,
+    required: false
+  })
   async getPlanetTrack(
     @Param('id') studentId: string,
+    @Query(
+      'usePlanetAvailability',
+      new DefaultValuePipe(true),
+      new ParseBoolPipe(),
+    ) usePlanetAvailability: boolean,
+    @Query(
+      'hideLastPlanets',
+      new DefaultValuePipe(true),
+      new ParseBoolPipe(),
+    ) hideLastPlanets: boolean,
   ): Promise<PlanetTrackDto> {
-    return this.studentExamService.getPlanetTrack(studentId);
-  }
-
-  @Get('/:id/planet-track-without-availability')
-  @ApiResponse({
-    status: 200,
-    description: 'Rota do planeta recuperada com sucesso',
-    type: PlanetTrackDto,
-  })
-  @ApiBadRequestResponse({ description: 'Requsição inválida' })
-  @ApiResponse({
-    status: ErrorDetails.STUDENT_NOT_FOUND.status,
-    description: ErrorDetails.STUDENT_NOT_FOUND.message,
-  })
-  @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno sem considerar disponibilidade de planeta' })
-  async getPlanetTrackWithoutAvailability(
-    @Param('id') studentId: string,
-  ): Promise<PlanetTrackDto> {
-    return this.studentExamService.getPlanetTrack(studentId, false);
+    return this.studentExamService.getPlanetTrack(
+      studentId,
+      usePlanetAvailability,
+      hideLastPlanets,
+    );
   }
 
   @Put('/:id/release-planets')
