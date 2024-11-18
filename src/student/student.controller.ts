@@ -282,6 +282,12 @@ export class StudentController {
     type: Boolean,
     required: false
   })
+  @ApiQuery({
+    name: 'canExecuteAnyPlanet',
+    description: 'Possibilidade de executar qualquer planeta listado',
+    type: Boolean,
+    required: false
+  })
   async getPlanetTrack(
     @Param('id') studentId: string,
     @Query(
@@ -294,11 +300,17 @@ export class StudentController {
       new DefaultValuePipe(true),
       new ParseBoolPipe(),
     ) hideLastPlanets: boolean,
+    @Query(
+      'canExecuteAnyPlanet',
+      new DefaultValuePipe(false),
+      new ParseBoolPipe(),
+    ) canExecuteAnyPlanet: boolean,
   ): Promise<PlanetTrackDto> {
     return this.studentExamService.getPlanetTrack(
       studentId,
       usePlanetAvailability,
       hideLastPlanets,
+      canExecuteAnyPlanet,
     );
   }
 
