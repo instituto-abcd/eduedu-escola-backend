@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   NotFoundException,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Put,
@@ -21,6 +23,7 @@ import {
   ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -267,10 +270,48 @@ export class StudentController {
     description: ErrorDetails.STUDENT_NOT_FOUND.message,
   })
   @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
+  @ApiQuery({
+    name: 'usePlanetAvailability',
+    description: 'Considerar disponibilidade de planeta',
+    type: Boolean,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'hideLastPlanets',
+    description: 'Ocultar últimos planetas',
+    type: Boolean,
+    required: false
+  })
+  @ApiQuery({
+    name: 'canExecuteAnyPlanet',
+    description: 'Possibilidade de executar qualquer planeta listado',
+    type: Boolean,
+    required: false
+  })
   async getPlanetTrack(
     @Param('id') studentId: string,
+    @Query(
+      'usePlanetAvailability',
+      new DefaultValuePipe(true),
+      new ParseBoolPipe(),
+    ) usePlanetAvailability: boolean,
+    @Query(
+      'hideLastPlanets',
+      new DefaultValuePipe(true),
+      new ParseBoolPipe(),
+    ) hideLastPlanets: boolean,
+    @Query(
+      'canExecuteAnyPlanet',
+      new DefaultValuePipe(false),
+      new ParseBoolPipe(),
+    ) canExecuteAnyPlanet: boolean,
   ): Promise<PlanetTrackDto> {
-    return this.studentExamService.getPlanetTrack(studentId);
+    return this.studentExamService.getPlanetTrack(
+      studentId,
+      usePlanetAvailability,
+      hideLastPlanets,
+      canExecuteAnyPlanet,
+    );
   }
 
   @Put('/:id/release-planets')
@@ -278,8 +319,6 @@ export class StudentController {
     status: 200,
     description: 'Status da operação',
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async releasePlanets(
     @Param('id') studentId: string,
   ): Promise<PlanetTrackDto> {
@@ -429,8 +468,6 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getExamExecutions(@Param('id') id: string): Promise<StudentExamDto[]> {
     return await this.studentExamService.getStudentExams(id);
   }
@@ -514,8 +551,6 @@ export class StudentController {
   @ApiOperation({
     summary: 'Obtém as estrelas do aluno no planeta',
   })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async studentPlanetStars(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
@@ -531,8 +566,6 @@ export class StudentController {
     type: StudentResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getStudentLevels(
     @Param('studentId') studentId: string,
   ): Promise<{ levelLC: string; levelEA: string; levelES: string }> {
