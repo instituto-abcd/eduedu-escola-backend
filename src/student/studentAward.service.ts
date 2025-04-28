@@ -3,8 +3,8 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Prisma, StudentExamResult } from "@prisma/client";
 import { Model } from "mongoose";
 import { AwardType } from "../awards/enums/award.enum";
-import { Exam, ExamDocument } from "src/exam/schemas/exam.schema";
-import { PrismaService } from "src/prisma/prisma.service";
+import { Exam, ExamDocument } from "../exam/schemas/exam.schema";
+import { PrismaService } from "../prisma/prisma.service";
 import { StudentExam, StudentExamDocument } from "./schemas/studentExam.schema";
 
 @Injectable()
