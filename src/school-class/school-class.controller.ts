@@ -39,7 +39,7 @@ import { EduException } from '../common/exceptions/edu-school.exception';
 import { Response } from 'express';
 import { join } from 'path';
 import { AddStudentsToClassDto } from './dto/add-students-to-class.dto';
-import { AuditGuard } from 'src/common/guard/audit.guard';
+import { AuditGuard } from '../common/guard/audit.guard';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
 import { StudentSimplifiedResponseDto } from '../student/dto/response/student-simplified-response.dto';

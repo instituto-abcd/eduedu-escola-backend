@@ -16,7 +16,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UserGuard } from 'src/auth/guard/user.guard';
+import { UserGuard } from '../auth/guard/user.guard';
 import { NotificationDto } from './dto/notifications.dto';
 import { NotifiedCountDto } from './dto/notified-count.dto';
 import { CreateNotificationResponseDto } from './dto/create-notification-response.dto';

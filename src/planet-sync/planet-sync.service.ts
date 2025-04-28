@@ -10,7 +10,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
+import { DateFormatterUtilsService } from '../common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
 import { ExamService } from '../exam/exam.service';

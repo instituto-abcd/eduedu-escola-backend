@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PaginationResponse } from 'src/common/pagination/pagination-response.dto';
+import { PaginationResponse } from '../common/pagination/pagination-response.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @Controller('audit')
