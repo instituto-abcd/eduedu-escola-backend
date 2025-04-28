@@ -5,7 +5,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   PlanetDocument,
   Question,
-} from 'src/planet-sync/schemas/planet.schema';
+} from '../planet-sync/schemas/planet.schema';
 
 @Controller('planet')
 @ApiTags('Planetas')

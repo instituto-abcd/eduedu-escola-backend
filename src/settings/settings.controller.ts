@@ -6,8 +6,8 @@ import { UpdateSettingsDto } from './dto/update-settings';
 import { SchoolId } from '../common/school-id.decorator';
 import { UpdateSchoolNameDto } from './dto/update-school-name';
 import { StatusResponseDto } from './dto/status-response.dto';
-import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
-import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { CreateUserRequestDto } from '../user/dto/request/create-user-request.dto';
+import { AuthResponseDto } from '../auth/dto/response/auth-response.dto';
 import { Request } from 'express';
 import axios from 'axios';
 

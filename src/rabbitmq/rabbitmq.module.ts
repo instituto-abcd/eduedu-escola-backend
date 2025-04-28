@@ -2,16 +2,16 @@ import { Inject, Module, OnModuleInit } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { connect, Connection, Channel, ConsumeMessage } from 'amqplib';
-import { rabbitmqConstants } from 'src/common/constants';
-import { PlanetSyncModule } from 'src/planet-sync/planet-sync.module';
-import { PlanetSyncService } from 'src/planet-sync/planet-sync.service';
-import { FirestoreService } from 'src/planet-sync/firestore.service';
-import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
+import { rabbitmqConstants } from '../common/constants';
+import { PlanetSyncModule } from '../planet-sync/planet-sync.module';
+import { PlanetSyncService } from '../planet-sync/planet-sync.service';
+import { FirestoreService } from '../planet-sync/firestore.service';
+import { Planet, PlanetSchema } from '../planet-sync/schemas/planet.schema';
 import {
   PlanetSync,
   PlanetSyncSchema,
-} from 'src/planet-sync/schemas/sync-list.schema';
-import { DownloadedFile, DownloadedFileSchema } from 'src/planet-sync/schemas/download-file.schema';
+} from '../planet-sync/schemas/sync-list.schema';
+import { DownloadedFile, DownloadedFileSchema } from '../planet-sync/schemas/download-file.schema';
 
 @Module({
   imports: [

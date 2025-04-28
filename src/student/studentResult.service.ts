@@ -6,14 +6,14 @@ import {
   StudentExamDocument,
 } from './schemas/studentExam.schema';
 import { Model } from 'mongoose';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { StudentPlanetResultDetailDto } from './dto/student-planet-result-detail.dto';
 import { ChartStudentResponse } from './dto/response/chart-studant-response.dto';
 import { ChartDatasetDto } from './dto/response/chart-dataset-dto';
 import { StudentDetailedSummaryDto } from './student-detailed-summary.dto';
 import { StudentService } from './student.service';
 import { StudentPlanetResult } from '@prisma/client';
-import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
 import { StudentPlanetStarsDto } from './student-planet-stars.dto';
 import { PlanetDocument } from '../planet-sync/schemas/planet.schema';
 import { EduException } from '../common/exceptions/edu-school.exception';

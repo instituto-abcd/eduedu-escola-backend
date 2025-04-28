@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { FirestoreService } from 'src/planet-sync/firestore.service';
+import { FirestoreService } from '../planet-sync/firestore.service';
 import { Exam, IExam, Question } from './schemas/exam.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { StorageService } from 'src/planet-sync/storage.service';
+import { StorageService } from '../planet-sync/storage.service';
 
 @Injectable()
 export class ExamService {

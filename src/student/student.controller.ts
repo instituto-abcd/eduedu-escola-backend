@@ -36,7 +36,7 @@ import { DeleteStudentResponseDto } from './dto/response/delete-student-response
 import { InativeStudantRequestDto } from './dto/request/inative-studant-request.dto';
 import { InativeStudentResponseDto } from './dto/response/inative-student-response.dto';
 import { PaginationResponse } from '../common/pagination/pagination-response.dto';
-import { AuditGuard } from 'src/common/guard/audit.guard';
+import { AuditGuard } from '../common/guard/audit.guard';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { StudentExamService } from './studentExam.service';
 import { AwardDto } from '../awards/dto/awards.dto';
