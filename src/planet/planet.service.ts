@@ -6,8 +6,8 @@ import {
   Planet,
   PlanetDocument,
   Question,
-} from 'src/planet-sync/schemas/planet.schema';
-import { Exam, ExamDocument } from 'src/exam/schemas/exam.schema';
+} from '../planet-sync/schemas/planet.schema';
+import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { StudentService } from '../student/student.service';

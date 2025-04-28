@@ -7,7 +7,7 @@ import { EduException } from '../common/exceptions/edu-school.exception';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { PlanetDto } from './dto/planet.dto';
 import { StudentExamDto } from './dto/studentexam.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class StudentExamService {

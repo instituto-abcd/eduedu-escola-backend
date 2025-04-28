@@ -34,8 +34,8 @@ import {
   StudentExamDocument,
 } from './schemas/studentExam.schema';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
-import { PlanetDocument } from 'src/planet-sync/schemas/planet.schema';
-import { ExamResumes } from 'src/templates/exam-resume-templates';
+import { PlanetDocument } from '../planet-sync/schemas/planet.schema';
+import { ExamResumes } from '../templates/exam-resume-templates';
 import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
