@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { QuestionPlanentDto } from "../exam/dto/question-planet.dto";
 import { AnswersPlanet } from "./schemas/studentExam.schema";
 import { EduException } from "../common/exceptions/edu-school.exception";
-import { OptionAnswer } from "src/exam/dto/request/answers-request.dto";
+import { OptionAnswer } from "../exam/dto/request/answers-request.dto";
 
 @Injectable()
 export class StudentPlanetExecutionService {

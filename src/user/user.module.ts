@@ -7,7 +7,7 @@ import { BcryptService } from "../common/services/bcrypt.service";
 import { AuthService } from "../auth/auth.service";
 import { DateApiService } from "../common/services/date-api.service";
 import { DashboardService } from "../dashboard/dashboard.service";
-import { EmailService } from "src/email/email.service";
+import { EmailService } from "../email/email.service";
 import { UtilsModule } from "../common/utils/utils.module";
 
 @Module({
