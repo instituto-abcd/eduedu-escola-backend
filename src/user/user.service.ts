@@ -228,7 +228,8 @@ export class UserService {
 			} catch (error) {
 				errors.push({
 					line,
-					message: errorMappings[error.code] || "Erro ao criar registro.",
+					message:
+						errorMappings[(error as any).code] || "Erro ao criar registro.",
 				});
 			}
 		}

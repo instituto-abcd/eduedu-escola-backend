@@ -53,9 +53,9 @@ export class UserGuard implements CanActivate {
 			request["user"] = user;
 			return true;
 		} catch (error) {
-			if (error.name === "TokenExpiredError") {
+			if ((error as any).name === "TokenExpiredError") {
 				throw new UnauthorizedException("Token expirado");
-			} else if (error.name === "JsonWebTokenError") {
+			} else if ((error as any).name === "JsonWebTokenError") {
 				throw new UnauthorizedException("Token inválido");
 			} else {
 				throw new UnauthorizedException("Não autorizado");

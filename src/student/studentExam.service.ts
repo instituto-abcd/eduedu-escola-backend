@@ -117,7 +117,7 @@ export class StudentExamService {
 
       return false;
     } catch (error) {
-      console.error('Error fetching exam performed status:', error.message);
+      console.error('Error fetching exam performed status:', ( error as any ).message);
       return false;
     }
   }
