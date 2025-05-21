@@ -46,12 +46,17 @@ export class EmailService {
 	}) {
 		const client = await this.getClient();
 
+		const htmlRegex = /<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>/g
+
+		const cleanedUrl = url.replace(htmlRegex, '');
+		const cleanedName = name.replace(htmlRegex, '');
+
 		client
 			.sendMail({
 				from: "EduEdu Escola <edueduescola@institutoabcd.org>",
 				to: email,
 				subject: "Redefinição de senha",
-				html: passwordTemplate(url, name),
+				html: passwordTemplate(cleanedUrl, cleanedName),
 				attachments: [
 					{
 						filename: "eduedu-preta.png",
