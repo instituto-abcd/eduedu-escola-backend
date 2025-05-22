@@ -85,7 +85,7 @@ export class UserService {
 
 		const hashedPassword = password
 			? await this.bcryptService.hashPassword(password)
-			: null;
+			: await this.bcryptService.hashPassword(document.substring(0, 6));
 
 		const accessKey = await this.generateUniqueAccessKey();
 
