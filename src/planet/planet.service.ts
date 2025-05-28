@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid"
 import { Inject, Injectable } from '@nestjs/common';
 import { PlanetDto } from './dto/planet.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -279,6 +280,10 @@ export class PlanetService {
           const questionFinal = question;
           questionFinal.id = question.id.toString();
           questionFinal.planetTitle = result.title;
+          questionFinal.options = question.options.map(opt => ({
+            id: uuid(),
+            ...opt,
+          }))
           return questionFinal;
         });
         resultQuestions.push(...questions);
@@ -350,6 +355,10 @@ export class PlanetService {
       .map((question) => {
         const questionFinal: any = question;
         questionFinal.planetTitle = 'Prova';
+        questionFinal.options = question.options.map(opt => ({
+          id: uuid(),
+          ...opt,
+        }))
         return questionFinal;
       });
 

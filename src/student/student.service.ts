@@ -1,3 +1,4 @@
+import { v4 as uuid} from "uuid"
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentRequestDto } from './dto/request/create-student-request.dto';
@@ -723,8 +724,11 @@ export class StudentService {
     );
 
     questionsByAxisCode.options = this.shuffleOptions(
-      questionsByAxisCode.options,
+      questionsByAxisCode.options
     );
+
+    questionsByAxisCode.options = this.assignOptionIds(questionsByAxisCode.options)
+
     return questionsByAxisCode;
   }
 
@@ -1528,6 +1532,8 @@ export class StudentService {
       );
 
       response.options = this.shuffleOptions(response.options);
+      response.options = this.assignOptionIds(response.options);
+
       return response;
     } catch (error) {
       console.log(error);
@@ -1577,6 +1583,11 @@ export class StudentService {
     }
 
     return options;
+  }
+
+  private assignOptionIds(options: QuestionDto["options"]): QuestionDto["options"] {
+    if (!options) return
+    return options.map(opt => ({ id: uuid(), ...opt }))
   }
 
   async recoverProgress(
@@ -2167,6 +2178,7 @@ export class StudentService {
 
     const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
     question.options = this.applyPlanetQuestionShuffle(question);
+    question.options = this.assignOptionIds(question.options);
     question.progress = 0;
 
     if (question === null) {
@@ -2223,6 +2235,7 @@ export class StudentService {
       }
 
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
+      nextQuestion.options = this.assignOptionIds(nextQuestion.options);
 
       nextQuestion.previousQuestionIsCorrect = isCorrect;
       nextQuestion.progress = this.recoverPlanetProgress(
@@ -2241,6 +2254,7 @@ export class StudentService {
         return await this.finishPlanet(studentId, planetId);
       }
       nextQuestion.options = this.applyPlanetQuestionShuffle(nextQuestion);
+      nextQuestion.options = this.assignOptionIds(nextQuestion.options);
       // Se entrou nesse else, é porque não deve ser verificado se a questão foi respondida corretamente.
       // Logo, retornamos true e boa.
       nextQuestion.previousQuestionIsCorrect = true;
