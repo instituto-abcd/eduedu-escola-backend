@@ -1,4 +1,10 @@
+
 # EduEdu+ &mdash; Backend
+
+## Gitflow
+
+![image](https://github.com/user-attachments/assets/334f1711-93c4-45d9-b311-35fec3f8d9fe)
+
 
 Webserver para os serviços do EduEdu+, usando o framework [Nest.js](https://docs.nestjs.com/v5/). Utilizamos Docker para empacotar em container o servidor e _os_ bancos de dados.
 
