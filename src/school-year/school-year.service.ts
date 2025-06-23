@@ -1,302 +1,296 @@
-import { Injectable } from '@nestjs/common';
-import { EduException } from '../common/exceptions/edu-school.exception';
-import { PrismaService } from '../prisma/prisma.service';
-import { DateApiService } from '../common/services/date-api.service';
-import { StatusSchoolYear } from '@prisma/client';
-import { SchoolYearSummary } from './dto/response/list-school-year-response.dto';
-import { DeleteSchoolYearResponseDto } from './dto/response/delete-school-year-response.dto';
-import { SchoolYearResponse } from './dto/response/school-year-response';
-import { DashboardService } from '../dashboard/dashboard.service';
+import { Injectable } from "@nestjs/common";
+import { EduException } from "../common/exceptions/edu-school.exception";
+import { PrismaService } from "../prisma/prisma.service";
+import { DateApiService } from "../common/services/date-api.service";
+import { StatusSchoolYear } from "@prisma/client";
+import { SchoolYearSummary } from "./dto/response/list-school-year-response.dto";
+import { DeleteSchoolYearResponseDto } from "./dto/response/delete-school-year-response.dto";
+import { SchoolYearResponse } from "./dto/response/school-year-response";
+import { DashboardService } from "../dashboard/dashboard.service";
 
 @Injectable()
 export class SchoolYearService {
-  constructor(
-    private readonly prismaService: PrismaService,
-    private readonly externalApiService: DateApiService,
-    private readonly dashboardService: DashboardService,
-  ) {}
+	constructor(
+		private readonly prismaService: PrismaService,
+		private readonly externalApiService: DateApiService,
+		private readonly dashboardService: DashboardService,
+	) {}
 
-  async isSchoolYearCreatable(year: number): Promise<boolean> {
-    const schoolYears = await this.prismaService.schoolYear.findMany({
-      where: {
-        name: year,
-      },
-    });
+	async isSchoolYearCreatable(year: number): Promise<boolean> {
+		const schoolYears = await this.prismaService.schoolYear.findMany({
+			where: {
+				name: year,
+			},
+		});
 
-    return schoolYears.length === 0;
-  }
+		return schoolYears.length === 0;
+	}
 
-  async isSchoolYearCreatableDraft(year: number): Promise<boolean> {
-    const schoolYears = await this.prismaService.schoolYear.findMany({
-      where: {
-        OR: [{ status: StatusSchoolYear.DRAFT }],
-        name: year,
-      },
-    });
+	async isSchoolYearCreatableDraft(year: number): Promise<boolean> {
+		const schoolYears = await this.prismaService.schoolYear.findMany({
+			where: {
+				OR: [{ status: StatusSchoolYear.DRAFT }],
+				name: year,
+			},
+		});
 
-    return schoolYears.length === 1;
-  }
+		return schoolYears.length === 1;
+	}
 
-  async createSchoolYear(
-    year: number,
-    schoolId: string,
-  ): Promise<SchoolYearResponse> {
-    return this.prismaService.schoolYear.create({
-      data: {
-        name: year,
-        schoolId: schoolId,
-        status: StatusSchoolYear.DRAFT,
-      },
-    });
-  }
+	async createSchoolYear(
+		year: number,
+		schoolId: string,
+	): Promise<SchoolYearResponse> {
+		return this.prismaService.schoolYear.create({
+			data: {
+				name: year,
+				schoolId: schoolId,
+				status: StatusSchoolYear.DRAFT,
+			},
+		});
+	}
 
-  async createNextAvailableSchoolYear(
-    schoolId: string,
-  ): Promise<SchoolYearSummary> {
-    const currentYear = await this.externalApiService.getCurrentYear();
-    const currentSchoolYearCreatable = await this.isSchoolYearCreatable(
-      currentYear,
-    );
+	async createNextAvailableSchoolYear(
+		schoolId: string,
+	): Promise<SchoolYearSummary> {
+		const currentYear = this.externalApiService.getCurrentYear();
+		const currentSchoolYearCreatable =
+			await this.isSchoolYearCreatable(currentYear);
 
-    if (!currentSchoolYearCreatable) {
-      const lastYear = currentYear + 1;
-      const lastSchoolYearCreatable = await this.isSchoolYearCreatable(
-        lastYear,
-      );
-      const currentSchoolYearDraft = await this.isSchoolYearCreatableDraft(
-        currentYear,
-      );
+		if (!currentSchoolYearCreatable) {
+			const lastYear = currentYear + 1;
+			const lastSchoolYearCreatable =
+				await this.isSchoolYearCreatable(lastYear);
+			const currentSchoolYearDraft =
+				await this.isSchoolYearCreatableDraft(currentYear);
 
-      if (!currentSchoolYearDraft && lastSchoolYearCreatable) {
-        const createdSchoolYear = await this.createSchoolYear(
-          lastYear,
-          schoolId,
-        );
-        const buttonEnabled =
-          createdSchoolYear.status === 'DRAFT' &&
-          currentYear == createdSchoolYear.name;
-        await this.dashboardService.createSchoolYear(
-          createdSchoolYear.id,
-          createdSchoolYear.name,
-        );
-        return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
-      } else {
-        throw new EduException('NEXT_SCHOOL_YEAR_ALREADY_EXISTS');
-      }
-    } else {
-      const createdSchoolYear = await this.createSchoolYear(
-        currentYear,
-        schoolId,
-      );
-      const buttonEnabled =
-        createdSchoolYear.status === 'DRAFT' &&
-        currentYear == createdSchoolYear.name;
-      await this.dashboardService.createSchoolYear(
-        createdSchoolYear.id,
-        createdSchoolYear.name,
-      );
-      return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
-    }
+			if (!currentSchoolYearDraft && lastSchoolYearCreatable) {
+				const createdSchoolYear = await this.createSchoolYear(
+					lastYear,
+					schoolId,
+				);
+				const buttonEnabled =
+					createdSchoolYear.status === "DRAFT" &&
+					currentYear == createdSchoolYear.name;
+				await this.dashboardService.createSchoolYear(
+					createdSchoolYear.id,
+					createdSchoolYear.name,
+				);
+				return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
+			} else {
+				throw new EduException("NEXT_SCHOOL_YEAR_ALREADY_EXISTS");
+			}
+		} else {
+			const createdSchoolYear = await this.createSchoolYear(
+				currentYear,
+				schoolId,
+			);
+			const buttonEnabled =
+				createdSchoolYear.status === "DRAFT" &&
+				currentYear == createdSchoolYear.name;
+			await this.dashboardService.createSchoolYear(
+				createdSchoolYear.id,
+				createdSchoolYear.name,
+			);
+			return this.mapToSchoolYearSummary(createdSchoolYear, buttonEnabled);
+		}
 
-    throw new EduException('SCHOOL_YEAR_ALREADY_EXISTS');
-  }
+		throw new EduException("SCHOOL_YEAR_ALREADY_EXISTS");
+	}
 
-  private async mapToSchoolYearSummary(
-    schoolYear: SchoolYearResponse,
-    buttonEnabled: boolean,
-  ): Promise<SchoolYearSummary> {
-    const totalSchoolClasses = await this.prismaService.schoolClass.count({
-      where: {
-        schoolYearId: schoolYear.id,
-      },
-    });
-    const totalStudents = await this.getNumberOfStudents(schoolYear.id);
-    const totalTeachers = await this.prismaService.userSchoolClass.count({
-      where: {
-        schoolClass: {
-          schoolYearId: schoolYear.id,
-        },
-      },
-    });
+	private async mapToSchoolYearSummary(
+		schoolYear: SchoolYearResponse,
+		buttonEnabled: boolean,
+	): Promise<SchoolYearSummary> {
+		const totalSchoolClasses = await this.prismaService.schoolClass.count({
+			where: {
+				schoolYearId: schoolYear.id,
+			},
+		});
+		const totalStudents = await this.getNumberOfStudents(schoolYear.id);
+		const totalTeachers = await this.prismaService.userSchoolClass.count({
+			where: {
+				schoolClass: {
+					schoolYearId: schoolYear.id,
+				},
+			},
+		});
 
-    return {
-      id: schoolYear.id,
-      name: schoolYear.name,
-      status: schoolYear.status,
-      createdAt: schoolYear.createdAt,
-      updatedAt: schoolYear.updatedAt,
-      summary: {
-        totalSchoolClasses,
-        totalStudents,
-        totalTeachers,
-        buttonEnabled,
-      },
-    };
-  }
+		return {
+			id: schoolYear.id,
+			name: schoolYear.name,
+			status: schoolYear.status,
+			createdAt: schoolYear.createdAt,
+			updatedAt: schoolYear.updatedAt,
+			summary: {
+				totalSchoolClasses,
+				totalStudents,
+				totalTeachers,
+				buttonEnabled,
+			},
+		};
+	}
 
-  async findAllSchoolYears(): Promise<SchoolYearSummary[]> {
-    const currentYear = await this.externalApiService.getCurrentYear();
-    const schoolYears = await this.prismaService.schoolYear.findMany({
-      include: {
-        schoolClasses: true,
-      },
-      orderBy: {
-        name: 'desc',
-      },
-    });
+	async findAllSchoolYears(): Promise<SchoolYearSummary[]> {
+		const currentYear = this.externalApiService.getCurrentYear();
+		const schoolYears = await this.prismaService.schoolYear.findMany({
+			orderBy: {
+				name: "desc",
+			},
+		});
 
-    return await Promise.all(
-      schoolYears.map(async (schoolYear) => {
-        const totalSchoolClasses = await this.prismaService.schoolClass.count({
-          where: {
-            schoolYearId: schoolYear.id,
-          },
-        });
+		return await Promise.all(
+			schoolYears.map(async (schoolYear) => {
+				const totalSchoolClasses = await this.prismaService.schoolClass.count({
+					where: {
+						schoolYearId: schoolYear.id,
+					},
+				});
 
-        const totalTeachers = await this.prismaService.userSchoolClass.count({
-          where: {
-            schoolClass: {
-              schoolYearId: schoolYear.id,
-            },
-          },
-        });
+				const totalTeachers = await this.prismaService.userSchoolClass.count({
+					where: {
+						schoolClass: {
+							schoolYearId: schoolYear.id,
+						},
+					},
+				});
 
-        const totalStudents = await this.getNumberOfStudents(schoolYear.id);
+				const totalStudents = await this.getNumberOfStudents(schoolYear.id);
 
-        const buttonEnabled =
-          schoolYear.status === 'DRAFT' && currentYear == schoolYear.name;
+				const buttonEnabled =
+					schoolYear.status === "DRAFT" && currentYear == schoolYear.name;
 
-        return {
-          id: schoolYear.id,
-          name: schoolYear.name,
-          status: schoolYear.status,
-          createdAt: schoolYear.createdAt,
-          updatedAt: schoolYear.updatedAt,
-          summary: {
-            totalSchoolClasses,
-            totalStudents,
-            totalTeachers,
-            buttonEnabled,
-          },
-        };
-      }),
-    );
-  }
+				return {
+					id: schoolYear.id,
+					name: schoolYear.name,
+					status: schoolYear.status,
+					createdAt: schoolYear.createdAt,
+					updatedAt: schoolYear.updatedAt,
+					summary: {
+						totalSchoolClasses,
+						totalStudents,
+						totalTeachers,
+						buttonEnabled,
+					},
+				};
+			}),
+		);
+	}
 
-  private async getNumberOfStudents(schoolYearId: string): Promise<number> {
-    return this.prismaService.schoolClassStudent.count({
-      where: {
-        schoolClass: {
-          schoolYearId,
-        },
-      },
-    });
-  }
+	private async getNumberOfStudents(schoolYearId: string): Promise<number> {
+		return this.prismaService.schoolClassStudent.count({
+			where: {
+				schoolClass: {
+					schoolYearId,
+				},
+			},
+		});
+	}
 
-  async activateSchoolYear(id: string): Promise<void> {
-    const selectedSchoolYear = await this.prismaService.schoolYear.findUnique({
-      where: { id },
-    });
+	async activateSchoolYear(id: string): Promise<void> {
+		const selectedSchoolYear = await this.prismaService.schoolYear.findUnique({
+			where: { id },
+		});
 
-    if (!selectedSchoolYear) {
-      throw new EduException('SCHOOL_YEAR_NOT_FOUND');
-    }
+		if (!selectedSchoolYear) {
+			throw new EduException("SCHOOL_YEAR_NOT_FOUND");
+		}
 
-    if (selectedSchoolYear.status === StatusSchoolYear.DRAFT) {
-      await this.prismaService.schoolYear.update({
-        where: { id },
-        data: {
-          status: StatusSchoolYear.ACTIVE,
-        },
-      });
+		if (selectedSchoolYear.status === StatusSchoolYear.DRAFT) {
+			await this.prismaService.schoolYear.update({
+				where: { id },
+				data: {
+					status: StatusSchoolYear.ACTIVE,
+				},
+			});
 
-      const lastYear = selectedSchoolYear.name - 1;
+			const lastYear = selectedSchoolYear.name - 1;
 
-      const schoolLastYear = await this.prismaService.schoolYear.findFirst({
-        where: { name: lastYear },
-      });
+			const schoolLastYear = await this.prismaService.schoolYear.findFirst({
+				where: { name: lastYear },
+			});
 
-      if (schoolLastYear != null) {
-        const previousYears = await this.prismaService.schoolYear.findMany({
-          where: {
-            name: { lte: lastYear },
-            schoolId: schoolLastYear.schoolId,
-            status: StatusSchoolYear.ACTIVE,
-          },
-        });
+			if (schoolLastYear != null) {
+				const previousYears = await this.prismaService.schoolYear.findMany({
+					where: {
+						name: { lte: lastYear },
+						schoolId: schoolLastYear.schoolId,
+						status: StatusSchoolYear.ACTIVE,
+					},
+				});
 
-        await this.prismaService.schoolYear.updateMany({
-          where: {
-            id: { in: previousYears.map((year) => year.id) },
-          },
-          data: {
-            status: StatusSchoolYear.INACTIVE,
-          },
-        });
-      }
-    } else if (selectedSchoolYear.status === StatusSchoolYear.ACTIVE) {
-      throw new EduException('SCHOOL_YEAR_IS_ALREADY_ACTIVE');
-    } else if (selectedSchoolYear.status === StatusSchoolYear.INACTIVE) {
-      throw new EduException('SCHOOL_YEAR_IS_INACTIVE');
-    }
-  }
+				await this.prismaService.schoolYear.updateMany({
+					where: {
+						id: { in: previousYears.map((year) => year.id) },
+					},
+					data: {
+						status: StatusSchoolYear.INACTIVE,
+					},
+				});
+			}
+		} else if (selectedSchoolYear.status === StatusSchoolYear.ACTIVE) {
+			throw new EduException("SCHOOL_YEAR_IS_ALREADY_ACTIVE");
+		} else if (selectedSchoolYear.status === StatusSchoolYear.INACTIVE) {
+			throw new EduException("SCHOOL_YEAR_IS_INACTIVE");
+		}
+	}
 
-  async deleteSchoolYearAndClasses(): Promise<DeleteSchoolYearResponseDto> {
-    const schoolYearToDelete = await this.prismaService.schoolYear.findFirst({
-      where: {
-        status: 'DRAFT',
-      },
-      orderBy: {
-        name: 'desc',
-      },
-    });
+	async deleteSchoolYearAndClasses(): Promise<DeleteSchoolYearResponseDto> {
+		const schoolYearToDelete = await this.prismaService.schoolYear.findFirst({
+			where: {
+				status: "DRAFT",
+			},
+			orderBy: {
+				name: "desc",
+			},
+		});
 
-    if (!schoolYearToDelete) {
-      throw new EduException('NO_SCHOOL_YEAR_TO_DELETE');
-    }
+		if (!schoolYearToDelete) {
+			throw new EduException("NO_SCHOOL_YEAR_TO_DELETE");
+		}
 
-    const { id } = schoolYearToDelete;
+		const { id } = schoolYearToDelete;
 
-    if (schoolYearToDelete) {
-      await this.prismaService.schoolClassStudent.deleteMany({
-        where: {
-          schoolClassId: {
-            in: await this.prismaService.schoolClass
-              .findMany({
-                where: { schoolYearId: id },
-                select: { id: true },
-              })
-              .then((schoolClasses) => schoolClasses.map((sc) => sc.id)),
-          },
-        },
-      });
+		if (schoolYearToDelete) {
+			await this.prismaService.schoolClassStudent.deleteMany({
+				where: {
+					schoolClassId: {
+						in: await this.prismaService.schoolClass
+							.findMany({
+								where: { schoolYearId: id },
+								select: { id: true },
+							})
+							.then((schoolClasses) => schoolClasses.map((sc) => sc.id)),
+					},
+				},
+			});
 
-      const schoolClassesCount = await this.prismaService.schoolClass.count({
-        where: { schoolYearId: id },
-      });
+			const schoolClassesCount = await this.prismaService.schoolClass.count({
+				where: { schoolYearId: id },
+			});
 
-      if (schoolClassesCount > 0) {
-        await this.prismaService.schoolClass.deleteMany({
-          where: { schoolYearId: id },
-        });
-      }
+			if (schoolClassesCount > 0) {
+				await this.prismaService.schoolClass.deleteMany({
+					where: { schoolYearId: id },
+				});
+			}
 
-      await this.prismaService.schoolYear.delete({
-        where: { id },
-      });
-    }
+			await this.prismaService.schoolYear.delete({
+				where: { id },
+			});
+		}
 
-    return { success: true };
-  }
+		return { success: true };
+	}
 
-  async current(): Promise<SchoolYearSummary> {
-    const currentYear = await this.externalApiService.getCurrentYear();
-    const schoolYears = await this.prismaService.schoolYear.findFirst({
-      where: {
-        name: currentYear,
-      },
-    });
+	async current(): Promise<SchoolYearSummary> {
+		const currentYear = this.externalApiService.getCurrentYear();
+		const schoolYears = await this.prismaService.schoolYear.findFirst({
+			where: {
+				name: currentYear,
+			},
+		});
 
-    return this.mapToSchoolYearSummary(schoolYears, false);
-  }
+		return this.mapToSchoolYearSummary(schoolYears, false);
+	}
 }
