@@ -2,14 +2,20 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class AwardDto {
   @ApiProperty({
-    description: 'ID da conquista',
-    example: '2f7bc4d2-8e92-4ad0-ae2a-b3e276d87b34',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: 'Nome da conquista',
-    example: 'Primeiro planeta',
+    description: 'Nome único identificador da conquista',
+    example: 'nome_da_conquista',
   })
   name: string;
+
+  @ApiProperty({
+    description: 'Título da conquista que aparecerá em interface',
+    example: 'Primeiro planeta',
+  })
+  title: string;
+
+  @ApiProperty({
+    description: 'Descrição da conquista',
+    example: 'Completou 2 avaliações',
+  })
+  description: string;
 }

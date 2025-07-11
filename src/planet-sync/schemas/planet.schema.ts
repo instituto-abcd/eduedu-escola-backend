@@ -1,86 +1,101 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { ApiProperty } from '@nestjs/swagger';
+import { HydratedDocument } from 'mongoose';
+import { QuestionDto } from 'src/exam/dto/question.dto';
 
 export type Question = {
-	orderedAnswer: boolean;
-	multiplesAnswer: boolean;
-	level: number;
-	id: string;
-	model_id: string;
-	description: string;
-	planet_id: string;
-	position: number;
-	status: string;
-	title: string;
-	bncc: string | null;
-	updated_at: string;
-	options: {
-		sound_id?: string;
-		sound_url?: string;
-		image_id?: string;
-		image_url?: string;
-		description: string;
-		position: number;
-		isCorrect: boolean;
-		id: string;
-	}[];
-	titles: {
-		file_id?: string | null;
-		file_url?: string | null;
-		description: string;
-		position: number;
-		placeholder: string;
-		type: string;
-	}[];
-	rules: {
-		name: string;
-		type: string;
-		value: string;
-	}[];
+  orderedAnswer: boolean;
+  multiplesAnswer: boolean;
+  level: number;
+  id: string;
+  model_id: string;
+  description: string;
+  planet_id: string;
+  position: number;
+  status: string;
+  title: string;
+  bncc: string | null;
+  updated_at: string;
+  options: {
+    sound_id?: string;
+    sound_url?: string;
+    image_id?: string;
+    image_url?: string;
+    description: string;
+    position: number;
+    isCorrect: boolean;
+    id: string;
+  }[];
+  titles: {
+    file_id?: string | null;
+    file_url?: string | null;
+    description: string;
+    position: number;
+    placeholder: string;
+    type: string;
+  }[];
+  rules: {
+    name: string;
+    type: string;
+    value: string;
+  }[];
 };
 
 export type PlanetDocument = HydratedDocument<Planet>;
 
 @Schema()
 export class Planet {
-	@Prop()
-	avatar_id: string;
+  @ApiProperty()
+  @Prop()
+  avatar_id: string;
 
-	@Prop()
-	avatar_url: string;
+  @ApiProperty()
+  @Prop()
+  avatar_url: string;
 
-	@Prop()
-	axis_code: string;
+  @ApiProperty()
+  @Prop()
+  axis_code: string;
 
-	@Prop()
-	domain_code: string;
+  @ApiProperty()
+  @Prop()
+  domain_code: string;
 
-	@Prop()
-	enable: boolean;
+  @ApiProperty()
+  @Prop()
+  enable: boolean;
 
-	@Prop()
-	id: string;
+  @ApiProperty()
+  @Prop()
+  id: string;
 
-	@Prop()
-	level: string;
+  @ApiProperty()
+  @Prop()
+  level: string;
 
-	@Prop()
-	next_planet_id: string | null;
+  @ApiProperty()
+  @Prop()
+  next_planet_id: string | null;
 
-	@Prop()
-	position: number;
+  @ApiProperty()
+  @Prop()
+  position: number;
 
-	@Prop()
-	status: string;
+  @ApiProperty()
+  @Prop()
+  status: string;
 
-	@Prop()
-	title: string;
+  @ApiProperty()
+  @Prop()
+  title: string;
 
-	@Prop({ type: { seconds: Number, nanoseconds: Number }, _id: false })
-	updated_at: { seconds: number; nanoseconds: number };
+  @ApiProperty()
+  @Prop({ type: { seconds: Number, nanoseconds: Number }, _id: false })
+  updated_at: { seconds: number; nanoseconds: number };
 
-	@Prop()
-	questions: Question[];
+  @ApiProperty({ type: QuestionDto, isArray: true })
+  @Prop()
+  questions: Question[];
 }
 
 export const PlanetSchema = SchemaFactory.createForClass(Planet);

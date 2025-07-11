@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SchoolYearSummary {
+  // TODO: add types
   @ApiProperty({ description: 'O resumo do ano letivo.' })
   summary: {
     totalStudents: number;
