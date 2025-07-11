@@ -21,7 +21,9 @@ import { UpdateStudentRequestDto } from './dto/request/update-student-request.dt
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -59,19 +61,22 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { StudentPlanetStarsDto } from './student-planet-stars.dto';
 import { ReservedStudentRequestDto } from './dto/request/reserved-student-request.dto';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
+import { ApiPaginatedResponse } from 'src/common/pagination/pagination-decorator';
 
 @Controller('student')
-@ApiTags('Estudante')
+@ApiTags('Alunos')
 export class StudentController {
   constructor(
     private readonly studentService: StudentService,
     private readonly studentExamService: StudentExamService,
     private readonly awardsService: AwardsService,
     private readonly studentResultService: StudentResultService,
-  ) { }
+  ) {}
 
   @Post('sync-planet-student')
-  @ApiOperation({ summary: 'Sincronizar Trilha de Planetas do Aluno' })
+  @ApiOperation({
+    summary: '[ ? ] [NÃO UTILIZADO] Sincronizar Trilha de Planetas do Aluno',
+  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async syncPlanetStudent(): Promise<any> {
@@ -79,7 +84,9 @@ export class StudentController {
   }
 
   @Post('sync-planets-by-student/:studentId')
-  @ApiOperation({ summary: 'Sincronizar Trilha de Planetas por Aluno' })
+  @ApiOperation({
+    summary: '[ ? ] [NÃO UTILIZADO] Sincronizar Trilha de Planetas por Aluno',
+  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async syncPlanetByStudent(
@@ -88,16 +95,12 @@ export class StudentController {
     return await this.studentService.syncPlanetByStudent(studentId);
   }
 
-  @AuditGuard()
   @Post()
-  @ApiResponse({
-    status: 201,
-    description: 'Estudante criado com sucesso',
-    type: StudentResponseDto,
-  })
-  @ApiOperation({ summary: 'Criar um novo estudante' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @AuditGuard()
+  @ApiOperation({ summary: 'Criar aluno' })
+  @ApiCreatedResponse({ type: StudentResponseDto })
   create(
     @Body() createStudentDto: CreateStudentRequestDto,
   ): Promise<StudentResponseDto> {
@@ -105,19 +108,10 @@ export class StudentController {
   }
 
   @Get('all')
-  @ApiResponse({
-    status: 200,
-    description: 'Estudantes encontrados com sucesso',
-    type: PaginationResponse,
-  })
-  @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiResponse({
-    status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
-    description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
-  })
-  @ApiOperation({ summary: 'Obter todos os estudantes', deprecated: true })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiPaginatedResponse(StudentResponseDto)
+  @ApiOperation({ summary: 'Listar alunos', deprecated: true })
   findAll(
     @Req() req,
     @Query('page-number') page?: string,
@@ -150,17 +144,12 @@ export class StudentController {
   }
 
   @Get('all-no-auth')
-  @ApiResponse({
-    status: 200,
-    description: 'Estudantes encontrados com sucesso',
-    type: PaginationResponse,
+  @ApiPaginatedResponse(StudentResponseDto)
+  @ApiOperation({
+    summary: 'Listar alunos (não autenticado)',
+    description:
+      'Usado no portal aluno para popular a lista de alunos sem necessitar de um token de usuaário autenticado. O endpoint `GET /all` foi depreciado em favor deste, mas ambos são indênticos.',
   })
-  @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiResponse({
-    status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
-    description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
-  })
-  @ApiOperation({ summary: 'Obter todos os estudantes' })
   findAllNoAuth(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
@@ -195,30 +184,21 @@ export class StudentController {
   }
 
   @Get(':id')
-  @ApiResponse({
-    status: 200,
-    description: 'Estudante encontrado com sucesso',
-    type: StudentResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
-  @ApiOperation({ summary: 'Obter estudante por ID' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: StudentResponseDto })
+  @ApiNotFoundResponse({ description: 'Aluno não encontrado' })
+  @ApiOperation({ summary: 'Buscar aluno por ID' })
   findOne(@Param('id') id: string): Promise<StudentResponseDto> {
     return this.studentService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiResponse({
-    status: 200,
-    description: 'Estudante atualizado com sucesso',
-    type: StudentResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
-  @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiOperation({ summary: 'Atualizar estudante por ID' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiResponse({ type: StudentResponseDto })
+  @ApiNotFoundResponse({ description: 'Aluno não encontrado' })
+  @ApiOperation({ summary: 'Atualizar aluno por ID' })
   update(
     @Param('id') id: string,
     @Body() updateStudentDto: UpdateStudentRequestDto,
@@ -226,16 +206,12 @@ export class StudentController {
     return this.studentService.update(id, updateStudentDto);
   }
 
-  @AuditGuard()
   @Delete()
-  @ApiResponse({
-    status: 200,
-    description: 'Estudantes removidos com sucesso',
-    type: DeleteStudentResponseDto,
-  })
-  @ApiOperation({ summary: 'Excluir estudantes' })
+  @AuditGuard()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiResponse({ type: DeleteStudentResponseDto })
+  @ApiOperation({ summary: 'Excluir estudantes' })
   remove(
     @Body() requestDto: DeleteStudentRequestDto,
   ): Promise<DeleteStudentResponseDto> {
@@ -244,14 +220,10 @@ export class StudentController {
   }
 
   @Post('inactivate')
-  @ApiOperation({ summary: 'Desativar estudantes' })
-  @ApiResponse({
-    status: 200,
-    description: 'Estudantes desativados com sucesso',
-    type: InativeStudentResponseDto,
-  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '[NÃO UTILIZADO] Inativar alunos' })
+  @ApiResponse({ type: InativeStudentResponseDto })
   async deactivateStudents(
     @Body() requestDto: InativeStudantRequestDto,
   ): Promise<InativeStudentResponseDto> {
@@ -259,16 +231,7 @@ export class StudentController {
   }
 
   @Get('/:id/planet-track')
-  @ApiResponse({
-    status: 200,
-    description: 'Rota do planeta recuperada com sucesso',
-    type: PlanetTrackDto,
-  })
-  @ApiBadRequestResponse({ description: 'Requsição inválida' })
-  @ApiResponse({
-    status: ErrorDetails.STUDENT_NOT_FOUND.status,
-    description: ErrorDetails.STUDENT_NOT_FOUND.message,
-  })
+  @ApiOkResponse({ type: PlanetTrackDto })
   @ApiOperation({ summary: 'Obtenha a trilha do planeta para um aluno' })
   @ApiQuery({
     name: 'usePlanetAvailability',
@@ -280,13 +243,13 @@ export class StudentController {
     name: 'hideLastPlanets',
     description: 'Ocultar últimos planetas',
     type: Boolean,
-    required: false
+    required: false,
   })
   @ApiQuery({
     name: 'canExecuteAnyPlanet',
     description: 'Possibilidade de executar qualquer planeta listado',
     type: Boolean,
-    required: false
+    required: false,
   })
   async getPlanetTrack(
     @Param('id') studentId: string,
@@ -294,17 +257,16 @@ export class StudentController {
       'usePlanetAvailability',
       new DefaultValuePipe(true),
       new ParseBoolPipe(),
-    ) usePlanetAvailability: boolean,
-    @Query(
-      'hideLastPlanets',
-      new DefaultValuePipe(true),
-      new ParseBoolPipe(),
-    ) hideLastPlanets: boolean,
+    )
+    usePlanetAvailability: boolean,
+    @Query('hideLastPlanets', new DefaultValuePipe(true), new ParseBoolPipe())
+    hideLastPlanets: boolean,
     @Query(
       'canExecuteAnyPlanet',
       new DefaultValuePipe(false),
       new ParseBoolPipe(),
-    ) canExecuteAnyPlanet: boolean,
+    )
+    canExecuteAnyPlanet: boolean,
   ): Promise<PlanetTrackDto> {
     return this.studentExamService.getPlanetTrack(
       studentId,
@@ -315,9 +277,10 @@ export class StudentController {
   }
 
   @Put('/:id/release-planets')
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
+  @ApiOperation({
+    summary: 'Marca planetas como disponíveis na trilha do aluno',
+    description:
+      'A operação é realizada manualmente no portal Admin, na listagem de alunos',
   })
   async releasePlanets(
     @Param('id') studentId: string,
@@ -326,17 +289,8 @@ export class StudentController {
   }
 
   @Get('/:id/awards')
-  @ApiOperation({ summary: 'Obter os prêmios do estudante pelo ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de prêmios do estudante',
-    type: [AwardDto],
-  })
-  @ApiBadRequestResponse({ description: 'Requisição inválida' })
-  @ApiResponse({
-    status: ErrorDetails.STUDENT_NOT_FOUND.status,
-    description: ErrorDetails.STUDENT_NOT_FOUND.message,
-  })
+  @ApiOperation({ summary: 'Lista conquistas do aluno' })
+  @ApiResponse({ type: AwardDto, isArray: true })
   async getStudentAwards(@Param('id') studentId: string): Promise<AwardDto[]> {
     try {
       return await this.awardsService.getStudentAwards(studentId);
@@ -350,14 +304,12 @@ export class StudentController {
   }
 
   @Patch(':id/reserved')
-  @ApiResponse({
-    status: 200,
-    description: 'Valor do campo reserved atualizado com sucesso',
-  })
-  @ApiNotFoundResponse({ description: 'Aluno não encontrado' })
   @ApiOperation({
-    summary: 'Atualizar campo reserved de um aluno',
+    summary: 'Marcar aluno como reservado',
+    description:
+      'Usado para bloquear um aluno de estar aberto em mais de um computador ao mesmo tempo',
   })
+  @ApiOkResponse({ type: UpdateStudentReservedResponseDto })
   async updateStudentReserved(
     @Param('id') id: string,
     @Body() requestDto: ReservedStudentRequestDto,
@@ -369,24 +321,23 @@ export class StudentController {
   }
 
   @Get(':id/exam-questions/first')
-  @ApiResponse({
-    status: 200,
-    description: 'Recuperar próxima questão para o estudante',
-    type: StudentResponseDto,
+  @ApiOperation({
+    summary: 'Primeira questão da prova',
+    description:
+      'Usado para dar iniciação a prova com a primeira questão, para as demais questões deve-se usar o `/:studentId/exam-questions/:examId/answer` enviando um objeto de resposta desta questão',
   })
-  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
-  @ApiOperation({ summary: 'Obter estudante por ID' })
-  getFirstQuestionForStudent(@Param('id') id: string): Promise<any> {
+  @ApiOkResponse({ type: QuestionDto })
+  getFirstQuestionForStudent(@Param('id') id: string): Promise<QuestionDto> {
     return this.studentService.getFirstQuestionForStudent(id);
   }
 
   @Post('/:id/exam-questions/:examId/answer')
-  @ApiOperation({ summary: 'Responder questão da prova' })
-  @ApiResponse({
-    status: 201,
-    description: 'Resposta do estudante enviada com sucesso',
-    type: StudentResponseDto,
+  @ApiOperation({
+    summary: 'Responder questão da prova',
+    description:
+      'Retorna a próxima questão OU objeto que identifica o fim da prova',
   })
+  @ApiCreatedResponse({ type: QuestionDto })
   async answer(
     @Param('id') studentId: string,
     @Param('examId') examId: string,
@@ -396,26 +347,21 @@ export class StudentController {
   }
 
   @Post(':id/exam-evaluation')
-  @ApiResponse({
-    status: 201,
-    description: 'Submete a avaliação da prova do aluno',
-    type: ExamEvaluationResponseDto,
+  @ApiOperation({
+    summary: 'Submete a avaliação da prova do aluno',
+    description:
+      'Ao fim da prova, o portal aluno chama esta rota pra gerar o resultado da prova',
   })
-  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
-  @ApiOperation({ summary: 'Submete a avaliação da prova do aluno' })
+  @ApiCreatedResponse({ type: ExamEvaluationResponseDto })
   evaluation(@Param('id') id: string): Promise<any> {
     return this.studentService.handleExamEvaluation(id);
   }
 
   @Post('authorize-new-exam')
-  @ApiOperation({ summary: 'Autorizar novo exame' })
-  @ApiResponse({
-    status: 200,
-    description: 'Nova prova liberada para os Estudantes',
-    type: AuthorizeNewExamResponseDto,
-  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Liberar prova' })
+  @ApiOkResponse({ type: AuthorizeNewExamResponseDto })
   async authorizeNewExam(
     @Body() requestDto: AuthorizeNewExamRequestDto,
   ): Promise<AuthorizeNewExamResponseDto> {
@@ -423,13 +369,12 @@ export class StudentController {
   }
 
   @Get(':id/planets/:planetId/first-question')
-  @ApiResponse({
-    status: 200,
-    description: 'Retrieve the next question of the planet for the student',
-    type: StudentResponseDto,
+  @ApiCreatedResponse({ type: QuestionDto })
+  @ApiOperation({
+    summary: 'Primeira questão de um planeta',
+    description:
+      'Assim como as rotas de prova, esse endpoint deve ser usado para dar início a execução de um planeta, e a resposta deste e demais questões serão tratadas no endpoint `:studentId/planets/:planetId/answer`',
   })
-  @ApiNotFoundResponse({ description: 'Student not found' })
-  @ApiOperation({ summary: 'Get student by ID' })
   async getFirstQuestionPlanetForStudent(
     @Param('id') id: string,
     @Param('planetId') planetId: string,
@@ -441,12 +386,8 @@ export class StudentController {
   }
 
   @Post(':id/planets/:planetId/answer')
-  @ApiOperation({ summary: 'Responder questão da prova' })
-  @ApiResponse({
-    status: 201,
-    description: 'Resposta do estudante enviada com sucesso',
-    type: StudentResponseDto,
-  })
+  @ApiOperation({ summary: 'Responder questão do planeta' })
+  @ApiCreatedResponse({ type: QuestionDto })
   async answerPlanet(
     @Param('id') studentId: string,
     @Param('planetId') planetId: string,
@@ -462,27 +403,19 @@ export class StudentController {
   }
 
   @Get(':id/exam-executions')
-  @ApiResponse({
-    status: 200,
-    description: 'Obtém as execuções de prova de um aluno',
-    type: StudentResponseDto,
-  })
-  @ApiOperation({ summary: 'Obtém as execuções de prova de um aluno' })
+  @ApiOkResponse({ type: StudentResponseDto })
+  @ApiOperation({ summary: 'Lista datas de execuções de prova do aluno' })
   async getExamExecutions(@Param('id') id: string): Promise<StudentExamDto[]> {
     return await this.studentExamService.getStudentExams(id);
   }
 
   @Get(':id/exam-executions/:studentExamId/planets-performance')
-  @ApiResponse({
-    status: 200,
-    description: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
-    type: StudentPlanetResultDetailDto,
-  })
-  @ApiOperation({
-    summary: 'Obtém o desempenho do aluno em planetas agrupados por eixo',
-  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: StudentPlanetResultDetailDto })
+  @ApiOperation({
+    summary: '[?] Desempenho do aluno em planetas agrupados por eixo',
+  })
   async getExamExecution(
     @Param('id') id: string,
     @Param('studentExamId') studentExamId: string,
@@ -496,13 +429,10 @@ export class StudentController {
 
   // Card Gráfico Desempenho do Aluno Por Planetas - Endpoint de Retorno dos dados do gráfico
   @Get(':id/planets-chart')
-  @ApiResponse({
-    status: 200,
-    description: 'Obtém o gráfico desempenho do aluno por planetas',
-    type: ChartStudentResponse,
-  })
+  @ApiOkResponse({ type: ChartStudentResponse })
   @ApiOperation({
-    summary: 'Obtém os sumarizados por eixo, com a lista de planetas',
+    summary:
+      'Dados para o gráfico de desempenho por eixo, com a lista de planetas',
   })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -511,13 +441,10 @@ export class StudentController {
   }
 
   @Get(':id/exams-chart')
-  @ApiResponse({
-    status: 200,
-    description: 'Obtém o gráfico desempenho do aluno por provas',
-    type: ChartStudentResponse,
-  })
+  @ApiOkResponse({ type: ChartStudentResponse })
   @ApiOperation({
-    summary: 'Obtém os sumarizados por eixo, com a lista de provas',
+    summary:
+      'Dados para o gráfico de desempenho por eixo, com a lista de provas',
   })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -526,14 +453,8 @@ export class StudentController {
   }
 
   @Get(':id/detailed-summary')
-  @ApiResponse({
-    status: 200,
-    description: 'Obtém os resultados e resumos de prova por eixo de um aluno',
-    type: StudentDetailedSummaryDto,
-  })
-  @ApiOperation({
-    summary: 'Obtém os resultados e resumos de prova por eixo de um aluno',
-  })
+  @ApiOkResponse({ type: StudentDetailedSummaryDto })
+  @ApiOperation({ summary: 'Resultados de prova por eixo' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async getStudentDetailedSummary(
@@ -559,13 +480,7 @@ export class StudentController {
   }
 
   @Get('find-level/:studentId')
-  @ApiOperation({ summary: 'Obter níveis de um estudante por ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Níveis do estudante encontrados com sucesso',
-    type: StudentResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Estudante não encontrado' })
+  @ApiOperation({ summary: 'Níveis de um aluno por eixo' })
   async getStudentLevels(
     @Param('studentId') studentId: string,
   ): Promise<{ levelLC: string; levelEA: string; levelES: string }> {

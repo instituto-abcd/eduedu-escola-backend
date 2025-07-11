@@ -11,6 +11,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -34,12 +35,11 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 export class SchoolYearController {
   constructor(private readonly schoolYearService: SchoolYearService) {}
 
-  @AuditGuard()
   @Post()
+  @AuditGuard()
   @ApiOperation({ summary: 'Criar um novo ano letivo' })
-  @ApiCreatedResponse({ description: 'Ano Letivo criado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Requisição inválida' })
-  @ApiResponse({
+  @ApiCreatedResponse({ type: SchoolYearSummary })
+  @ApiBadRequestResponse({
     status: ErrorDetails.CANNOT_CREATE_SCHOOL_YEAR.status,
     description: ErrorDetails.CANNOT_CREATE_SCHOOL_YEAR.message,
   })
@@ -56,16 +56,8 @@ export class SchoolYearController {
   }
 
   @Get('all')
-  @ApiOperation({ summary: 'Obter todos os anos letivos' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de todos os anos letivos',
-    type: [SchoolYearSummary],
-  })
-  @ApiResponse({
-    status: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.status,
-    description: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.message,
-  })
+  @ApiOperation({ summary: 'Listar os anos letivos' })
+  @ApiOkResponse({ type: SchoolYearSummary, isArray: true })
   async getAllSchoolYears(): Promise<SchoolYearSummary[]> {
     try {
       return await this.schoolYearService.findAllSchoolYears();
@@ -75,12 +67,8 @@ export class SchoolYearController {
   }
 
   @Get('current')
-  @ApiOperation({ summary: 'Recupera o ano letivo do ano atual' })
-  @ApiResponse({
-    status: 200,
-    description: 'Recupera o ano letivo do ano atual',
-    type: [SchoolYearSummary],
-  })
+  @ApiOperation({ summary: 'Ano letivo atual' })
+  @ApiOkResponse({ type: SchoolYearSummary, isArray: true })
   @ApiResponse({
     status: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.status,
     description: ErrorDetails.SCHOOL_YEAR_ALREADY_ACTIVE.message,
@@ -95,9 +83,6 @@ export class SchoolYearController {
 
   @Put('activate')
   @ApiOperation({ summary: 'Ativar um ano letivo' })
-  @ApiBadRequestResponse({ description: 'Requisição inválida' })
-  @ApiResponse({ status: 200, description: 'Ano letivo ativado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Ano letivo não encontrado' })
   async activateSchoolYear(
     @Body() activateSchoolYearDto: ActivateSchoolYearRequestDto,
   ): Promise<void> {
@@ -112,8 +97,7 @@ export class SchoolYearController {
   @AuditGuard()
   @Delete()
   @ApiOperation({ summary: 'Excluir um ano letivo' })
-  @ApiResponse({ status: 200, description: 'Ano letivo excluído com sucesso' })
-  @ApiResponse({ status: 404, description: 'Ano letivo não encontrado' })
+  @ApiOkResponse({ type: DeleteSchoolYearResponseDto })
   async deleteSchoolYear(): Promise<DeleteSchoolYearResponseDto> {
     return await this.schoolYearService.deleteSchoolYearAndClasses();
   }

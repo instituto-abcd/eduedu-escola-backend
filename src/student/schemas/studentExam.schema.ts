@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { ApiProperty } from '@nestjs/swagger';
 import { Document } from 'mongoose';
 
 export type StudentExamDocument = StudentExam & Document;
@@ -105,41 +106,53 @@ export class OptionsAnswers {
 }
 
 @Schema()
-export class AnswersPlanet {
-  @Prop()
-  questionId: string;
-
-  @Prop()
-  optionsAnswered?: OptionsAnswersPlanet[];
-
-  @Prop()
-  isCorrect: boolean;
-
-  @Prop()
-  axis_code: string;
-
-  @Prop()
-  level: number;
-
-  @Prop()
-  order: number;
-
-  @Prop()
-  lastQuestion: boolean;
-}
-
-@Schema()
 export class OptionsAnswersPlanet {
+  @ApiProperty()
   @Prop()
   position: number;
+
+  @ApiProperty()
   @Prop()
   positionAnswer: number;
 
+  @ApiProperty()
   @Prop()
   description: string;
 
+  @ApiProperty()
   @Prop()
   isCorrect: boolean = false;
+}
+
+@Schema()
+export class AnswersPlanet {
+  @ApiProperty()
+  @Prop()
+  questionId: string;
+
+  @ApiProperty({ type: OptionsAnswersPlanet, isArray: true })
+  @Prop()
+  optionsAnswered?: OptionsAnswersPlanet[];
+
+  @ApiProperty()
+  @Prop()
+  isCorrect: boolean;
+
+  @ApiProperty()
+  @Prop()
+  axis_code: string;
+
+  @ApiProperty()
+  @Prop()
+  level: number;
+
+  @ApiProperty()
+  @Prop()
+  order: number;
+
+  @ApiProperty()
+  @Prop()
+  lastQuestion: boolean;
 }
 
 export const StudentExamSchema = SchemaFactory.createForClass(StudentExam);

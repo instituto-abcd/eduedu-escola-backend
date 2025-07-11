@@ -1,8 +1,9 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuditService } from './audit.service';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PaginationResponse } from '../common/pagination/pagination-response.dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { AuditDto } from './dto/audit.dto';
+import { ApiPaginatedResponse } from 'src/common/pagination/pagination-decorator';
 
 @Controller('audit')
 @ApiTags('Auditoria')
@@ -12,10 +13,10 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
-  @ApiResponse({
-    status: 200,
-    type: PaginationResponse,
+  @ApiOperation({
+    summary: 'Listar operações realizadas no painel administrativo',
   })
+  @ApiPaginatedResponse(AuditDto)
   findAll(
     @Query('page-number') page?: string,
     @Query('page-size') limit?: string,
