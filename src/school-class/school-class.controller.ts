@@ -190,10 +190,16 @@ export class SchoolClassController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async update(
+    @Req() req,
     @Param('id') id: string,
-    @Body() updateUserDto: UpdateSchoolClassRequestDto,
+    @Body() schoolClassPayload: UpdateSchoolClassRequestDto,
   ): Promise<CreateSchoolClassResponseDto> {
-    return this.schoolClassService.updateSchoolClass(id, updateUserDto);
+    const user = req.user;
+    return this.schoolClassService.updateSchoolClass(
+      id,
+      schoolClassPayload,
+      user.profile,
+    );
   }
 
   @Delete()
