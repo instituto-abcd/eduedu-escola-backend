@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid"
+import { v4 as uuid } from 'uuid';
 import { Inject, Injectable } from '@nestjs/common';
 import { PlanetDto } from './dto/planet.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -280,10 +280,10 @@ export class PlanetService {
           const questionFinal = question;
           questionFinal.id = question.id.toString();
           questionFinal.planetTitle = result.title;
-          questionFinal.options = question.options.map(opt => ({
+          questionFinal.options = question.options.map((opt) => ({
             id: uuid(),
             ...opt,
-          }))
+          }));
           return questionFinal;
         });
         resultQuestions.push(...questions);
@@ -355,17 +355,17 @@ export class PlanetService {
       .map((question) => {
         const questionFinal: any = question;
         questionFinal.planetTitle = 'Prova';
-        questionFinal.options = question.options.map(opt => ({
+        questionFinal.options = question.options.map((opt) => ({
           id: uuid(),
           ...opt,
-        }))
+        }));
         return questionFinal;
       });
 
     return examQuestions.sort((a, b) => a.id - b.id);
   }
 
-  async findAllPlanetModels(planetIds: string[]): Promise<Question[]> {
+  async findAllPlanetModels(planetIds: string[]): Promise<string[]> {
     const planets: any[] = await this.planetModel
       .find({
         id: { $in: planetIds },
@@ -374,7 +374,7 @@ export class PlanetService {
 
     const models = planets
       .reduce((question, planet) => [...question, ...planet.questions], [])
-      .map((question) => question.model_id);
+      .map((q: Question) => q.model_id) as string[];
 
     const uniqueModels = models.filter((n, i) => models.indexOf(n) === i);
 

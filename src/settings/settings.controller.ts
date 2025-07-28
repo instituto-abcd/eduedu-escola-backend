@@ -1,5 +1,10 @@
 import { Body, Controller, Get, Post, Put, Req } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { Settings } from './dto/settings.entity';
 import { UpdateSettingsDto } from './dto/update-settings';
@@ -11,18 +16,14 @@ import { AuthResponseDto } from '../auth/dto/response/auth-response.dto';
 import { Request } from 'express';
 import axios from 'axios';
 
-@ApiTags('Settings')
+@ApiTags('Configurações')
 @Controller('system-configuration')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get('public-ip')
   @ApiOperation({ summary: 'Obter endereço IP público' })
-  @ApiResponse({
-    status: 200,
-    description: 'Endereço IP público recuperado com sucesso',
-    type: String,
-  })
+  @ApiOkResponse({ type: String })
   async getPublicIpAddress(): Promise<string> {
     try {
       const response = await axios.get('https://api.ipify.org?format=json');
@@ -34,23 +35,15 @@ export class SettingsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obter configurações da escola' })
-  @ApiResponse({
-    status: 200,
-    description: 'Configurações encontradas',
-    type: Settings,
-  })
+  @ApiOperation({ summary: 'Configurações da escola' })
+  @ApiOkResponse({ type: Settings })
   async getSettingsById(@SchoolId() schoolId: string): Promise<Settings> {
     return this.settingsService.getSettingsBySchoolId(schoolId);
   }
 
   @Put()
   @ApiOperation({ summary: 'Atualizar configurações da escola' })
-  @ApiResponse({
-    status: 200,
-    description: 'Configurações atualizadas com sucesso',
-    type: Settings,
-  })
+  @ApiOkResponse({ type: Settings })
   async updateSettings(
     @SchoolId() schoolId: string,
     @Body() updateSettingsDto: UpdateSettingsDto,
@@ -60,11 +53,7 @@ export class SettingsController {
 
   @Put('school/name')
   @ApiOperation({ summary: 'Atualizar nome da escola' })
-  @ApiResponse({
-    status: 200,
-    description: 'Nome da escola atualizado com sucesso',
-    type: Settings,
-  })
+  @ApiOkResponse({ type: Settings })
   async updateSchoolName(
     @SchoolId() schoolId: string,
     @Body() updateSchoolNameDto: UpdateSchoolNameDto,
@@ -84,12 +73,12 @@ export class SettingsController {
   }
 
   @Post('owner')
-  @ApiOperation({ summary: 'Criar usuário master' })
-  @ApiResponse({
-    status: 201,
-    description: 'Usuário criado e autenticado com sucesso',
-    type: AuthResponseDto,
+  @ApiOperation({
+    summary: 'Criar usuário admin/owner',
+    description:
+      'Usado no setup de nova escola, essa conta é a primeira a ser criada e tem o perfil de maior autoridade na aplicação',
   })
+  @ApiOkResponse({ type: AuthResponseDto })
   async createOwner(
     @Body() createUserDto: CreateUserRequestDto,
     @SchoolId() schoolId: string,

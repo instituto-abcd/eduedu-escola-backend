@@ -1,14 +1,8 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LastSyncResponseDto } from './dto/last-sync-response.dto';
-// import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('Sincronizar Planetas')
 @Controller('planet-sync')
@@ -16,12 +10,12 @@ export class PlanetSyncController {
   constructor(private readonly planetSyncService: PlanetSyncService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Sincronizar planetas da fila' })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
-    type: SyncPlanetResponse,
+  @ApiOperation({
+    summary: 'Sincronizar planetas da fila',
+    description:
+      'Sincronizará planetas apenas com a propriedade `synced: false`. Após cada sincronização, um planeta é marcado com `synced: true`, para evitar de baixar o mesmo planeta múltiplas vezes.',
   })
+  @ApiOkResponse({ type: SyncPlanetResponse })
   sync() {
     return this.planetSyncService.sync();
   }
@@ -29,12 +23,10 @@ export class PlanetSyncController {
   @Post('sync-all')
   @ApiOperation({
     summary: 'Sincronizar planetas do Firestore (ignora a fila)',
+    description:
+      'Sincroniza todos os planetas mesmo que este já esteja sincronizado, ignorando a flag `synced: true`.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
-    type: SyncPlanetResponse,
-  })
+  @ApiOkResponse({ type: SyncPlanetResponse })
   syncAll() {
     if (process.env.ASSETS != 'LOCAL') {
       return this.planetSyncService.handleSyncAll();
@@ -45,35 +37,25 @@ export class PlanetSyncController {
 
   @Post('force-sync-all')
   @ApiOperation({
-    summary: 'Força Sincronizar planetas do Firestore',
+    summary: 'Sincronizar tudo ignorando cache e flag `synced: true`',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
-    type: SyncPlanetResponse,
-  })
+  @ApiOkResponse({ type: SyncPlanetResponse })
   forceSyncAll() {
     return this.planetSyncService.handleSyncAll();
   }
 
+  // TODO: add types
   @Get('sync-status')
   @ApiOperation({
-    summary: 'Retorna o status da sincronização atual de planetas',
-  })
-  @ApiResponse({
-    status: 200,
+    summary: 'Status da operação de sincronização',
   })
   getPlanetSyncStatus() {
     return this.planetSyncService.getPlanetSyncStatus();
   }
 
   @Get('last-sync')
-  @ApiOperation({
-    summary: 'Retorna a última data de sincronização',
-  })
-  @ApiResponse({
-    status: 200,
-  })
+  @ApiOperation({ summary: 'Última data de sincronização' })
+  @ApiOkResponse({ type: LastSyncResponseDto })
   getLastSync(): Promise<LastSyncResponseDto> {
     return this.planetSyncService.getLastSync();
   }
