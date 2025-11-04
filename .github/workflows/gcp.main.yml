@@ -2,7 +2,7 @@
 name: MAIN GCP - CI/CD Pipeline
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 jobs:
   build-push:
     name: Build and Push Docker Image
@@ -60,7 +60,6 @@ jobs:
       MONGO_URI: ${{ secrets.MONGO_URI }}
       MONGO_USER: ${{ secrets.MONGO_USER }}
       MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-      RABBITMQ_URI: ${{ secrets.RABBITMQ_URI }}
 
     steps:
       - name: Checkout
@@ -86,7 +85,6 @@ jobs:
             MONGO_URI=${{ env.MONGO_URI }}
             MONGO_USER=${{ env.MONGO_USER }}
             MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
-            RABBITMQ_URI=${{ env.RABBITMQ_URI }}
 
       - name: 'App URL'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
