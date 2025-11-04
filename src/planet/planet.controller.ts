@@ -1,11 +1,15 @@
 import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
 import { PlanetService } from './planet.service';
 import { PlanetDto } from './dto/planet.dto';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
-  PlanetDocument,
-  Question,
-} from '../planet-sync/schemas/planet.schema';
+  ApiOkResponse,
+  ApiOperation,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { PlanetDocument, Question } from '../planet-sync/schemas/planet.schema';
+import { QuestionDto } from 'src/exam/dto/question.dto';
 
 @Controller('planet')
 @ApiTags('Planetas')
@@ -13,60 +17,61 @@ export class PlanetController {
   constructor(private readonly planetService: PlanetService) {}
 
   @Delete('/reset-cache-all-models')
-  @ApiResponse({
-    status: 200,
-    description: 'Reset cache',
+  @ApiOperation({
+    summary: '[DEBUG] Apaga o cache de modelos',
+    description:
+      'Deve ser usado quando em desenvolvimento a listagem de questões por modelo (ex. url: /debug/model?modelid=MODEL2) não está incluindo a questão de algum planeta. Isso pode acontecer quando foram criados ou alterados planetas no EduLab depois de essa requisição ter sido cacheada.',
   })
-  resetAllPlanetQuestionsCache(): Promise<any> {
+  @ApiOkResponse({ description: 'Cache de modelos excluído' })
+  resetAllPlanetQuestionsCache(): Promise<{ message: string }> {
     return this.planetService.resetAllPlanetQuestionsCache();
   }
 
   @Get('/all-models')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna os modelos de questão utilizados em planetas',
-    type: PlanetDto,
+  @ApiOperation({
+    summary: '[DEBUG] [NÃO UTILIZADO] Listar modelos de um planeta',
   })
-  findAllPlanetModels(@Query('planetId') planetIds: string[]): Promise<any[]> {
+  @ApiResponse({ type: [String] })
+  findAllPlanetModels(
+    @Query('planetId') planetIds: string[],
+  ): Promise<string[]> {
     return this.planetService.findAllPlanetModels(planetIds);
   }
 
   @Get('/all-questions')
-  @ApiResponse({
-    status: 201,
+  @ApiOperation({
+    summary: '[DEBUG] Todas as quesões de um determinado modelo',
+  })
+  @ApiOkResponse({
     description: 'Retorna as questões de planetas',
-    type: PlanetDto,
+    type: QuestionDto,
+    isArray: true,
   })
   findAllPlanetQuestion(@Query('modelId') modelId: string): Promise<any> {
     return this.planetService.findAllPlanetQuestions(modelId);
   }
 
   @Get('/question-models')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna todos os modelos das questões de todos os planetas',
-    type: PlanetDto,
+  @ApiOperation({
+    summary: '[DEBUG] Lista todos os modelos únicos com ao menos 1 questão',
   })
-  findPlanetModels(): Promise<any> {
+  @ApiOkResponse({ type: [String] })
+  findPlanetModels(): Promise<string[]> {
     return this.planetService.findPlanetModels();
   }
 
   @Get('/test-questions')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna as questões de planetas PARA TESTE',
-    type: PlanetDto,
+  @ApiOperation({
+    summary: '[DEBUG] [NÃO UTILIZADO] ???',
   })
+  @ApiOkResponse({ type: [QuestionDto] })
   findAllPlanetQuestionTest(@Query('modelId') modelId: string): Promise<any[]> {
     return this.planetService.findAllPlanetQuestionsTest(modelId);
   }
 
   @Get('/axis-code/:axisCode/level/:level')
-  @ApiResponse({
-    status: 200,
-    description: 'Retorna todos os planetas por eixo e nível',
-    type: [PlanetDto],
-  })
+  @ApiOperation({ summary: 'Lista planetas com base em eixo e nível' })
+  @ApiOkResponse({ type: PlanetDto, isArray: true })
   findAllPlanetsByAxisAndLevel(
     @Param('axisCode') axisCode: string,
     @Param('level') level: number,
@@ -75,20 +80,20 @@ export class PlanetController {
   }
 
   @Get('/assign-all-planets/:id')
-  @ApiResponse({
-    status: 201,
-    description: 'Atribuir todos planetas ao usuário ',
+  @ApiOperation({
+    summary: '[DEBUG] Atribuir todos os planetas a um aluno',
+    description:
+      'Usado para testes internos, essa chamada vai ignorar os filtros de Eixo e Nível para o aluno logado e irá atribuir todos os planetas disponíveis em sua trilha.',
   })
-  assignAllPlanetsToUser(@Param('id') studentId: string): Promise<any[]> {
+  assignAllPlanetsToUser(
+    @Param('id') studentId: string,
+  ): Promise<{ success: boolean }> {
     return this.planetService.assignAllPlanetsToUser(studentId);
   }
 
   @Get(':id/questions/:questionId')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna as questões de planetas',
-    type: PlanetDto,
-  })
+  @ApiOperation({ summary: 'Retorna uma questão de um planeta' })
+  @ApiOkResponse({ type: QuestionDto })
   findPlanetQuestion(
     @Param('id') planetId: string,
     @Param('questionId') questionId: string,
@@ -97,39 +102,33 @@ export class PlanetController {
   }
 
   @Get(':id/questions')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna as questões de planetas',
-    type: PlanetDto,
-  })
+  @ApiOperation({ summary: '[DEBUG] Lista todas questões de um planeta' })
+  @ApiOkResponse({ type: QuestionDto, isArray: true })
   findPlanetQuestions(@Param('id') planetId: string): Promise<Question[]> {
     return this.planetService.findPlanetQuestions(planetId);
   }
 
   @Get('/name/:name')
-  @ApiResponse({
-    status: 201,
-    description: 'Recuperar planetas pelo nome ',
-  })
+  @ApiOperation({ summary: 'Buscar planeta por nome' })
+  @ApiOkResponse({ type: PlanetDto })
   getByNamePartial(@Param('name') name: string): Promise<PlanetDocument[]> {
     return this.planetService.getByNamePartial(name);
   }
 
   @Get('/:id')
-  @ApiResponse({
-    status: 201,
-    description: 'Recuperar Planeta pelo Id ',
-  })
+  @ApiOperation({ summary: 'Buscar planeta por ID' })
+  @ApiOkResponse({ type: PlanetDto })
   getPlanet(@Param('id') id: string): Promise<PlanetDocument> {
     return this.planetService.getOne(id);
   }
 
   @Get('/')
-  @ApiResponse({
-    status: 201,
-    description: 'Retorna todos os planetas',
-    type: PlanetDto,
+  @ApiOperation({
+    summary: '[!] [DEBUG] Listar todos os planetas',
+    description:
+      'Essa requisição é extremamente pesada e deve ser usada com cautela, de preferência, nunca em ambientes produtivos',
   })
+  @ApiOkResponse({ type: PlanetDto, isArray: true })
   findAll(): Promise<PlanetDto[]> {
     return this.planetService.findAll();
   }

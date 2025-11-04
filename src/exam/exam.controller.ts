@@ -1,26 +1,21 @@
 import { Controller, Get } from '@nestjs/common';
 import { ExamService } from './exam.service';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SyncExamResponse } from './dto/sync-success.dto';
-// import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { QuestionPlanentDto } from './dto/question-planet.dto';
 
 @Controller('exam')
 @ApiTags('Prova')
-// @ApiBearerAuth()
-// @UseGuards(JwtAuthGuard)
 export class ExamController {
   constructor(private readonly examService: ExamService) {}
 
   @Get()
   @ApiOperation({
     summary: 'Sincronizar provas do Firestore',
+    description:
+      'Essa chamada vai copiar a prova que está no Firestore e duplicá-la no MongoDB local da aplicação EduEdu',
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Status da operação',
     type: SyncExamResponse,
   })
@@ -30,11 +25,10 @@ export class ExamController {
 
   @Get('/questions')
   @ApiOperation({
-    summary: 'Obter questões da prova atual',
+    summary: 'Obter questões da prova',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
+  @ApiOkResponse({
+    type: QuestionPlanentDto,
   })
   async getExamQuestions() {
     return await this.examService.getExamQuestions();
