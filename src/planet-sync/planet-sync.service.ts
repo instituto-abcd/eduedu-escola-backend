@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Planet } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
 import { Model } from 'mongoose';
-import { FirestoreService } from './firestore.service';
+import { GatewayService } from './gateway.service';
 import { PlanetSync } from './schemas/sync-list.schema';
 import { StorageService } from './storage.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -27,7 +27,7 @@ export class PlanetSyncService {
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectQueue('planet-sync') private readonly planetSyncQueue: Queue,
-    private readonly firestoreService: FirestoreService,
+    private readonly gatewayService: GatewayService,
     private readonly storageService: StorageService,
     private readonly studentService: StudentService,
     private readonly examService: ExamService,
@@ -149,10 +149,12 @@ export class PlanetSyncService {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
-    
+
     await this.updateLastSync();
-    
-    const planetsFromFirestore = await this.firestoreService.getPlanets();
+
+    console.log('DEBUG1 #########');
+
+    const planetsFromFirestore = await this.gatewayService.getPlanets();
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
     const planetsInsertedOrUpdated = [];
@@ -202,10 +204,13 @@ export class PlanetSyncService {
 
   async getLastSync(): Promise<LastSyncResponseDto> {
     const lastSync = await this.lastSyncModel.findOneAndUpdate();
-    
+
     const syncedAt = lastSync?.syncedAt ?? null;
     const daysSinceLastSync = syncedAt
-      ? Math.floor((new Date().getTime() - new Date(syncedAt).getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor(
+          (new Date().getTime() - new Date(syncedAt).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
       : null;
     const showReminder = daysSinceLastSync === null || daysSinceLastSync >= 60;
 
@@ -244,7 +249,7 @@ export class PlanetSyncService {
 
     const planetsFromFirestore = await Promise.all(
       planetsToSync.map((planet) =>
-        this.firestoreService.getPlanet(planet.planetId),
+        this.gatewayService.getPlanet(planet.planetId),
       ),
     );
 

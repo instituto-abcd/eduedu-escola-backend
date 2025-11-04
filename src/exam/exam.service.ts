@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { FirestoreService } from '../planet-sync/firestore.service';
+import { GatewayService } from '../planet-sync/gateway.service';
 import { Exam, IExam, Question } from './schemas/exam.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { StorageService } from '../planet-sync/storage.service';
@@ -9,7 +9,7 @@ import { StorageService } from '../planet-sync/storage.service';
 export class ExamService {
   constructor(
     @InjectModel(Exam.name) private examModel: Model<Exam>,
-    private readonly firestoreService: FirestoreService,
+    private readonly gatewayService: GatewayService,
     private readonly storageService: StorageService,
   ) {}
 
@@ -20,7 +20,7 @@ export class ExamService {
 
   async syncExams() {
     try {
-      const _exams = await this.firestoreService.getExams();
+      const _exams = await this.gatewayService.getExams();
       const exams = await this.handleFileURLs(_exams);
 
       const mutation = await this.examModel.bulkWrite(
