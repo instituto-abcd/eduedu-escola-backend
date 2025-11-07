@@ -30,4 +30,13 @@ export const ApiGatewayService = {
     const response = await apiGatewayClient.get('/exams');
     return response?.data?.exams;
   },
+  async getAssets(): Promise<any> {
+    const response = await apiGatewayClient.get(
+      '/assets?installId=INSTALL_ID',
+      {
+        responseType: 'stream',
+      },
+    );
+    return response;
+  },
 };

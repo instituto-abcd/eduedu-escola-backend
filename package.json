@@ -66,6 +66,7 @@
     "puppeteer": "^21.1.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
+    "unzipper": "^0.12.3",
     "uuid": "^9.0.0",
     "winston": "^3.17.0",
     "xlsx": "^0.18.5"
@@ -86,6 +87,7 @@
     "@types/node": "18.15.11",
     "@types/nodemailer": "^6.4.8",
     "@types/supertest": "^2.0.11",
+    "@types/unzipper": "^0.10.11",
     "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
