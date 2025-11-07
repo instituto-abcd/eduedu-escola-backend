@@ -63,8 +63,15 @@ export class StorageService {
       return null;
     }
 
+    const fileIdArray = fileId.split('.');
+
     const fileServerUrl = process.env.FILE_SERVER_URL || '';
-    const url = `${fileServerUrl}/${fileId}.${fileExtension}`;
+
+    // Previne extensões de arquivo duplas, como .tar.gz ou mp3.mp3
+    const url =
+      fileIdArray.length > 1
+        ? `${fileServerUrl}/${fileIdArray[0]}.${fileExtension}`
+        : `${fileServerUrl}/${fileId}.${fileExtension}`;
     return url;
   }
 
