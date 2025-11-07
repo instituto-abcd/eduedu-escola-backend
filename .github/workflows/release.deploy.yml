@@ -1,47 +1,42 @@
----
 name: Publicação de Release
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag da release que será gerada'
+        description: "Tag da release que será gerada"
         required: true
 
+env:
+  PROJECT_ID: eduedu-plus-open-source-prd
+  REGION: southamerica-east1
+  GAR_LOCATION: southamerica-east1-docker.pkg.dev/eduedu-plus-open-source-prd/eduedu-plus-setup/eduedu-plus-backend
+
 jobs:
-  build-push:
-    name: Build and Push Docker Image
+  build-push-artifact:
     runs-on: ubuntu-latest
     environment: os-prd
-    env:
-      IMAGE_NAME: eduedu-plus-backend
-      PROJECT_ID: eduedu-plus-open-source-prd
-      REGISTRY_PREFIX: southamerica-east1-docker.pkg.dev
-      REGISTRY_SETUP_REPOSITORY: ${{ secrets.REGISTRY_SETUP_REPOSITORY }}
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.inputs.tag }}
-    
-    - uses: 'google-github-actions/auth@v1'
-      with:
-        credentials_json: '${{ secrets.GCP_CREDENTIAL }}'
+      - name: "Checkout"
+        uses: "actions/checkout@v3"
 
-    - uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ${{ env.PROJECT_ID }}
+      - id: "auth"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.SERVICE_ACCOUNT_KEY }}"
 
-    - name: Build Docker Image
-      run: |-
-        docker build -t $IMAGE_NAME:latest .
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
 
-    - name: Configure Docker Client
-      run: |-
-        gcloud auth configure-docker --quiet
-        gcloud auth configure-docker $REGISTRY_PREFIX --quiet
+      - name: "Use gcloud CLI"
+        run: "gcloud info"
 
-    - name: Push Docker Image to Setup
-      run: |-
-        docker tag $IMAGE_NAME:latest $REGISTRY_SETUP_REPOSITORY:${{ github.event.inputs.tag }}
-        docker push $REGISTRY_SETUP_REPOSITORY:${{ github.event.inputs.tag }}
+      - name: "Docker auth"
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}:${{ github.event.inputs.tag }}
+        working-directory: .
+
+      - name: Push image
+        run: docker push ${{ env.GAR_LOCATION }}:${{ github.event.inputs.tag }}
