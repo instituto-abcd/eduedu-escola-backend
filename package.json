@@ -53,7 +53,6 @@
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
     "file-type": "^18.5.0",
-    "firebase-admin": "^11.9.0",
     "fs-extra": "^11.1.1",
     "ftp": "^0.3.10",
     "got": "^11.8.2",
