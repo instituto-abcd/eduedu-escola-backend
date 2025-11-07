@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Planet } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
 import { Model } from 'mongoose';
-import { FirestoreService } from './firestore.service';
+import { GatewayService } from './gateway.service';
 import { PlanetSync } from './schemas/sync-list.schema';
 import { StorageService } from './storage.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -27,7 +27,7 @@ export class PlanetSyncService {
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectQueue('planet-sync') private readonly planetSyncQueue: Queue,
-    private readonly firestoreService: FirestoreService,
+    private readonly gatewayService: GatewayService,
     private readonly storageService: StorageService,
     private readonly studentService: StudentService,
     private readonly examService: ExamService,
@@ -149,10 +149,16 @@ export class PlanetSyncService {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
-    
+
     await this.updateLastSync();
-    
-    const planetsFromFirestore = await this.firestoreService.getPlanets();
+
+    const files = this.storageService.getFiles();
+
+    if (files.length === 0) {
+      await this.storageService.downloadFiles();
+    }
+
+    const planetsFromFirestore = await this.gatewayService.getPlanets();
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
     const planetsInsertedOrUpdated = [];
@@ -202,10 +208,13 @@ export class PlanetSyncService {
 
   async getLastSync(): Promise<LastSyncResponseDto> {
     const lastSync = await this.lastSyncModel.findOneAndUpdate();
-    
+
     const syncedAt = lastSync?.syncedAt ?? null;
     const daysSinceLastSync = syncedAt
-      ? Math.floor((new Date().getTime() - new Date(syncedAt).getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor(
+          (new Date().getTime() - new Date(syncedAt).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
       : null;
     const showReminder = daysSinceLastSync === null || daysSinceLastSync >= 60;
 
@@ -244,7 +253,7 @@ export class PlanetSyncService {
 
     const planetsFromFirestore = await Promise.all(
       planetsToSync.map((planet) =>
-        this.firestoreService.getPlanet(planet.planetId),
+        this.gatewayService.getPlanet(planet.planetId),
       ),
     );
 
@@ -285,9 +294,7 @@ export class PlanetSyncService {
       const planet = new Planet();
       planet.avatar_id = planetOrigin?.avatar?.replace(/^planets\//, '');
       planet.avatar_url = await this.storageService.recoverFileURL(
-        planet.avatar_id,
-        planetOrigin?.avatar_url,
-        'planets',
+        planet?.avatar_id,
       );
       planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
       planet.domain_code = planetOrigin.domain_code;
@@ -333,14 +340,10 @@ export class PlanetSyncService {
             sound_id: optionOrigin.sound_id,
             image_id: optionOrigin.image_id,
             sound_url: await this.storageService.recoverFileURL(
-              optionOrigin.sound_id,
-              optionOrigin.sound_url,
-              'assets',
+              optionOrigin?.sound_id,
             ),
             image_url: await this.storageService.recoverFileURL(
-              optionOrigin.image_id,
-              optionOrigin.image_url,
-              'assets',
+              optionOrigin?.image_id,
             ),
             description: optionOrigin.description,
             position:
@@ -362,9 +365,7 @@ export class PlanetSyncService {
           const title = {
             file_id: titleOrigin.file_id,
             file_url: await this.storageService.recoverFileURL(
-              titleOrigin.file_id,
-              titleOrigin.file_url,
-              'assets',
+              titleOrigin?.file_id,
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
@@ -461,13 +462,15 @@ export class PlanetSyncProcessor {
 
       const promises = [];
 
-      await this.storageService.initialize();
+      // await this.storageService.initialize();
+
+      const files = this.storageService.getFiles();
+
+      if (files.length === 0) {
+        await this.storageService.downloadFiles();
+      }
 
       promises.push(this.planetSyncService.handleSyncAll());
-
-      if (process.env.ASSETS === 'LOCAL') {
-        promises.push(this.storageService.downloadFiles());
-      }
 
       promises.push(this.examService.syncExams());
       promises.push(this.studentService.syncPlanetStudent());
