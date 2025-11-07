@@ -2,9 +2,6 @@ FROM node:18
 
 WORKDIR /usr/src/app
 
-ARG ARG_FIRESTORE_READ_SERVICEACCOUNT
-ENV FIRESTORE_READ_SERVICEACCOUNT=${ARG_FIRESTORE_READ_SERVICEACCOUNT}
-
 COPY package.json ./
 
 RUN npm i
@@ -13,6 +10,6 @@ COPY . .
 
 RUN npx prisma generate
 
-RUN FIRESTORE_READ_SERVICEACCOUNT=$FIRESTORE_READ_SERVICEACCOUNT npm run build
+RUN npm run build
 
 CMD [ "node", "--max-old-space-size=6144", "dist/src/main.js" ]
