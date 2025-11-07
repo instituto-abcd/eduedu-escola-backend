@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { FirestoreService } from '../planet-sync/firestore.service';
+import { GatewayService } from '../planet-sync/gateway.service';
 import { Exam, IExam, Question } from './schemas/exam.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { StorageService } from '../planet-sync/storage.service';
@@ -9,7 +9,7 @@ import { StorageService } from '../planet-sync/storage.service';
 export class ExamService {
   constructor(
     @InjectModel(Exam.name) private examModel: Model<Exam>,
-    private readonly firestoreService: FirestoreService,
+    private readonly gatewayService: GatewayService,
     private readonly storageService: StorageService,
   ) {}
 
@@ -20,7 +20,13 @@ export class ExamService {
 
   async syncExams() {
     try {
-      const _exams = await this.firestoreService.getExams();
+      const files = this.storageService.getFiles();
+
+      if (files.length === 0) {
+        await this.storageService.downloadFiles();
+      }
+
+      const _exams = await this.gatewayService.getExams();
       const exams = await this.handleFileURLs(_exams);
 
       const mutation = await this.examModel.bulkWrite(
@@ -45,20 +51,16 @@ export class ExamService {
   }
 
   private async handleFileURLs(exams: IExam[]): Promise<IExam[]> {
-    await this.storageService.initialize();
+    // await this.storageService.initialize();
 
     const promises = exams.map(async (exam) => {
       const newQuestions = exam.questions.map(async (question) => {
         const newOptions = question.options.map(async (option) => {
           option.image_url = await this.storageService.recoverFileURL(
-            option.image_name.toLocaleLowerCase(),
-            option.image_url,
-            'exam',
+            option?.image_name,
           );
           option.sound_url = await this.storageService.recoverFileURL(
-            option.sound_name.toLocaleLowerCase(),
-            option.sound_url,
-            'exam',
+            option?.sound_name,
           );
 
           return option;
@@ -68,9 +70,7 @@ export class ExamService {
 
         const newTitles = question.titles.map(async (title) => {
           title.file_url = await this.storageService.recoverFileURL(
-            title.file_name.toLocaleLowerCase(),
-            title.file_url,
-            'exam',
+            title?.file_name,
           );
 
           return title;
