@@ -156,13 +156,9 @@ export class PlanetSyncService {
 
     await this.updateLastSync();
 
-    const files = this.storageService.getFiles();
-
     const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
 
-    if (files.length === 0) {
-      await this.storageService.downloadFiles(accessKey);
-    }
+    await this.storageService.downloadFiles(accessKey);
 
     const planetsFromFirestore = await this.gatewayService.getPlanets(
       accessKey,
@@ -473,20 +469,9 @@ export class PlanetSyncProcessor {
 
       const promises = [];
 
-      // await this.storageService.initialize();
-
-      const files = this.storageService.getFiles();
-
-      const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
-
-      if (files.length === 0) {
-        await this.storageService.downloadFiles(accessKey);
-      }
-
       promises.push(this.planetSyncService.handleSyncAll());
 
       promises.push(this.examService.syncExams());
-      promises.push(this.studentService.syncPlanetStudent());
 
       const start = new Date();
 

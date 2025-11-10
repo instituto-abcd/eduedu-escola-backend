@@ -9,7 +9,8 @@ import * as path from 'path';
 import * as unzipper from 'unzipper';
 import * as mime from 'mime-types';
 import { ApiGatewayService } from './apiGateway.service';
-import { AccessKeyService } from 'src/access-key/accessKey.service';
+import { pipeline } from 'stream/promises';
+import { Transform } from 'stream';
 
 type StoredFile = { name: string; mimeType: string; extension: string };
 
@@ -142,28 +143,48 @@ export class StorageService {
 
     try {
       const assetsResponse = await ApiGatewayService.getAssets(accessKey);
-      const writer = fs.createWriteStream(outputFile);
 
-      await new Promise<void>((resolve, reject) => {
-        (assetsResponse.data as NodeJS.ReadableStream)
-          .pipe(writer)
-          .on('finish', resolve)
-          .on('error', (err) => {
-            console.error('Erro no download do zip:', err);
-            reject(err);
-          });
+      const totalLength = Number(assetsResponse.headers['content-length']);
+      if (!totalLength) {
+        console.warn('Tamanho total não informado no cabeçalho.');
+      } else {
+        console.log(
+          `Tamanho total do ZIP: ${(totalLength / 1024 / 1024).toFixed(2)} MB`,
+        );
+      }
+
+      let downloaded = 0;
+      const progress = new Transform({
+        transform(chunk, _encoding, callback) {
+          downloaded += chunk.length;
+          if (totalLength) {
+            const percent = ((downloaded / totalLength) * 100).toFixed(2);
+            process.stdout.write(`\r[DOWNLOAD] ${percent}%`);
+          } else {
+            process.stdout.write(
+              `\r[DOWNLOAD] ${Math.round(downloaded / 1024)} KB`,
+            );
+          }
+          callback(null, chunk);
+        },
       });
 
-      console.log('ZIP baixado com sucesso!');
+      await pipeline(
+        assetsResponse.data,
+        progress,
+        fs.createWriteStream(outputFile),
+      );
+
+      console.log('\nZIP baixado com sucesso!');
     } catch (err) {
       console.error('Falha ao baixar assets.zip:', err);
       throw err;
     }
   }
-
   async downloadFiles(accessKey: string) {
     console.log('Iniciando download dos artefatos');
 
+    await fs.emptyDir(this.assetsDir);
     await this.downloadedFileModel.deleteMany();
 
     await this.downloadZipAssets(accessKey);
