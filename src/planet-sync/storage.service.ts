@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as unzipper from 'unzipper';
 import * as mime from 'mime-types';
 import { ApiGatewayService } from './apiGateway.service';
+import { AccessKeyService } from 'src/access-key/accessKey.service';
 
 type StoredFile = { name: string; mimeType: string; extension: string };
 
@@ -59,7 +60,7 @@ export class StorageService {
 
     const fileExtension = await this.getFileExtensionByFileId(fileId);
     if (!fileExtension) {
-      console.log(`Extensão não encontrada para fileId=${fileId}`);
+      // console.log(`Extensão não encontrada para fileId=${fileId}`);
       return null;
     }
 
@@ -87,7 +88,7 @@ export class StorageService {
     );
 
     if (!file) {
-      console.log(`[!] Extensão não encontrada para fileId=${fileId}`);
+      // console.log(`[!] Extensão não encontrada para fileId=${fileId}`);
       return null;
     }
 
@@ -134,13 +135,13 @@ export class StorageService {
     return zipFiles.files.length;
   }
 
-  async downloadZipAssets(): Promise<void> {
+  async downloadZipAssets(accessKey: string): Promise<void> {
     console.log('Iniciando download do zip de assets...');
     const outputFile = path.join(this.assetsDir, 'assets.zip');
     await fs.ensureDir(this.assetsDir);
 
     try {
-      const assetsResponse = await ApiGatewayService.getAssets();
+      const assetsResponse = await ApiGatewayService.getAssets(accessKey);
       const writer = fs.createWriteStream(outputFile);
 
       await new Promise<void>((resolve, reject) => {
@@ -160,12 +161,12 @@ export class StorageService {
     }
   }
 
-  async downloadFiles() {
+  async downloadFiles(accessKey: string) {
     console.log('Iniciando download dos artefatos');
 
     await this.downloadedFileModel.deleteMany();
 
-    await this.downloadZipAssets();
+    await this.downloadZipAssets(accessKey);
     const filesLength = await this.extrairZip();
 
     await this.cacheManager.set('sync-total-files', filesLength, {

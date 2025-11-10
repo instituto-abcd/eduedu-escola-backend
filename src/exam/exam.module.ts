@@ -5,6 +5,8 @@ import { GatewayService } from '../planet-sync/gateway.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Exam, ExamSchema } from './schemas/exam.schema';
 import { PlanetSyncModule } from '../planet-sync/planet-sync.module';
+import { AccessKeyService } from 'src/access-key/accessKey.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
   imports: [
@@ -12,6 +14,6 @@ import { PlanetSyncModule } from '../planet-sync/planet-sync.module';
     PlanetSyncModule,
   ],
   controllers: [ExamController],
-  providers: [ExamService, GatewayService],
+  providers: [ExamService, GatewayService, AccessKeyService, PrismaService],
 })
 export class ExamModule {}

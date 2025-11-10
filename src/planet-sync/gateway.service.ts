@@ -5,26 +5,31 @@ import { ApiGatewayService } from './apiGateway.service';
 
 @Injectable()
 export class GatewayService {
-  async getPlanets(): Promise<Array<PlanetOrigin>> {
-    const docs: PlanetOrigin[] = await ApiGatewayService.getPlanets();
+  async getPlanets(accessKey: string): Promise<Array<PlanetOrigin>> {
+    const docs: PlanetOrigin[] = await ApiGatewayService.getPlanets(accessKey);
 
     console.log('Planets fetched from Firestore:', docs.length);
 
     return docs;
   }
 
-  async getTotalPlanetsCount(): Promise<number> {
-    const planetsCount: number = await ApiGatewayService.getTotalPlanetsCount();
+  async getTotalPlanetsCount(accessKey: string): Promise<number> {
+    const planetsCount: number = await ApiGatewayService.getTotalPlanetsCount(
+      accessKey,
+    );
     return planetsCount;
   }
 
-  async getPlanet(planetId: string): Promise<PlanetOrigin> {
-    const doc: PlanetOrigin = await ApiGatewayService.getPlanet(planetId);
+  async getPlanet(planetId: string, accessKey: string): Promise<PlanetOrigin> {
+    const doc: PlanetOrigin = await ApiGatewayService.getPlanet(
+      planetId,
+      accessKey,
+    );
     return doc;
   }
 
-  async getExams(): Promise<IExam[]> {
-    const exams: IExam[] = await ApiGatewayService.getExams();
+  async getExams(accessKey: string): Promise<IExam[]> {
+    const exams: IExam[] = await ApiGatewayService.getExams(accessKey);
     return exams;
   }
 }

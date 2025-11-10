@@ -21,4 +21,7 @@ export class UpdateSettingsDto {
 
   @ApiProperty({ example: true, required: false })
   sslIsActive?: boolean;
+
+  @ApiProperty({ example: 'HEEL-OWOR-LDDF-XXXX', required: false })
+  accessKey?: string;
 }
