@@ -70,6 +70,8 @@ export class StorageService {
     const fileServerUrl = process.env.FILE_SERVER_URL || '';
 
     // Previne extensões de arquivo duplas, como .tar.gz ou mp3.mp3
+
+    console.log({ fileId, fileExtension, fileIdArray });
     const url =
       fileIdArray.length > 1
         ? `${fileServerUrl}/${fileIdArray[0]}.${fileExtension}`
@@ -82,7 +84,11 @@ export class StorageService {
   ): Promise<string | null> {
     if (!fileId) return null;
 
-    const normalizedId = path.parse(fileId).name.trim().toLowerCase();
+    const normalizedId = path
+      .parse(fileId)
+      .name.trim()
+      .toLowerCase()
+      .replace(/^\./, '');
 
     const file = this.files.find(
       (f) => f.name.trim().toLowerCase() === normalizedId,
