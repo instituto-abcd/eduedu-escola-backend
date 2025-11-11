@@ -32,6 +32,7 @@ import { StudentAwardService } from '../student/studentAward.service';
 import { StudentPlanetExecutionService } from '../student/studentPlanetExecution.service';
 import { ExamService } from '../exam/exam.service';
 import { LastSync, LastSyncSchema } from './schemas/last-sync.schema';
+import { AccessKeyService } from 'src/access-key/accessKey.service';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { LastSync, LastSyncSchema } from './schemas/last-sync.schema';
     StudentPlanetExecutionService,
     PerformanceResultUtilsService,
     ExamService,
+    AccessKeyService,
   ],
   exports: [
     PlanetSyncModule,

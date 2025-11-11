@@ -4,6 +4,7 @@ import { GatewayService } from '../planet-sync/gateway.service';
 import { Exam, IExam, Question } from './schemas/exam.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { StorageService } from '../planet-sync/storage.service';
+import { AccessKeyService } from 'src/access-key/accessKey.service';
 
 @Injectable()
 export class ExamService {
@@ -11,6 +12,7 @@ export class ExamService {
     @InjectModel(Exam.name) private examModel: Model<Exam>,
     private readonly gatewayService: GatewayService,
     private readonly storageService: StorageService,
+    private readonly accessKeyService: AccessKeyService,
   ) {}
 
   async getExamQuestions(): Promise<Question[]> {
@@ -20,13 +22,9 @@ export class ExamService {
 
   async syncExams() {
     try {
-      const files = this.storageService.getFiles();
+      const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
 
-      if (files.length === 0) {
-        await this.storageService.downloadFiles();
-      }
-
-      const _exams = await this.gatewayService.getExams();
+      const _exams = await this.gatewayService.getExams(accessKey);
       const exams = await this.handleFileURLs(_exams);
 
       const mutation = await this.examModel.bulkWrite(
@@ -51,8 +49,6 @@ export class ExamService {
   }
 
   private async handleFileURLs(exams: IExam[]): Promise<IExam[]> {
-    // await this.storageService.initialize();
-
     const promises = exams.map(async (exam) => {
       const newQuestions = exam.questions.map(async (question) => {
         const newOptions = question.options.map(async (option) => {

@@ -8,33 +8,49 @@ const API_GATEWAY_URL =
 
 const apiGatewayClient = axios.create({
   baseURL: API_GATEWAY_URL,
-  headers: {
-    'x-assets-access-key': process.env.CLIENT_KEY || 'HEEL-OWOR-LDDF-XXXX',
-  },
 });
 
 export const ApiGatewayService = {
-  async getPlanets(): Promise<Array<PlanetOrigin>> {
-    const response = await apiGatewayClient.get('/planets/all');
+  async getPlanets(accessKey: string): Promise<Array<PlanetOrigin>> {
+    const response = await apiGatewayClient.get('/planets/all', {
+      headers: {
+        'x-assets-access-key': accessKey,
+      },
+    });
     return response?.data?.planets;
   },
-  async getTotalPlanetsCount(): Promise<number> {
-    const response = await apiGatewayClient.get('/planets/count');
+  async getTotalPlanetsCount(accessKey: string): Promise<number> {
+    const response = await apiGatewayClient.get('/planets/count', {
+      headers: {
+        'x-assets-access-key': accessKey,
+      },
+    });
     return response?.data?.count;
   },
-  async getPlanet(planetId: string): Promise<PlanetOrigin> {
-    const response = await apiGatewayClient.get(`/planets/${planetId}`);
+  async getPlanet(planetId: string, accessKey: string): Promise<PlanetOrigin> {
+    const response = await apiGatewayClient.get(`/planets/${planetId}`, {
+      headers: {
+        'x-assets-access-key': accessKey,
+      },
+    });
     return response?.data?.planet;
   },
-  async getExams(): Promise<IExam[]> {
-    const response = await apiGatewayClient.get('/exams');
+  async getExams(accessKey: string): Promise<IExam[]> {
+    const response = await apiGatewayClient.get('/exams', {
+      headers: {
+        'x-assets-access-key': accessKey,
+      },
+    });
     return response?.data?.exams;
   },
-  async getAssets(): Promise<any> {
+  async getAssets(accessKey: string): Promise<any> {
     const response = await apiGatewayClient.get(
       '/assets?installId=INSTALL_ID',
       {
         responseType: 'stream',
+        headers: {
+          'x-assets-access-key': accessKey,
+        },
       },
     );
     return response;

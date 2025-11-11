@@ -1,4 +1,9 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Post,
+} from '@nestjs/common';
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -27,11 +32,17 @@ export class PlanetSyncController {
       'Sincroniza todos os planetas mesmo que este já esteja sincronizado, ignorando a flag `synced: true`.',
   })
   @ApiOkResponse({ type: SyncPlanetResponse })
-  syncAll() {
-    if (process.env.ASSETS != 'LOCAL') {
-      return this.planetSyncService.handleSyncAll();
-    } else {
-      return this.planetSyncService.enqueueSyncAll();
+  async syncAll() {
+    try {
+      await this.planetSyncService.enqueueSyncAll();
+      return {
+        message: 'Sincronização de todos os planetas enfileirada.',
+        status: 202,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Falha ao enfileirar sincronização: ' + error.message,
+      );
     }
   }
 

@@ -16,6 +16,7 @@ import { StudentService } from '../student/student.service';
 import { ExamService } from '../exam/exam.service';
 import { LastSync } from './schemas/last-sync.schema';
 import { LastSyncResponseDto } from './dto/last-sync-response.dto';
+import { AccessKeyService } from 'src/access-key/accessKey.service';
 
 @Injectable()
 export class PlanetSyncService {
@@ -31,6 +32,7 @@ export class PlanetSyncService {
     private readonly storageService: StorageService,
     private readonly studentService: StudentService,
     private readonly examService: ExamService,
+    private readonly accessKeyService: AccessKeyService,
   ) {}
 
   async testStream() {
@@ -59,7 +61,9 @@ export class PlanetSyncService {
     // let assetFileId = '00zPfsrj2f6uUqeeTO1K';
     // let assetFileExtension = await this.storageService.handleFile('assets', assetFileId);
 
-    await this.storageService.downloadFiles();
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
+    await this.storageService.downloadFiles(accessKey);
 
     return true;
   }
@@ -152,13 +156,13 @@ export class PlanetSyncService {
 
     await this.updateLastSync();
 
-    const files = this.storageService.getFiles();
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
 
-    if (files.length === 0) {
-      await this.storageService.downloadFiles();
-    }
+    await this.storageService.downloadFiles(accessKey);
 
-    const planetsFromFirestore = await this.gatewayService.getPlanets();
+    const planetsFromFirestore = await this.gatewayService.getPlanets(
+      accessKey,
+    );
     this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
 
     const planetsInsertedOrUpdated = [];
@@ -251,9 +255,11 @@ export class PlanetSyncService {
     if (!planetsToSync.length)
       return { success: true, planetsSynced: 0, planetsUpdated: 0 };
 
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
     const planetsFromFirestore = await Promise.all(
       planetsToSync.map((planet) =>
-        this.gatewayService.getPlanet(planet.planetId),
+        this.gatewayService.getPlanet(planet.planetId, accessKey),
       ),
     );
 
@@ -435,8 +441,6 @@ export class PlanetSyncService {
 export class PlanetSyncProcessor {
   constructor(
     private readonly planetSyncService: PlanetSyncService,
-    private readonly studentService: StudentService,
-    private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
     private readonly examService: ExamService,
@@ -462,18 +466,9 @@ export class PlanetSyncProcessor {
 
       const promises = [];
 
-      // await this.storageService.initialize();
-
-      const files = this.storageService.getFiles();
-
-      if (files.length === 0) {
-        await this.storageService.downloadFiles();
-      }
-
       promises.push(this.planetSyncService.handleSyncAll());
 
       promises.push(this.examService.syncExams());
-      promises.push(this.studentService.syncPlanetStudent());
 
       const start = new Date();
 
@@ -494,6 +489,9 @@ export class PlanetSyncProcessor {
       console.log('Planet Sync - Duração Sincronização: ' + duration);
     } catch (error) {
       console.error('Erro durante a sincronização:', error);
+    } finally {
+      await this.cacheManager.set('sync-running', false, 0);
+      await this.cacheManager.set('sync-current-operation', '', 0);
     }
   }
 }

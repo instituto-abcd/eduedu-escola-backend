@@ -33,4 +33,7 @@ export class Settings {
 
   @ApiProperty({ example: '2023-06-07T14:23:40.740Z' })
   updatedAt: Date;
+
+  @ApiProperty({ example: 'HEEL-OWOR-LDDF-XXXX' })
+  accessKey?: string;
 }
