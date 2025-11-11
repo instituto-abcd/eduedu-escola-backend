@@ -441,12 +441,9 @@ export class PlanetSyncService {
 export class PlanetSyncProcessor {
   constructor(
     private readonly planetSyncService: PlanetSyncService,
-    private readonly studentService: StudentService,
-    private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
     private readonly examService: ExamService,
-    private readonly accessKeyService: AccessKeyService,
   ) {}
 
   @Process('planet-job')
@@ -492,6 +489,9 @@ export class PlanetSyncProcessor {
       console.log('Planet Sync - Duração Sincronização: ' + duration);
     } catch (error) {
       console.error('Erro durante a sincronização:', error);
+    } finally {
+      await this.cacheManager.set('sync-running', false, 0);
+      await this.cacheManager.set('sync-current-operation', '', 0);
     }
   }
 }

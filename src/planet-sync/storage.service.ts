@@ -96,16 +96,111 @@ export class StorageService {
     return file.extension;
   }
 
+  async downloadFiles(accessKey: string) {
+    try {
+      console.log('Iniciando download dos artefatos');
+
+      await this.cacheManager.set('sync-running', true, 0);
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Limpando pasta de assets...',
+        0,
+      );
+      await this.cacheManager.set('sync-synced-files', 0, 0);
+
+      console.log('[DOWNLOAD] - Limpando pasta de assets...');
+      await fs.emptyDir(this.assetsDir);
+      console.log('[DOWNLOAD] - Pasta limpa.');
+
+      await this.downloadedFileModel.deleteMany();
+
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Baixando ZIP de assets...',
+        0,
+      );
+      await this.downloadZipAssets(accessKey);
+
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Extraindo arquivos...',
+        0,
+      );
+      const filesLength = await this.extrairZip();
+
+      await this.cacheManager.set('sync-total-files', filesLength, 0);
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Baixando Metadados',
+        0,
+      );
+
+      console.log('Download dos artefatos concluído');
+      await this.cacheManager.set('sync-running', false, 0);
+    } catch (error) {
+      console.error('Erro no download dos artefatos:', error);
+      await this.cacheManager.set('sync-running', false, 0);
+      throw error;
+    }
+  }
+
+  async downloadZipAssets(accessKey: string): Promise<void> {
+    console.log('Iniciando download do zip de assets...');
+
+    const outputFile = path.join(this.assetsDir, 'assets.zip');
+    await fs.ensureDir(this.assetsDir);
+
+    try {
+      const assetsResponse = await ApiGatewayService.getAssets(accessKey);
+
+      const totalLength = Number(assetsResponse.headers['content-length']) || 0;
+
+      let downloaded = 0;
+      const progress = new Transform({
+        transform: async (chunk, _encoding, callback) => {
+          downloaded += chunk.length;
+          if (totalLength) {
+            const percent = ((downloaded / totalLength) * 100).toFixed(2);
+            await this.cacheManager.set(
+              'sync-current-operation',
+              `Baixando ZIP (${percent}%)`,
+              0,
+            );
+          }
+          callback(null, chunk);
+        },
+      });
+
+      await pipeline(
+        assetsResponse.data,
+        progress,
+        fs.createWriteStream(outputFile),
+      );
+
+      console.log('\nZIP baixado com sucesso!');
+    } catch (err) {
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Erro no download do ZIP',
+        0,
+      );
+      throw new Error('Erro ao baixar o arquivo ZIP de assets ');
+    }
+  }
+
   async extrairZip(): Promise<number> {
     const zipPath = path.join(this.assetsDir, 'assets.zip');
-
     if (!fs.existsSync(zipPath)) {
       throw new Error(`Arquivo ZIP não encontrado: ${zipPath}`);
     }
 
     console.log('Descompactando ZIP...');
-
     const zipFiles = await unzipper.Open.file(zipPath);
+    const total = zipFiles.files.length;
+    let processed = 0;
+
+    await this.cacheManager.set('sync-total-files', total, 0);
+    await this.cacheManager.set('sync-synced-files', 0, 0);
 
     for (const entry of zipFiles.files) {
       const fileName = entry.path;
@@ -124,82 +219,25 @@ export class StorageService {
           .stream()
           .pipe(fs.createWriteStream(outputPath))
           .on('finish', resolve)
-          .on('error', (err) => {
-            console.error('Erro ao escrever arquivo do zip:', err);
-            reject(err);
-          });
+          .on('error', reject);
       });
+
+      processed++;
+      if (processed % 10 === 0 || processed === total) {
+        const percent = ((processed / total) * 100).toFixed(2);
+        await this.cacheManager.set('sync-synced-files', processed, 0);
+        await this.cacheManager.set(
+          'sync-current-operation',
+          `Extraindo arquivos (${percent}%)`,
+          0,
+        );
+      }
     }
 
     this.reloadFiles();
 
-    return zipFiles.files.length;
-  }
-
-  async downloadZipAssets(accessKey: string): Promise<void> {
-    console.log('Iniciando download do zip de assets...');
-    const outputFile = path.join(this.assetsDir, 'assets.zip');
-    await fs.ensureDir(this.assetsDir);
-
-    try {
-      const assetsResponse = await ApiGatewayService.getAssets(accessKey);
-
-      const totalLength = Number(assetsResponse.headers['content-length']);
-      if (!totalLength) {
-        console.warn('Tamanho total não informado no cabeçalho.');
-      } else {
-        console.log(
-          `Tamanho total do ZIP: ${(totalLength / 1024 / 1024).toFixed(2)} MB`,
-        );
-      }
-
-      let downloaded = 0;
-      const progress = new Transform({
-        transform(chunk, _encoding, callback) {
-          downloaded += chunk.length;
-          if (totalLength) {
-            const percent = ((downloaded / totalLength) * 100).toFixed(2);
-            process.stdout.write(`\r[DOWNLOAD] ${percent}%`);
-          } else {
-            process.stdout.write(
-              `\r[DOWNLOAD] ${Math.round(downloaded / 1024)} KB`,
-            );
-          }
-          callback(null, chunk);
-        },
-      });
-
-      await pipeline(
-        assetsResponse.data,
-        progress,
-        fs.createWriteStream(outputFile),
-      );
-
-      console.log('\nZIP baixado com sucesso!');
-    } catch (err) {
-      console.error('Falha ao baixar assets.zip:', err);
-      throw err;
-    }
-  }
-  async downloadFiles(accessKey: string) {
-    console.log('Iniciando download dos artefatos');
-
-    await fs.emptyDir(this.assetsDir);
-    await this.downloadedFileModel.deleteMany();
-
-    await this.downloadZipAssets(accessKey);
-    const filesLength = await this.extrairZip();
-
-    await this.cacheManager.set('sync-total-files', filesLength, {
-      ttl: 0,
-    } as any);
-    await this.cacheManager.set(
-      'sync-current-operation',
-      'Baixando Metadados',
-      { ttl: 0 } as any,
-    );
-
-    console.log('Download dos artefatos concluído');
+    console.log('Descompactação concluída!');
+    return total;
   }
 
   async getLottie(lottieId: string) {
