@@ -448,31 +448,38 @@ export class PlanetSyncProcessor {
 
   @Process('planet-job')
   async processPlanetSync() {
+    const syncKey = 'sync-running';
+    await this.cacheManager.set(syncKey, true, 0);
+    await this.cacheManager.set(
+      'sync-current-operation',
+      'Preparando para baixar ZIP...',
+      0,
+    );
+    await this.cacheManager.set('sync-global-progress', 0, 0);
+
     try {
       console.log('Planet Sync - Iniciando sincronização');
-      this.cacheManager.set('sync-synced-planets', 0, 0);
-
-      const syncKey = 'sync-running';
-      const syncValue = true;
-      const syncDuration = 0;
-
-      await this.cacheManager.set(syncKey, syncValue, syncDuration);
-
-      await this.cacheManager.set(
-        'sync-current-operation',
-        'Baixando Artefatos',
-        0,
-      );
-
-      const promises = [];
-
-      promises.push(this.planetSyncService.handleSyncAll());
-
-      promises.push(this.examService.syncExams());
 
       const start = new Date();
 
-      await Promise.all(promises);
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Sincronizando Planetas',
+        0,
+      );
+
+      await this.planetSyncService.handleSyncAll();
+      await this.cacheManager.set('sync-global-progress', 85, 0); // 30 + 40 + 15 (parcial)
+
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Sincronizando Exames',
+        0,
+      );
+      await this.examService.syncExams();
+
+      await this.cacheManager.set('sync-global-progress', 100, 0);
+      await this.cacheManager.set('sync-current-operation', 'Concluído', 0);
 
       const end = new Date();
       const duration = this.dateFormatterUtilsService.convertMsToTime(
@@ -480,18 +487,18 @@ export class PlanetSyncProcessor {
       );
 
       await this.cacheManager.set('sync-current-end', end, 0);
-      await this.cacheManager.set(syncKey, !syncValue, syncDuration);
+      await this.cacheManager.set(syncKey, false, 0);
 
-      await this.cacheManager.set('sync-current-operation', '', 0);
-
-      console.log('Planet Sync - Sincronização concluída');
-      console.log('-------------------------------------');
-      console.log('Planet Sync - Duração Sincronização: ' + duration);
+      console.log(`✅ Planet Sync concluído em ${duration}`);
     } catch (error) {
       console.error('Erro durante a sincronização:', error);
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Erro na sincronização',
+        0,
+      );
     } finally {
-      await this.cacheManager.set('sync-running', false, 0);
-      await this.cacheManager.set('sync-current-operation', '', 0);
+      await this.cacheManager.set(syncKey, false, 0);
     }
   }
 }

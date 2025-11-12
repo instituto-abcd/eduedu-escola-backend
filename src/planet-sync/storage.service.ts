@@ -105,28 +105,26 @@ export class StorageService {
   async downloadFiles(accessKey: string) {
     try {
       console.log('Iniciando download dos artefatos');
-
       await this.cacheManager.set('sync-running', true, 0);
-      await this.cacheManager.set(
-        'sync-current-operation',
-        'Limpando pasta de assets...',
-        0,
-      );
       await this.cacheManager.set('sync-synced-files', 0, 0);
 
-      console.log('[DOWNLOAD] - Limpando pasta de assets...');
-      await fs.emptyDir(this.assetsDir);
-      console.log('[DOWNLOAD] - Pasta limpa.');
-
-      await this.downloadedFileModel.deleteMany();
-
       await this.cacheManager.set(
         'sync-current-operation',
-        'Baixando ZIP de assets...',
+        'Limpando pasta...',
+        0,
+      );
+      await fs.emptyDir(this.assetsDir);
+      await this.downloadedFileModel.deleteMany();
+
+      // 🔹 Etapa 1: Download ZIP
+      await this.cacheManager.set(
+        'sync-current-operation',
+        'Baixando ZIP...',
         0,
       );
       await this.downloadZipAssets(accessKey);
 
+      // 🔹 Etapa 2: Extração
       await this.cacheManager.set(
         'sync-current-operation',
         'Extraindo arquivos...',
@@ -135,13 +133,8 @@ export class StorageService {
       const filesLength = await this.extrairZip();
 
       await this.cacheManager.set('sync-total-files', filesLength, 0);
-      await this.cacheManager.set(
-        'sync-current-operation',
-        'Baixando Metadados',
-        0,
-      );
+      console.log('Download e extração concluídos.');
 
-      console.log('Download dos artefatos concluído');
       await this.cacheManager.set('sync-running', false, 0);
     } catch (error) {
       console.error('Erro no download dos artefatos:', error);
@@ -152,13 +145,11 @@ export class StorageService {
 
   async downloadZipAssets(accessKey: string): Promise<void> {
     console.log('Iniciando download do zip de assets...');
-
     const outputFile = path.join(this.assetsDir, 'assets.zip');
     await fs.ensureDir(this.assetsDir);
 
     try {
       const assetsResponse = await ApiGatewayService.getAssets(accessKey);
-
       const totalLength = Number(assetsResponse.headers['content-length']) || 0;
 
       let downloaded = 0;
@@ -167,9 +158,15 @@ export class StorageService {
           downloaded += chunk.length;
           if (totalLength) {
             const percent = ((downloaded / totalLength) * 100).toFixed(2);
+            const globalPercent = ((+percent / 100) * 30).toFixed(2); // 30% da etapa total
             await this.cacheManager.set(
               'sync-current-operation',
               `Baixando ZIP (${percent}%)`,
+              0,
+            );
+            await this.cacheManager.set(
+              'sync-global-progress',
+              +globalPercent,
               0,
             );
           }
@@ -182,15 +179,14 @@ export class StorageService {
         progress,
         fs.createWriteStream(outputFile),
       );
-
-      console.log('\nZIP baixado com sucesso!');
+      console.log('ZIP baixado com sucesso!');
     } catch (err) {
       await this.cacheManager.set(
         'sync-current-operation',
         'Erro no download do ZIP',
         0,
       );
-      throw new Error('Erro ao baixar o arquivo ZIP de assets ');
+      throw new Error('Erro ao baixar o arquivo ZIP de assets');
     }
   }
 
@@ -211,13 +207,12 @@ export class StorageService {
     for (const entry of zipFiles.files) {
       const fileName = entry.path;
       const outputPath = path.join(this.assetsDir, fileName);
-      const outputDir = path.dirname(outputPath);
-      await fs.ensureDir(outputDir);
+      await fs.ensureDir(path.dirname(outputPath));
 
       await this.downloadedFileModel.findOneAndUpdate(
         { fileName },
         { fileName },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
+        { upsert: true, new: true },
       );
 
       await new Promise<void>((resolve, reject) => {
@@ -229,19 +224,25 @@ export class StorageService {
       });
 
       processed++;
+
       if (processed % 10 === 0 || processed === total) {
-        const percent = ((processed / total) * 100).toFixed(2);
-        await this.cacheManager.set('sync-synced-files', processed, 0);
+        const percent = (processed / total) * 100;
+        const globalPercent = 30 + (percent / 100) * 40;
+
         await this.cacheManager.set(
           'sync-current-operation',
-          `Extraindo arquivos (${percent}%)`,
+          `Extraindo arquivos (${percent.toFixed(2)}%)`,
+          0,
+        );
+        await this.cacheManager.set(
+          'sync-global-progress',
+          +globalPercent.toFixed(2),
           0,
         );
       }
     }
 
     this.reloadFiles();
-
     console.log('Descompactação concluída!');
     return total;
   }
