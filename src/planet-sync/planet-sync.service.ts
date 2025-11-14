@@ -145,6 +145,10 @@ export class PlanetSyncService {
     const start = new Date();
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
+
+    // Remove todos os jobs 'planet-job' antes de adicionar um novo, para evitar duplicações
+    await this.planetSyncQueue.obliterate()
+
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
     await this.cacheManager.set('sync-running', true, 0);
   }
