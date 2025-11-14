@@ -146,8 +146,8 @@ export class PlanetSyncService {
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
 
-    // Remove todos os jobs 'planet-job' antes de adicionar um novo, para evitar duplicações
-    await this.planetSyncQueue.obliterate()
+    //FIXME: O melhor caminho seria verificar se há jobs ativos e então cancelar a adição de mais um
+    await this.planetSyncQueue.obliterate({force: true})
 
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
     await this.cacheManager.set('sync-running', true, 0);
