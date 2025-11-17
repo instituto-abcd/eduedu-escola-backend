@@ -71,7 +71,6 @@ export class StorageService {
 
     // Previne extensões de arquivo duplas, como .tar.gz ou mp3.mp3
 
-    console.log({ fileId, fileExtension, fileIdArray });
     const url =
       fileIdArray.length > 1
         ? `${fileServerUrl}/${fileIdArray[0]}.${fileExtension}`
