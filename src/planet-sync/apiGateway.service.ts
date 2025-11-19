@@ -11,6 +11,14 @@ const apiGatewayClient = axios.create({
 });
 
 export const ApiGatewayService = {
+async validateKey(accessKey: string): Promise<number> {
+    const response = await apiGatewayClient.get('/key/validate', {
+      headers: {
+        'x-assets-access-key': accessKey,
+      },
+    });
+    return response?.status;
+  },
   async getPlanets(accessKey: string): Promise<Array<PlanetOrigin>> {
     const response = await apiGatewayClient.get('/planets/all', {
       headers: {

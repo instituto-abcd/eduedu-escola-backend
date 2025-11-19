@@ -33,7 +33,7 @@ export class PlanetSyncService {
     private readonly studentService: StudentService,
     private readonly examService: ExamService,
     private readonly accessKeyService: AccessKeyService,
-  ) {}
+  ) { }
 
   async testStream() {
     // IMAGEM
@@ -140,6 +140,12 @@ export class PlanetSyncService {
   }
 
   async enqueueSyncAll() {
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
+    // Em caso de chave inválida, lança exceção, mas o status code não será enviado
+    // por conta de como a controller lida com erros (catch)
+    await this.gatewayService.validateKey(accessKey);
+
     const start = new Date();
     await this.cacheManager.del('sync-current-end');
     await this.cacheManager.set('sync-current-start', start, 0);
@@ -218,9 +224,9 @@ export class PlanetSyncService {
     const syncedAt = lastSync?.syncedAt ?? null;
     const daysSinceLastSync = syncedAt
       ? Math.floor(
-          (new Date().getTime() - new Date(syncedAt).getTime()) /
-            (1000 * 60 * 60 * 24),
-        )
+        (new Date().getTime() - new Date(syncedAt).getTime()) /
+        (1000 * 60 * 60 * 24),
+      )
       : null;
     const showReminder = daysSinceLastSync === null || daysSinceLastSync >= 60;
 
@@ -446,7 +452,7 @@ export class PlanetSyncProcessor {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
     private readonly examService: ExamService,
-  ) {}
+  ) { }
 
   @Process('planet-job')
   async processPlanetSync() {
