@@ -96,6 +96,12 @@ export class StudentService {
       throw new EduException('SCHOOL_CLASS_NOT_FOUND');
     }
 
+    const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+
+    if (!exam) {
+      throw new EduException('STUDENT_CREATE_NO_EXAM');
+    }
+
     const createdStudent = await this.prisma.student.create({
       data: {
         id: createStudentDto.id,
@@ -286,10 +292,10 @@ export class StudentService {
     const where: Prisma.StudentWhereInput = {
       name: filters?.name || filters?.initialLetter
         ? {
-            contains: filters?.name || undefined,
-            startsWith: filters?.initialLetter || undefined,
-            mode: 'insensitive',
-          }
+          contains: filters?.name || undefined,
+          startsWith: filters?.initialLetter || undefined,
+          mode: 'insensitive',
+        }
         : undefined,
       status: filters?.status ? { equals: filters.status } : undefined,
       schoolClasses: {
@@ -486,7 +492,7 @@ export class StudentService {
       if (updatedSchoolClassStudent.count == 0) {
         throw new EduException('STUDENT_NOT_FOUND');
       }
-      
+
       return { success: true };
     } catch (error) {
       if (error instanceof EduException) {
