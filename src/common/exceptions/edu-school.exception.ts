@@ -113,7 +113,7 @@ export const ErrorDetails = {
 		status: HttpStatus.CONFLICT,
 	},
 	STUDENT_CREATE_NO_EXAM: {
-		message: "Não há exame ativo para associar ao aluno.",
+		message: "Antes de cadastrar um novo aluno, é preciso sincronizar a prova.",
 		status: HttpStatus.BAD_REQUEST,
 	},
 	NEXT_SCHOOL_YEAR_ALREADY_EXISTS: {
