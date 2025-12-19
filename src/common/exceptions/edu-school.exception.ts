@@ -112,6 +112,10 @@ export const ErrorDetails = {
 		message: "O aluno já existe.",
 		status: HttpStatus.CONFLICT,
 	},
+	STUDENT_CREATE_NO_EXAM: {
+		message: "Antes de cadastrar um novo aluno, é preciso sincronizar a prova.",
+		status: HttpStatus.BAD_REQUEST,
+	},
 	NEXT_SCHOOL_YEAR_ALREADY_EXISTS: {
 		message: "O próximo ano letivo já existe.",
 		status: HttpStatus.CONFLICT,
