@@ -30,6 +30,7 @@ import {
   StudentExam,
   StudentExamSchema,
 } from './student/schemas/studentExam.schema';
+import { Exam, ExamSchema } from './exam/schemas/exam.schema';
 import { PlanetModule } from './planet/planet.module';
 import { SchoolClassResultService } from './school-class/school-class-result.service';
 import { ReportModule } from './report/report.module';
@@ -60,6 +61,7 @@ import { AccessKeyModule } from './access-key/accessKey.module';
     }),
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
+      { name: Exam.name, schema: ExamSchema },
     ]),
     BullModule.forRoot({
       redis: {
