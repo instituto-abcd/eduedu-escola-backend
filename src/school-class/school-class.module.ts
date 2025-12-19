@@ -10,6 +10,7 @@ import {
 	StudentExam,
 	StudentExamSchema,
 } from "../student/schemas/studentExam.schema";
+import { Exam, ExamSchema } from "../exam/schemas/exam.schema";
 import { StudentExamService } from "../student/studentExam.service";
 import { SchoolClassResultService } from "./school-class-result.service";
 import { StudentModule } from "../student/student.module";
@@ -19,6 +20,7 @@ import { UtilsModule } from "../common/utils/utils.module";
 	imports: [
 		MongooseModule.forFeature([
 			{ name: StudentExam.name, schema: StudentExamSchema },
+			{ name: Exam.name, schema: ExamSchema },
 		]),
 		StudentModule,
 		UtilsModule,

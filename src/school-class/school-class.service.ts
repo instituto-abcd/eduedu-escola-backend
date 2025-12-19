@@ -1,5 +1,8 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { PrismaService } from '../prisma/prisma.service';
+import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
 import { CreateSchoolClassDto } from './dto/create-school-class.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { CreateSchoolClassResponseDto } from './dto/response/create-school-class-response';
@@ -32,7 +35,9 @@ export class SchoolClassService {
     private readonly prismaService: PrismaService,
     private readonly dashboard: DashboardService,
     private readonly studentExamService: StudentExamService,
-  ) {}
+    @InjectModel(Exam.name)
+    private examModel: Model<ExamDocument>,
+  ) { }
 
   async create(
     createSchoolClassDto: CreateSchoolClassDto,
@@ -718,6 +723,12 @@ export class SchoolClassService {
 
     if (!schoolClass) {
       throw new EduException('SCHOOL_CLASS_NOT_FOUND');
+    }
+
+    const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+
+    if (!exam) {
+      throw new EduException('STUDENT_CREATE_NO_EXAM');
     }
 
     const createdStudents: Student[] = [];
