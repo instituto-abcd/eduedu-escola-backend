@@ -43,8 +43,8 @@ export class GatewayService {
     return doc;
   }
 
-  async getExams(accessKey: string): Promise<IExam[]> {
-    const exams: IExam[] = await ApiGatewayService.getExams(accessKey);
+  async getExams(): Promise<IExam[]> {
+    const exams: IExam[] = await ApiGatewayService.getExams();
     return exams;
   }
 }
