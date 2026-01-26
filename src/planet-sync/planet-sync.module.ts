@@ -30,7 +30,6 @@ import { StudentExamService } from '../student/studentExam.service';
 import { AwardsService } from '../awards/awards.service';
 import { StudentAwardService } from '../student/studentAward.service';
 import { StudentPlanetExecutionService } from '../student/studentPlanetExecution.service';
-import { ExamService } from '../exam/exam.service';
 import { LastSync, LastSyncSchema } from './schemas/last-sync.schema';
 import { AccessKeyService } from 'src/access-key/accessKey.service';
 
@@ -66,7 +65,6 @@ import { AccessKeyService } from 'src/access-key/accessKey.service';
     StudentResultService,
     StudentPlanetExecutionService,
     PerformanceResultUtilsService,
-    ExamService,
     AccessKeyService,
   ],
   exports: [

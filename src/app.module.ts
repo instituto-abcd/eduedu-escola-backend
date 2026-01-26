@@ -59,6 +59,10 @@ import { AccessKeyModule } from './access-key/accessKey.module';
       rootPath: join(__dirname, '..', 'assets-data'),
       serveRoot: '/assets-data',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'assets-data-exam'),
+      serveRoot: '/assets-data-exam',
+    }),
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
       { name: Exam.name, schema: ExamSchema },
