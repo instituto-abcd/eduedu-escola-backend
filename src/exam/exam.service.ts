@@ -16,7 +16,8 @@ import { DateFormatterUtilsService } from '../common/utils/date-formatter-utils.
 export class ExamService {
   constructor(
     @InjectModel(Exam.name) private examModel: Model<Exam>,
-    @InjectModel(LastExamSync.name) private lastExamSyncModel: Model<LastExamSync>,
+    @InjectModel(LastExamSync.name)
+    private lastExamSyncModel: Model<LastExamSync>,
     @InjectQueue('exam-sync') private readonly examSyncQueue: Queue,
     private readonly gatewayService: GatewayService,
     private readonly examStorageService: ExamStorageService,
@@ -29,6 +30,8 @@ export class ExamService {
   }
 
   async enqueueSyncExams() {
+    await this.gatewayService.getExams();
+
     const start = new Date();
     await this.cacheManager.del('exam-sync-current-end');
     await this.cacheManager.set('exam-sync-current-start', start, 0);
@@ -57,7 +60,9 @@ export class ExamService {
       ? 0
       : await this.cacheManager.get('exam-sync-total-files');
 
-    const syncedFilesCached = await this.cacheManager.get('exam-sync-synced-files');
+    const syncedFilesCached = await this.cacheManager.get(
+      'exam-sync-synced-files',
+    );
     const syncedFiles = syncedFilesCached !== undefined ? syncedFilesCached : 0;
 
     const syncCurrentStart = (await this.cacheManager.get(
@@ -80,8 +85,11 @@ export class ExamService {
       }
     }
 
-    const globalProgressCached = await this.cacheManager.get('exam-sync-global-progress');
-    const percent = globalProgressCached !== undefined ? +globalProgressCached : 0;
+    const globalProgressCached = await this.cacheManager.get(
+      'exam-sync-global-progress',
+    );
+    const percent =
+      globalProgressCached !== undefined ? +globalProgressCached : 0;
 
     return {
       totalFiles,
@@ -261,9 +269,20 @@ export class ExamSyncProcessor {
         0,
       );
 
-      await this.examService.fullSyncExams();
+      const result = await this.examService.fullSyncExams();
+
+      // Se fullSyncExams retornou null, significa que houve erro (ja registrado no cache)
+      if (result === null) {
+        console.error('Exam Sync falhou - erro ja registrado no cache');
+        return;
+      }
+
       await this.cacheManager.set('exam-sync-global-progress', 100, 0);
-      await this.cacheManager.set('exam-sync-current-operation', 'Concluido', 0);
+      await this.cacheManager.set(
+        'exam-sync-current-operation',
+        'Concluido',
+        0,
+      );
 
       const end = new Date();
       const duration = this.dateFormatterUtilsService.convertMsToTime(
