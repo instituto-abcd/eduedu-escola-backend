@@ -639,7 +639,7 @@ export class DashboardService {
 				(schoolClass, grade) => [...schoolClass, ...grade.dashboardSchoolClass],
 				[],
 			)
-			.find((item) => item.name == schoolClassStudent.schoolClass.name);
+			.find((item) => item.id == schoolClassStudent.schoolClassId);
 
 		for (const axisCode in axisResults) {
 			const axisInfo = axisResults[axisCode];
@@ -770,7 +770,7 @@ export class DashboardService {
 				(schoolClass, grade) => [...schoolClass, ...grade.dashboardSchoolClass],
 				[],
 			)
-			.find((item) => item.name == schoolClassStudent.schoolClass.name);
+			.find((item) => item.id == schoolClassStudent.schoolClassId);
 
 		for (const axisCode in axisResults) {
 			const axisInfo = axisResults[axisCode];
