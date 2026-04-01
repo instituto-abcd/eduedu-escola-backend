@@ -1019,7 +1019,7 @@ export class StudentService {
 
     let counter = 1;
     const nextAvaiableDate = new Date();
-    nextAvaiableDate.setHours(0, 0, 0, 0);
+    nextAvaiableDate.setUTCHours(0, 0, 0, 0);
 
     const plantTrackToUpdate = studentExam.planetTrack;
 
@@ -1197,7 +1197,7 @@ export class StudentService {
 
   private setPlanetTrackAvailability(planetTrack: Planet[]) {
     const nextAvaiableDate = new Date();
-    nextAvaiableDate.setHours(0, 0, 0, 0);
+    nextAvaiableDate.setUTCHours(0, 0, 0, 0);
 
     for (let index = 0; index < planetTrack.length; index += 2) {
       planetTrack[index].availableAt = new Date(nextAvaiableDate.toISOString());
