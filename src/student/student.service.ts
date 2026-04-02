@@ -2182,6 +2182,17 @@ export class StudentService {
       throw new EduException('KIDS_WITHOUT_PLANETS');
     }
 
+    await this.studentExamModel.findOneAndUpdate(
+      {
+        studentId,
+        'planetTrack.planetId': planetId,
+        lastExam: true,
+      },
+      {
+        $set: { 'planetTrack.$.answers': [] },
+      },
+    );
+
     const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
     question.options = this.applyPlanetQuestionShuffle(question);
     question.options = this.assignOptionIds(question.options);
