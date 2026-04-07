@@ -86,11 +86,11 @@ export class StudentExamService {
           canExecutePlanet,
         };
 
-        planetTrack.push(planetDto);
-
         if (hideLastPlanets && !canExecutePlanet) {
           break;
         }
+
+        planetTrack.push(planetDto);
       }
 
       return {
