@@ -1019,7 +1019,7 @@ export class StudentService {
 
     let counter = 1;
     const nextAvaiableDate = new Date();
-    nextAvaiableDate.setHours(0, 0, 0, 0);
+    nextAvaiableDate.setUTCHours(0, 0, 0, 0);
 
     const plantTrackToUpdate = studentExam.planetTrack;
 
@@ -1197,7 +1197,7 @@ export class StudentService {
 
   private setPlanetTrackAvailability(planetTrack: Planet[]) {
     const nextAvaiableDate = new Date();
-    nextAvaiableDate.setHours(0, 0, 0, 0);
+    nextAvaiableDate.setUTCHours(0, 0, 0, 0);
 
     for (let index = 0; index < planetTrack.length; index += 2) {
       planetTrack[index].availableAt = new Date(nextAvaiableDate.toISOString());
@@ -2181,6 +2181,17 @@ export class StudentService {
     if (planetTrack.length === 0) {
       throw new EduException('KIDS_WITHOUT_PLANETS');
     }
+
+    await this.studentExamModel.findOneAndUpdate(
+      {
+        studentId,
+        'planetTrack.planetId': planetId,
+        lastExam: true,
+      },
+      {
+        $set: { 'planetTrack.$.answers': [] },
+      },
+    );
 
     const question = await this.getQuestionByPlanetIdAndPosition(planetId, 0);
     question.options = this.applyPlanetQuestionShuffle(question);

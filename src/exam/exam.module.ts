@@ -1,19 +1,31 @@
 import { Module } from '@nestjs/common';
-import { ExamService } from './exam.service';
+import { ExamService, ExamSyncProcessor } from './exam.service';
 import { ExamController } from './exam.controller';
 import { GatewayService } from '../planet-sync/gateway.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Exam, ExamSchema } from './schemas/exam.schema';
+import { LastExamSync, LastExamSyncSchema } from './schemas/last-exam-sync.schema';
 import { PlanetSyncModule } from '../planet-sync/planet-sync.module';
-import { AccessKeyService } from 'src/access-key/accessKey.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { ExamStorageService } from './exam-storage.service';
+import { BullModule } from '@nestjs/bull';
+import { UtilsModule } from '../common/utils/utils.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Exam.name, schema: ExamSchema }]),
+    MongooseModule.forFeature([
+      { name: Exam.name, schema: ExamSchema },
+      { name: LastExamSync.name, schema: LastExamSyncSchema },
+    ]),
+    BullModule.registerQueueAsync({ name: 'exam-sync' }),
     PlanetSyncModule,
+    UtilsModule,
   ],
   controllers: [ExamController],
-  providers: [ExamService, GatewayService, AccessKeyService, PrismaService],
+  providers: [
+    ExamService,
+    ExamSyncProcessor,
+    ExamStorageService,
+    GatewayService,
+  ],
 })
 export class ExamModule {}

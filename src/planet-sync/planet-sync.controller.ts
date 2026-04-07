@@ -7,7 +7,7 @@ import {
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { LastSyncResponseDto } from './dto/last-sync-response.dto';
+import { LastPlanetSyncResponseDto } from './dto/last-planet-sync-response.dto';
 
 @ApiTags('Sincronizar Planetas')
 @Controller('planet-sync')
@@ -18,56 +18,57 @@ export class PlanetSyncController {
   @ApiOperation({
     summary: 'Sincronizar planetas da fila',
     description:
-      'Sincronizará planetas apenas com a propriedade `synced: false`. Após cada sincronização, um planeta é marcado com `synced: true`, para evitar de baixar o mesmo planeta múltiplas vezes.',
+      'Sincronizara planetas apenas com a propriedade `synced: false`. Apos cada sincronizacao, um planeta e marcado com `synced: true`, para evitar de baixar o mesmo planeta multiplas vezes.',
   })
   @ApiOkResponse({ type: SyncPlanetResponse })
   sync() {
     return this.planetSyncService.sync();
   }
 
-  @Post('sync-all')
+  @Post('sync')
   @ApiOperation({
-    summary: 'Sincronizar planetas do Firestore (ignora a fila)',
+    summary: 'Sincronizar planetas (assets e dados) - Enfileira em background',
     description:
-      'Sincroniza todos os planetas mesmo que este já esteja sincronizado, ignorando a flag `synced: true`.',
+      'Enfileira a sincronizacao de planetas para execucao em background. Baixa os assets de planeta do endpoint /asset/planet, extrai para assets-data/, e sincroniza dados dos planetas do Firestore para o MongoDB local.',
   })
   @ApiOkResponse({ type: SyncPlanetResponse })
   async syncAll() {
     try {
       await this.planetSyncService.enqueueSyncAll();
       return {
-        message: 'Sincronização de todos os planetas enfileirada.',
+        message: 'Sincronizacao de planetas enfileirada.',
         status: 202,
       };
     } catch (error) {
       throw new InternalServerErrorException(
-        'Falha ao enfileirar sincronização: ' + error.message,
+        'Falha ao enfileirar sincronizacao de planetas: ' + error.message,
       );
     }
   }
 
-  @Post('force-sync-all')
+  @Post('force-sync')
   @ApiOperation({
-    summary: 'Sincronizar tudo ignorando cache e flag `synced: true`',
+    summary: 'Sincronizar planetas de forma sincrona (ignora fila)',
+    description:
+      'Executa a sincronizacao de planetas de forma sincrona, sem usar a fila.',
   })
   @ApiOkResponse({ type: SyncPlanetResponse })
   forceSyncAll() {
     return this.planetSyncService.handleSyncAll();
   }
 
-  // TODO: add types
   @Get('sync-status')
   @ApiOperation({
-    summary: 'Status da operação de sincronização',
+    summary: 'Status da operacao de sincronizacao de planetas',
   })
   getPlanetSyncStatus() {
     return this.planetSyncService.getPlanetSyncStatus();
   }
 
   @Get('last-sync')
-  @ApiOperation({ summary: 'Última data de sincronização' })
-  @ApiOkResponse({ type: LastSyncResponseDto })
-  getLastSync(): Promise<LastSyncResponseDto> {
+  @ApiOperation({ summary: 'Ultima data de sincronizacao de planetas' })
+  @ApiOkResponse({ type: LastPlanetSyncResponseDto })
+  getLastSync(): Promise<LastPlanetSyncResponseDto> {
     return this.planetSyncService.getLastSync();
   }
 }

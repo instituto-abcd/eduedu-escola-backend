@@ -11,7 +11,7 @@ const apiGatewayClient = axios.create({
 });
 
 export const ApiGatewayService = {
-async validateKey(accessKey: string): Promise<number> {
+  async validateKey(accessKey: string): Promise<number> {
     const response = await apiGatewayClient.get('/key/validate', {
       headers: {
         'x-assets-access-key': accessKey,
@@ -20,7 +20,7 @@ async validateKey(accessKey: string): Promise<number> {
     return response?.status;
   },
   async getPlanets(accessKey: string): Promise<Array<PlanetOrigin>> {
-    const response = await apiGatewayClient.get('/planets/all', {
+    const response = await apiGatewayClient.get('/planet', {
       headers: {
         'x-assets-access-key': accessKey,
       },
@@ -28,7 +28,7 @@ async validateKey(accessKey: string): Promise<number> {
     return response?.data?.planets;
   },
   async getTotalPlanetsCount(accessKey: string): Promise<number> {
-    const response = await apiGatewayClient.get('/planets/count', {
+    const response = await apiGatewayClient.get('/planet/count', {
       headers: {
         'x-assets-access-key': accessKey,
       },
@@ -36,29 +36,34 @@ async validateKey(accessKey: string): Promise<number> {
     return response?.data?.count;
   },
   async getPlanet(planetId: string, accessKey: string): Promise<PlanetOrigin> {
-    const response = await apiGatewayClient.get(`/planets/${planetId}`, {
+    const response = await apiGatewayClient.get(`/planet/${planetId}`, {
       headers: {
         'x-assets-access-key': accessKey,
       },
     });
     return response?.data?.planet;
   },
-  async getExams(accessKey: string): Promise<IExam[]> {
-    const response = await apiGatewayClient.get('/exams', {
-      headers: {
-        'x-assets-access-key': accessKey,
-      },
-    });
+  async getExams(): Promise<IExam[]> {
+    const response = await apiGatewayClient.get('/exam');
     return response?.data?.exams;
   },
-  async getAssets(accessKey: string): Promise<any> {
+  async getPlanetAssets(accessKey: string): Promise<any> {
     const response = await apiGatewayClient.get(
-      '/assets?installId=INSTALL_ID',
+      '/asset/planet?installId=INSTALL_ID',
       {
         responseType: 'stream',
         headers: {
           'x-assets-access-key': accessKey,
         },
+      },
+    );
+    return response;
+  },
+  async getExamAssets(): Promise<any> {
+    const response = await apiGatewayClient.get(
+      '/asset/exam?installId=INSTALL_ID',
+      {
+        responseType: 'stream',
       },
     );
     return response;
