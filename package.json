@@ -24,7 +24,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "containers": "docker-compose up -d",
     "migrations": "npx prisma migrate deploy",
-    "migrations:reset": "npx prisma migrate reset --force",
+    "migrations:reset": "npx prisma migrate reset --force"
   },
   "dependencies": {
     "@nestjs/bull": "^10.0.1",
