@@ -16,6 +16,8 @@ import { StudentAwardService } from "./studentAward.service";
 import { StudentResultService } from "./studentResult.service";
 import { PerformanceResultUtilsService } from "../common/utils/performance-result-utils.service";
 import { StudentPlanetExecutionService } from "./studentPlanetExecution.service";
+import { PlanetSyncModule } from "../planet-sync/planet-sync.module";
+import { ExamStorageService } from "../exam/exam-storage.service";
 
 @Module({
 	imports: [
@@ -24,6 +26,7 @@ import { StudentPlanetExecutionService } from "./studentPlanetExecution.service"
 			{ name: Exam.name, schema: ExamSchema },
 			{ name: Planet.name, schema: PlanetSchema },
 		]),
+		PlanetSyncModule,
 	],
 	exports: [PerformanceResultUtilsService, StudentResultService],
 	controllers: [StudentController],
@@ -40,6 +43,7 @@ import { StudentPlanetExecutionService } from "./studentPlanetExecution.service"
 		StudentResultService,
 		StudentPlanetExecutionService,
 		PerformanceResultUtilsService,
+		ExamStorageService,
 	],
 })
 export class StudentModule {}
