@@ -249,7 +249,7 @@ export class ExamResumes {
         id: 35,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.CHILDREN,
-        text: `Antes de iniciar o processo de alfabetização, é fundamental que a criança desenvolva a <b>consciência fonológica<\/b>. A consciência fonológica é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> demonstrou bom desempenho em consciência fonológica, sendo capaz de identificar os sons das palavras.`,
+        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para sua faixa etária nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
         axis_code: 'ES',
       },
       {
@@ -263,7 +263,7 @@ export class ExamResumes {
         id: 37,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.CHILDREN,
-        text: `O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa. Durante a educação infantil, a criança deve ter oportunidades para desenvolver competências que vão servir de base para a alfabetização.  <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado de conhecimento do sistema de escrita alfabética para sua faixa etária, demonstrando bom conhecimento sobre as letras e o alfabeto.`,
+        text: ``,
         axis_code: 'EA',
       },
       {
@@ -277,7 +277,7 @@ export class ExamResumes {
         id: 39,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.CHILDREN,
-        text: `A <b>habilidade de leitura e compreensão de texto<\/b> é desenvolvida e aperfeiçoada ao longo da vida. Na etapa da educação infantil, é importante que a criança tenha bastante oportunidade de ouvir histórias, manusear livros e se socializar. Verificamos que <b>${this.ReplaceTerm}<\/b> manifestou nível de compreensão adequado para sua faixa etária, sendo capaz de compreender histórias e ilustrações. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o prazer pela leitura ao longo do tempo.`,
+        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados nesta etapa. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e ampliar sua compreensão.`,
         axis_code: 'LC',
       },
     ];
