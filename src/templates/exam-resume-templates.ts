@@ -1,285 +1,285 @@
-import { SchoolGradeEnum } from "@prisma/client";
+import { SchoolGradeEnum } from '@prisma/client';
 
 export class ExamResumes {
-    public ReplaceTerm: string = '%1$s';
+  public ReplaceTerm: string = '%1$s';
 
-    public Templates = [];
+  public Templates = [];
 
-    constructor() {
-        this.Templates = [
-            {
-                id : 1,
-                level : "1",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> precisa desenvolver a <b>consciência fonológica<\/b>. A <b>consciência fonológica<\/b> é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. Essa habilidade é fundamental para a alfabetização.`,
-                axis_code : "ES"
-            },
-            {
-                id : 2,
-                level : "2",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> está no processo de desenvolvimento da <b>consciência fonológica<\/b> e ainda precisa de mais prática nesta área. A <b>consciência fonológica<\/b> é fundamental para a alfabetização. Atividades de manipulação de sons e sílabas são importantes para avançar neste domínio.`,
-                axis_code : "ES"
-            },
-            {
-                id : 3,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> teve alto desempenho em <b>consciência fonológica<\/b>, sendo capaz de identificar e manipular os sons das palavras.`,
-                axis_code : "ES"
-            },
-            {
-                id : 4,
-                level : "1",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `Além disso, é importante que <b>${this.ReplaceTerm}<\/b> assimile o <b>princípio alfabético<\/b>, ou seja, o entendimento de que as letras representam os sons que formam as palavras. Para isso, é importante apropriar-se do alfabeto, identificar as letras e reconhecer seus sons.`,
-                axis_code : "EA"
-            },
-            {
-                id : 5,
-                level : "2",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, associando letras e sons para ler e escrever palavras simples. Nesta fase, é importante trabalhar a produção de sílabas usando consoantes e vogais.`,
-                axis_code : "EA"
-            },
-            {
-                id : 6,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `Além disso, em relação ao <b>sistema de escrita alfabética (SEA)<\/b>, <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado para seu ano escolar. O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa.`,
-                axis_code : "EA"
-            },
-            {
-                id : 7,
-                level : "1",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `<b>${this.ReplaceTerm}<\/b> ainda está no início do processo de <b>letramento e alfabetização<\/b>. Para um bom desempenho em leitura, é necessário compreender o sentido do texto. Ler e contar histórias para a criança e conversar com ela sobre acontecimentos diários são maneiras de ajudá-la a desenvolver essas habilidades.`,
-                axis_code : "LC"
-            },
-            {
-                id : 8,
-                level : "2",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `No que se refere a <b>leitura e compreensão de texto<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa trabalhar com livros que tenham textos simples e bastante ilustração. Um adulto pode ajudar conversando sobre a leitura e fazendo perguntas sobre o texto e as imagens. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo.`,
-                axis_code : "LC"
-            },
-            {
-                id : 9,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.FIRST_GRADE,
-                text : `<b>${this.ReplaceTerm}<\/b> manifestou nível adequado de <b>leitura e compreensão de texto<\/b>. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo. O adulto pode ajudar nesse processo apresentando-lhe diferentes tipos de texto, conversando sobre a leitura e demonstrando interesse pelo mundo literário.`,
-                axis_code : "LC"
-            },
-            {
-                id : 10,
-                level : "1",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> precisa desenvolver a <b>consciência fonológica<\/b>. A <b>consciência fonológica<\/b> é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. Essa habilidade é fundamental para a alfabetização.`,
-                axis_code : "ES"
-            },
-            {
-                id : 11,
-                level : "2",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> está no processo de desenvolvimento da <b>consciência fonológica<\/b> e ainda precisa de mais prática nesta área. A <b>consciência fonológica<\/b> é fundamental para a alfabetização. Atividades de manipulação de sons e sílabas são importantes para avançar neste domínio.`,
-                axis_code : "ES"
-            },
-            {
-                id : 12,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> teve alto desempenho em <b>consciência fonológica<\/b>, sendo capaz de identificar e manipular os sons das palavras.`,
-                axis_code : "ES"
-            },
-            {
-                id : 13,
-                level : "1",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `Além disso, é importante que <b>${this.ReplaceTerm}<\/b> assimile o <b>princípio alfabético<\/b>, ou seja, o entendimento de que as letras representam os sons que formam as palavras. Para isso, é importante apropriar-se do alfabeto, identificar as letras e reconhecer seus sons.`,
-                axis_code : "EA"
-            },
-            {
-                id : 14,
-                level : "2",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, associando letras e sons para ler e escrever palavras simples. Nesta fase, é importante trabalhar a produção de sílabas usando consoantes e vogais.`,
-                axis_code : "EA"
-            },
-            {
-                id : 15,
-                level : "3",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve continuar a se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, assimilando as regras e convenções de nossa língua.  Nesta fase, é importante que <b>${this.ReplaceTerm}<\/b> tenha muitas oportunidades de ler e escrever. O adulto pode ajudar ensinando essas regras de forma explícita e direta.`,
-                axis_code : "EA"
-            },
-            {
-                id : 16,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `Além disso, em relação ao <b>sistema de escrita alfabética (SEA)<\/b>, <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado para seu ano escolar. O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa.`,
-                axis_code : "EA"
-            },
-            {
-                id : 17,
-                level : "1",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `<b>${this.ReplaceTerm}<\/b> ainda está no início do processo de <b>letramento e alfabetização<\/b>. Para um bom desempenho em leitura, é necessário compreender o sentido do texto. Ler e contar histórias para a criança e conversar com ela sobre acontecimentos diários são maneiras de ajudá-la a desenvolver essas habilidades.`,
-                axis_code : "LC"
-            },
-            {
-                id : 18,
-                level : "2",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `No que se refere a <b>leitura e compreensão de texto<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa trabalhar com livros que tenham textos simples e bastante ilustração. Um adulto pode ajudar conversando sobre a leitura e fazendo perguntas sobre o texto e as imagens. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo.`,
-                axis_code : "LC"
-            },
-            {
-                id : 19,
-                level : "3",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `No que se refere a <b>leitura e compreensão<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa de mais experiência lendo e ouvindo diferentes tipos de texto. O adulto pode ajudar pedindo para <b>${this.ReplaceTerm}<\/b> identificar o tópico central e recontar detalhes importantes de textos lidos. Também é importante praticar a leitura em voz alta para garantir que <b>${this.ReplaceTerm}<\/b> leia de forma fluente, com velocidade e entonação adequadas. <b>${this.ReplaceTerm}<\/b> ainda está formando sua identidade enquanto leitor(a), portanto o hábito de ler e o prazer pela leitura devem ser incentivados.`,
-                axis_code : "LC"
-            },
-            {
-                id : 20,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.SECOND_GRADE,
-                text : `<b>${this.ReplaceTerm}<\/b> manifestou nível adequado de <b>leitura e compreensão de texto<\/b>. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo. O adulto pode ajudar nesse processo apresentando diferentes tipos de texto, conversando sobre a leitura e demonstrando interesse pelo mundo literário.`,
-                axis_code : "LC"
-            },
-            {
-                id : 21,
-                level : "1",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> precisa desenvolver a <b>consciência fonológica<\/b>. A <b>consciência fonológica<\/b> é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. Essa habilidade é fundamental para a alfabetização.`,
-                axis_code : "ES"
-            },
-            {
-                id : 22,
-                level : "2",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> está no processo de desenvolvimento da <b>consciência fonológica<\/b> e ainda precisa de mais prática nesta área. A <b>consciência fonológica<\/b> é fundamental para a alfabetização. Atividades de manipulação de sons e sílabas são importantes para avançar neste domínio.`,
-                axis_code : "ES"
-            },
-            {
-                id : 23,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `De acordo com a atividade realizada, percebemos que a <b>consciência fonológica<\/b> de <b>${this.ReplaceTerm}<\/b> está dentro do esperado. <b>${this.ReplaceTerm}<\/b> é capaz de identificar e manipular os sons das palavras.`,
-                axis_code : "ES"
-            },
-            {
-                id : 24,
-                level : "1",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `Além disso, é importante que <b>${this.ReplaceTerm}<\/b> assimile o <b>princípio alfabético<\/b>, ou seja, o entendimento de que as letras representam os sons que formam as palavras. Para tal, é importante apropriar-se do alfabeto, identificar as letras e reconhecer seus sons.`,
-                axis_code : "EA"
-            },
-            {
-                id : 25,
-                level : "2",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, associando letras e sons para ler e escrever palavras simples. Nesta fase, é importante trabalhar a produção de sílabas usando consoantes e vogais.`,
-                axis_code : "EA"
-            },
-            {
-                id : 26,
-                level : "3",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve continuar a se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, assimilando as regras e convenções de nossa língua.  Nesta fase, é importante que <b>${this.ReplaceTerm}<\/b> tenha muitas oportunidades de ler e escrever. O adulto pode ajudar ensinando essas regras de forma explícita e direta.`,
-                axis_code : "EA"
-            },
-            {
-                id : 27,
-                level : "4",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> precisa continuar a se apropriar de algumas <b>regras e convenções<\/b> da língua portuguesa. O adulto pode ajudar ensinando gramática e ortografia de forma explícita e direta. É fundamental que <b>${this.ReplaceTerm}<\/b> tenha oportunidades de praticar e assimilar cada novo conhecimento. Experiências de leitura e escrita vão facilitar esse aprendizado.`,
-                axis_code : "EA"
-            },
-            {
-                id : 28,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `Além disso, em relação ao <b>sistema de escrita alfabética (SEA)<\/b>, <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado para seu ano escolar. O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa.`,
-                axis_code : "EA"
-            },
-            {
-                id : 29,
-                level : "1",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `<b>${this.ReplaceTerm}<\/b> ainda está no início do processo de <b>letramento e alfabetização<\/b>. Para um bom desempenho em leitura, é necessário compreender o sentido do texto. Ler e contar histórias para <b>${this.ReplaceTerm}<\/b> e conversar sobre acontecimentos diários são maneiras de ajudar a desenvolver essas habilidades.`,
-                axis_code : "LC"
-            },
-            {
-                id : 30,
-                level : "2",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `No que se refere a <b>leitura e compreensão de texto<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa trabalhar com textos simples e ilustrados. Entretanto, é importante oferecer livros com tópicos que interessem <b>${this.ReplaceTerm}<\/b> e sejam apropriados para sua idade. Um adulto pode ajudar conversando sobre a leitura e fazendo perguntas sobre o texto e as imagens. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo.`,
-                axis_code : "LC"
-            },
-            {
-                id : 31,
-                level : "3",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `No que se refere a <b>leitura e compreensão<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa de mais experiência lendo e ouvindo diferentes tipos de texto. O adulto pode ajudar pedindo para <b>${this.ReplaceTerm}<\/b> identificar o tópico central e recontar detalhes importantes de textos lidos. Também é importante praticar a leitura em voz alta para garantir que <b>${this.ReplaceTerm}<\/b> leia de forma fluente, com velocidade e entonação adequadas. <b>${this.ReplaceTerm}<\/b> ainda está formando sua identidade enquanto leitor(a), portanto o hábito de ler e o prazer pela leitura devem ser incentivados.`,
-                axis_code : "LC"
-            },
-            {
-                id : 32,
-                level : "4",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `No que se refere a <b>leitura e compreensão<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa de mais prática lendo diferentes tipos de texto. O adulto pode ajudar pedindo para <b>${this.ReplaceTerm}<\/b> buscar informações explícitas e implícitas nos textos lidos. A prática da leitura em voz alta é importante para garantir que <b>${this.ReplaceTerm}<\/b> leia de forma fluente, com velocidade e entonação adequadas. Ao se deparar com uma palavra desconhecida, <b>${this.ReplaceTerm}<\/b> deve se basear no contexto para inferir seu significado ou recorrer a um dicionário. É fundamental que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura.`,
-                axis_code : "LC"
-            },
-            {
-                id : 33,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.THIRD_GRADE,
-                text : `<b>${this.ReplaceTerm}<\/b> manifestou nível adequado de <b>leitura e compreensão de texto<\/b>. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo. O adulto pode ajudar nesse processo apresentando diferentes tipos de texto, conversando sobre a leitura e demonstrando interesse pelo mundo literário.`,
-                axis_code : "LC"
-            },
-            {
-                id : 34,
-                level : "1",
-                school_year : SchoolGradeEnum.CHILDREN,
-                text : `Antes de iniciar o processo de alfabetização, é fundamental que a criança desenvolva a <b>consciência fonológica<\/b>. A consciência fonológica é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> ainda está desenvolvendo consciência fonológica e irá se beneficiar de atividades e jogos que estimulem esse conhecimento.`,
-                axis_code : "ES"
-            },
-            {
-                id : 35,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.CHILDREN,
-                text : `Antes de iniciar o processo de alfabetização, é fundamental que a criança desenvolva a <b>consciência fonológica<\/b>. A consciência fonológica é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> demonstrou bom desempenho em consciência fonológica, sendo capaz de identificar os sons das palavras.`,
-                axis_code : "ES"
-            },
-            {
-                id : 36,
-                level : "1",
-                school_year : SchoolGradeEnum.CHILDREN,
-                text : `O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa. Durante a educação infantil, a criança deve ter oportunidades para desenvolver competências que vão servir de base para a alfabetização. <b>${this.ReplaceTerm}<\/b> ainda está assimilando esse conhecimento e precisa de mais prática para se apropriar do alfabeto, identificar as letras e reconhecer seus sons.`,
-                axis_code : "EA"
-            },
-            {
-                id : 37,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.CHILDREN,
-                text : `O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa. Durante a educação infantil, a criança deve ter oportunidades para desenvolver competências que vão servir de base para a alfabetização.  <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado de conhecimento do sistema de escrita alfabética para sua faixa etária, demonstrando bom conhecimento sobre as letras e o alfabeto.`,
-                axis_code : "EA"
-            },
-            {
-                id : 38,
-                level : "1",
-                school_year : SchoolGradeEnum.CHILDREN,
-                text : `A <b>habilidade de leitura e compreensão de texto<\/b> é desenvolvida e aperfeiçoada ao longo da vida. Na etapa da educação infantil, é importante que a criança tenha bastante oportunidade de ouvir histórias, manusear livros e se socializar. Verificamos que <b>${this.ReplaceTerm}<\/b> está no início desse processo e ainda apresenta dificuldades para compreender narrativas e ilustrações. Ler e contar histórias para <b>${this.ReplaceTerm}<\/b> e conversar sobre acontecimentos diários são maneiras de ajudar a desenvolver essas habilidades.`,
-                axis_code : "LC"
-            },
-            {
-                id : 39,
-                level : "IDEAL",
-                school_year : SchoolGradeEnum.CHILDREN,
-                text : `A <b>habilidade de leitura e compreensão de texto<\/b> é desenvolvida e aperfeiçoada ao longo da vida. Na etapa da educação infantil, é importante que a criança tenha bastante oportunidade de ouvir histórias, manusear livros e se socializar. Verificamos que <b>${this.ReplaceTerm}<\/b> manifestou nível de compreensão adequado para sua faixa etária, sendo capaz de compreender histórias e ilustrações. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o prazer pela leitura ao longo do tempo.`,
-                axis_code : "LC"
-            }
-        ]
-    }
-} 
+  constructor() {
+    this.Templates = [
+      {
+        id: 1,
+        level: '1',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> precisa desenvolver a <b>consciência fonológica<\/b>. A <b>consciência fonológica<\/b> é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. Essa habilidade é fundamental para a alfabetização.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 2,
+        level: '2',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> está no processo de desenvolvimento da <b>consciência fonológica<\/b> e ainda precisa de mais prática nesta área. A <b>consciência fonológica<\/b> é fundamental para a alfabetização. Atividades de manipulação de sons e sílabas são importantes para avançar neste domínio.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 3,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 4,
+        level: '1',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `Além disso, é importante que <b>${this.ReplaceTerm}<\/b> assimile o <b>princípio alfabético<\/b>, ou seja, o entendimento de que as letras representam os sons que formam as palavras. Para isso, é importante apropriar-se do alfabeto, identificar as letras e reconhecer seus sons.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 5,
+        level: '2',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, associando letras e sons para ler e escrever palavras simples. Nesta fase, é importante trabalhar a produção de sílabas usando consoantes e vogais.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 6,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: ``,
+        axis_code: 'EA',
+      },
+      {
+        id: 7,
+        level: '1',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `<b>${this.ReplaceTerm}<\/b> ainda está no início do processo de <b>letramento e alfabetização<\/b>. Para um bom desempenho em leitura, é necessário compreender o sentido do texto. Ler e contar histórias para a criança e conversar com ela sobre acontecimentos diários são maneiras de ajudá-la a desenvolver essas habilidades.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 8,
+        level: '2',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `No que se refere a <b>leitura e compreensão de texto<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa trabalhar com livros que tenham textos simples e bastante ilustração. Um adulto pode ajudar conversando sobre a leitura e fazendo perguntas sobre o texto e as imagens. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 9,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.FIRST_GRADE,
+        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 10,
+        level: '1',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> precisa desenvolver a <b>consciência fonológica<\/b>. A <b>consciência fonológica<\/b> é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. Essa habilidade é fundamental para a alfabetização.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 11,
+        level: '2',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> está no processo de desenvolvimento da <b>consciência fonológica<\/b> e ainda precisa de mais prática nesta área. A <b>consciência fonológica<\/b> é fundamental para a alfabetização. Atividades de manipulação de sons e sílabas são importantes para avançar neste domínio.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 12,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 13,
+        level: '1',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `Além disso, é importante que <b>${this.ReplaceTerm}<\/b> assimile o <b>princípio alfabético<\/b>, ou seja, o entendimento de que as letras representam os sons que formam as palavras. Para isso, é importante apropriar-se do alfabeto, identificar as letras e reconhecer seus sons.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 14,
+        level: '2',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, associando letras e sons para ler e escrever palavras simples. Nesta fase, é importante trabalhar a produção de sílabas usando consoantes e vogais.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 15,
+        level: '3',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve continuar a se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, assimilando as regras e convenções de nossa língua.  Nesta fase, é importante que <b>${this.ReplaceTerm}<\/b> tenha muitas oportunidades de ler e escrever. O adulto pode ajudar ensinando essas regras de forma explícita e direta.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 16,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: ``,
+        axis_code: 'EA',
+      },
+      {
+        id: 17,
+        level: '1',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `<b>${this.ReplaceTerm}<\/b> ainda está no início do processo de <b>letramento e alfabetização<\/b>. Para um bom desempenho em leitura, é necessário compreender o sentido do texto. Ler e contar histórias para a criança e conversar com ela sobre acontecimentos diários são maneiras de ajudá-la a desenvolver essas habilidades.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 18,
+        level: '2',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `No que se refere a <b>leitura e compreensão de texto<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa trabalhar com livros que tenham textos simples e bastante ilustração. Um adulto pode ajudar conversando sobre a leitura e fazendo perguntas sobre o texto e as imagens. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 19,
+        level: '3',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `No que se refere a <b>leitura e compreensão<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa de mais experiência lendo e ouvindo diferentes tipos de texto. O adulto pode ajudar pedindo para <b>${this.ReplaceTerm}<\/b> identificar o tópico central e recontar detalhes importantes de textos lidos. Também é importante praticar a leitura em voz alta para garantir que <b>${this.ReplaceTerm}<\/b> leia de forma fluente, com velocidade e entonação adequadas. <b>${this.ReplaceTerm}<\/b> ainda está formando sua identidade enquanto leitor(a), portanto o hábito de ler e o prazer pela leitura devem ser incentivados.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 20,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.SECOND_GRADE,
+        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 21,
+        level: '1',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> precisa desenvolver a <b>consciência fonológica<\/b>. A <b>consciência fonológica<\/b> é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. Essa habilidade é fundamental para a alfabetização.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 22,
+        level: '2',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> está no processo de desenvolvimento da <b>consciência fonológica<\/b> e ainda precisa de mais prática nesta área. A <b>consciência fonológica<\/b> é fundamental para a alfabetização. Atividades de manipulação de sons e sílabas são importantes para avançar neste domínio.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 23,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 24,
+        level: '1',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `Além disso, é importante que <b>${this.ReplaceTerm}<\/b> assimile o <b>princípio alfabético<\/b>, ou seja, o entendimento de que as letras representam os sons que formam as palavras. Para tal, é importante apropriar-se do alfabeto, identificar as letras e reconhecer seus sons.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 25,
+        level: '2',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, associando letras e sons para ler e escrever palavras simples. Nesta fase, é importante trabalhar a produção de sílabas usando consoantes e vogais.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 26,
+        level: '3',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> deve continuar a se apropriar do <b>sistema de escrita<\/b> da língua portuguesa, assimilando as regras e convenções de nossa língua.  Nesta fase, é importante que <b>${this.ReplaceTerm}<\/b> tenha muitas oportunidades de ler e escrever. O adulto pode ajudar ensinando essas regras de forma explícita e direta.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 27,
+        level: '4',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `Além disso, constatamos que <b>${this.ReplaceTerm}<\/b> precisa continuar a se apropriar de algumas <b>regras e convenções<\/b> da língua portuguesa. O adulto pode ajudar ensinando gramática e ortografia de forma explícita e direta. É fundamental que <b>${this.ReplaceTerm}<\/b> tenha oportunidades de praticar e assimilar cada novo conhecimento. Experiências de leitura e escrita vão facilitar esse aprendizado.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 28,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: ``,
+        axis_code: 'EA',
+      },
+      {
+        id: 29,
+        level: '1',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `<b>${this.ReplaceTerm}<\/b> ainda está no início do processo de <b>letramento e alfabetização<\/b>. Para um bom desempenho em leitura, é necessário compreender o sentido do texto. Ler e contar histórias para <b>${this.ReplaceTerm}<\/b> e conversar sobre acontecimentos diários são maneiras de ajudar a desenvolver essas habilidades.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 30,
+        level: '2',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `No que se refere a <b>leitura e compreensão de texto<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa trabalhar com textos simples e ilustrados. Entretanto, é importante oferecer livros com tópicos que interessem <b>${this.ReplaceTerm}<\/b> e sejam apropriados para sua idade. Um adulto pode ajudar conversando sobre a leitura e fazendo perguntas sobre o texto e as imagens. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 31,
+        level: '3',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `No que se refere a <b>leitura e compreensão<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa de mais experiência lendo e ouvindo diferentes tipos de texto. O adulto pode ajudar pedindo para <b>${this.ReplaceTerm}<\/b> identificar o tópico central e recontar detalhes importantes de textos lidos. Também é importante praticar a leitura em voz alta para garantir que <b>${this.ReplaceTerm}<\/b> leia de forma fluente, com velocidade e entonação adequadas. <b>${this.ReplaceTerm}<\/b> ainda está formando sua identidade enquanto leitor(a), portanto o hábito de ler e o prazer pela leitura devem ser incentivados.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 32,
+        level: '4',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `No que se refere a <b>leitura e compreensão<\/b>, <b>${this.ReplaceTerm}<\/b> ainda precisa de mais prática lendo diferentes tipos de texto. O adulto pode ajudar pedindo para <b>${this.ReplaceTerm}<\/b> buscar informações explícitas e implícitas nos textos lidos. A prática da leitura em voz alta é importante para garantir que <b>${this.ReplaceTerm}<\/b> leia de forma fluente, com velocidade e entonação adequadas. Ao se deparar com uma palavra desconhecida, <b>${this.ReplaceTerm}<\/b> deve se basear no contexto para inferir seu significado ou recorrer a um dicionário. É fundamental que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 33,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.THIRD_GRADE,
+        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 34,
+        level: '1',
+        school_year: SchoolGradeEnum.CHILDREN,
+        text: `Antes de iniciar o processo de alfabetização, é fundamental que a criança desenvolva a <b>consciência fonológica<\/b>. A consciência fonológica é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> ainda está desenvolvendo consciência fonológica e irá se beneficiar de atividades e jogos que estimulem esse conhecimento.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 35,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.CHILDREN,
+        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para sua faixa etária nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        axis_code: 'ES',
+      },
+      {
+        id: 36,
+        level: '1',
+        school_year: SchoolGradeEnum.CHILDREN,
+        text: `O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa. Durante a educação infantil, a criança deve ter oportunidades para desenvolver competências que vão servir de base para a alfabetização. <b>${this.ReplaceTerm}<\/b> ainda está assimilando esse conhecimento e precisa de mais prática para se apropriar do alfabeto, identificar as letras e reconhecer seus sons.`,
+        axis_code: 'EA',
+      },
+      {
+        id: 37,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.CHILDREN,
+        text: ``,
+        axis_code: 'EA',
+      },
+      {
+        id: 38,
+        level: '1',
+        school_year: SchoolGradeEnum.CHILDREN,
+        text: `A <b>habilidade de leitura e compreensão de texto<\/b> é desenvolvida e aperfeiçoada ao longo da vida. Na etapa da educação infantil, é importante que a criança tenha bastante oportunidade de ouvir histórias, manusear livros e se socializar. Verificamos que <b>${this.ReplaceTerm}<\/b> está no início desse processo e ainda apresenta dificuldades para compreender narrativas e ilustrações. Ler e contar histórias para <b>${this.ReplaceTerm}<\/b> e conversar sobre acontecimentos diários são maneiras de ajudar a desenvolver essas habilidades.`,
+        axis_code: 'LC',
+      },
+      {
+        id: 39,
+        level: 'IDEAL',
+        school_year: SchoolGradeEnum.CHILDREN,
+        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados nesta etapa. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e ampliar sua compreensão.`,
+        axis_code: 'LC',
+      },
+    ];
+  }
+}
