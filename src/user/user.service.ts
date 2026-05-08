@@ -613,6 +613,38 @@ export class UserService {
 		});
 	}
 
+	async resetPasswordByDirector(
+		targetUserId: string,
+		newPassword: string,
+	): Promise<{ success: boolean }> {
+		const targetUser = await this.prismaService.user.findUnique({
+			where: { id: targetUserId },
+		});
+
+		if (!targetUser) {
+			throw new EduException("USER_NOT_FOUND");
+		}
+
+		if (targetUser.profile !== Profile.TEACHER) {
+			throw new EduException("INVALID_TARGET_PROFILE");
+		}
+
+		const [isPasswordStrong, message] =
+			this.validationUtilsService.isPasswordStrong(newPassword);
+		if (!isPasswordStrong) {
+			throw new EduException("WEAK_PASSWORD", message);
+		}
+
+		const hashedPassword = await this.bcryptService.hashPassword(newPassword);
+
+		await this.prismaService.user.update({
+			where: { id: targetUserId },
+			data: { password: hashedPassword, updatedAt: new Date() },
+		});
+
+		return { success: true };
+	}
+
 	async getFirstUserIdBySchoolClassId(schoolClassId: string): Promise<string> {
 		const user = await this.prismaService.userSchoolClass.findFirst({
 			where: {
