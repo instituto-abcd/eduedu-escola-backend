@@ -77,6 +77,11 @@ export const ErrorDetails = {
 		status: HttpStatus.BAD_REQUEST,
 	},
 
+	INVALID_TARGET_PROFILE: {
+		message: "Apenas professores podem ter a senha redefinida por um diretor.",
+		status: HttpStatus.BAD_REQUEST,
+	},
+
 	INVALID_PASSWORD: {
 		message: "Senha inválida.",
 		status: HttpStatus.BAD_REQUEST,
