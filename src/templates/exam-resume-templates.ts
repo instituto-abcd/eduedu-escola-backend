@@ -5,6 +5,19 @@ export class ExamResumes {
 
   public Templates = [];
 
+  public AllAxesIdealResume: Record<string, Record<string, string>> = {
+    [SchoolGradeEnum.CHILDREN]: {
+      ES: `De acordo com a prova realizada, <b>${'%1$s'}<\/b> apresentou desempenho dentro do esperado para sua faixa etária nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+      EA: ``,
+      LC: `Apesar de ter alcançado o nível desejado, é importante que <b>${'%1$s'}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${'%1$s'}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados nesta etapa. Por meio dessas atividades, <b>${'%1$s'}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma e explorar uma variedade de gêneros textuais, ampliando sua compreensão.`,
+    },
+    default: {
+      ES: `De acordo com a prova realizada, <b>${'%1$s'}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+      EA: ``,
+      LC: `Apesar de ter alcançado o nível desejado, é importante que <b>${'%1$s'}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${'%1$s'}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${'%1$s'}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+    },
+  };
+
   constructor() {
     this.Templates = [
       {
@@ -25,7 +38,7 @@ export class ExamResumes {
         id: 3,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.FIRST_GRADE,
-        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> teve alto desempenho em <b>consciência fonológica<\/b>, sendo capaz de identificar e manipular os sons das palavras.`,
         axis_code: 'ES',
       },
       {
@@ -46,7 +59,7 @@ export class ExamResumes {
         id: 6,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.FIRST_GRADE,
-        text: ``,
+        text: `Além disso, em relação ao <b>sistema de escrita alfabética (SEA)<\/b>, <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado para seu ano escolar. O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa.`,
         axis_code: 'EA',
       },
       {
@@ -67,7 +80,7 @@ export class ExamResumes {
         id: 9,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.FIRST_GRADE,
-        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+        text: `<b>${this.ReplaceTerm}<\/b> manifestou nível adequado de <b>leitura e compreensão de texto<\/b>. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo. O adulto pode ajudar nesse processo apresentando-lhe diferentes tipos de texto, conversando sobre a leitura e demonstrando interesse pelo mundo literário.`,
         axis_code: 'LC',
       },
       {
@@ -88,7 +101,7 @@ export class ExamResumes {
         id: 12,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.SECOND_GRADE,
-        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        text: `De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> teve alto desempenho em <b>consciência fonológica<\/b>, sendo capaz de identificar e manipular os sons das palavras.`,
         axis_code: 'ES',
       },
       {
@@ -116,7 +129,7 @@ export class ExamResumes {
         id: 16,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.SECOND_GRADE,
-        text: ``,
+        text: `Além disso, em relação ao <b>sistema de escrita alfabética (SEA)<\/b>, <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado para seu ano escolar. O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa.`,
         axis_code: 'EA',
       },
       {
@@ -144,7 +157,7 @@ export class ExamResumes {
         id: 20,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.SECOND_GRADE,
-        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+        text: `<b>${this.ReplaceTerm}<\/b> manifestou nível adequado de <b>leitura e compreensão de texto<\/b>. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo. O adulto pode ajudar nesse processo apresentando diferentes tipos de texto, conversando sobre a leitura e demonstrando interesse pelo mundo literário.`,
         axis_code: 'LC',
       },
       {
@@ -165,7 +178,7 @@ export class ExamResumes {
         id: 23,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.THIRD_GRADE,
-        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para o seu ano escolar nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        text: `De acordo com a atividade realizada, percebemos que a <b>consciência fonológica<\/b> de <b>${this.ReplaceTerm}<\/b> está dentro do esperado. <b>${this.ReplaceTerm}<\/b> é capaz de identificar e manipular os sons das palavras.`,
         axis_code: 'ES',
       },
       {
@@ -200,7 +213,7 @@ export class ExamResumes {
         id: 28,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.THIRD_GRADE,
-        text: ``,
+        text: `Além disso, em relação ao <b>sistema de escrita alfabética (SEA)<\/b>, <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado para seu ano escolar. O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa.`,
         axis_code: 'EA',
       },
       {
@@ -235,7 +248,7 @@ export class ExamResumes {
         id: 33,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.THIRD_GRADE,
-        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados no seu ano escolar. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e praticar as regras e convenções da língua portuguesa, ampliando sua compreensão e domínio.`,
+        text: `<b>${this.ReplaceTerm}<\/b> manifestou nível adequado de <b>leitura e compreensão de texto<\/b>. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o hábito de ler e o prazer pela leitura ao longo do tempo. O adulto pode ajudar nesse processo apresentando diferentes tipos de texto, conversando sobre a leitura e demonstrando interesse pelo mundo literário.`,
         axis_code: 'LC',
       },
       {
@@ -249,7 +262,7 @@ export class ExamResumes {
         id: 35,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.CHILDREN,
-        text: `De acordo com a prova realizada, <b>${this.ReplaceTerm}<\/b> apresentou desempenho dentro do esperado para sua faixa etária nos três eixos avaliados no EduEdu: <b>consciência fonológica<\/b>, <b>sistema de escrita alfabética<\/b> e <b>leitura e compreensão de texto<\/b>.`,
+        text: `Antes de iniciar o processo de alfabetização, é fundamental que a criança desenvolva a <b>consciência fonológica<\/b>. A consciência fonológica é a capacidade de identificar os sons de palavras, percebendo rimas e sílabas. De acordo com a atividade realizada, percebemos que <b>${this.ReplaceTerm}<\/b> demonstrou bom desempenho em consciência fonológica, sendo capaz de identificar os sons das palavras.`,
         axis_code: 'ES',
       },
       {
@@ -263,7 +276,7 @@ export class ExamResumes {
         id: 37,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.CHILDREN,
-        text: ``,
+        text: `O <b>sistema de escrita alfabética<\/b> refere-se ao domínio das regras e convenções da língua portuguesa. Durante a educação infantil, a criança deve ter oportunidades para desenvolver competências que vão servir de base para a alfabetização.  <b>${this.ReplaceTerm}<\/b> alcançou o nível desejado de conhecimento do sistema de escrita alfabética para sua faixa etária, demonstrando bom conhecimento sobre as letras e o alfabeto.`,
         axis_code: 'EA',
       },
       {
@@ -277,7 +290,7 @@ export class ExamResumes {
         id: 39,
         level: 'IDEAL',
         school_year: SchoolGradeEnum.CHILDREN,
-        text: `Apesar de ter alcançado o nível desejado, é importante que <b>${this.ReplaceTerm}<\/b> continue praticando e desenvolvendo seus conhecimentos e habilidades. Por isso, mesmo que não precise de reforço, o EduEdu disponibilizou para <b>${this.ReplaceTerm}<\/b> uma trilha de atividades que abrange os principais conteúdos que devem ser aprofundados nesta etapa. Por meio dessas atividades, <b>${this.ReplaceTerm}<\/b> poderá continuar desenvolvendo o hábito de leitura e o prazer pela mesma, explorar uma variedade de gêneros textuais e ampliar sua compreensão.`,
+        text: `A <b>habilidade de leitura e compreensão de texto<\/b> é desenvolvida e aperfeiçoada ao longo da vida. Na etapa da educação infantil, é importante que a criança tenha bastante oportunidade de ouvir histórias, manusear livros e se socializar. Verificamos que <b>${this.ReplaceTerm}<\/b> manifestou nível de compreensão adequado para sua faixa etária, sendo capaz de compreender histórias e ilustrações. É muito importante que <b>${this.ReplaceTerm}<\/b> continue desenvolvendo o prazer pela leitura ao longo do tempo.`,
         axis_code: 'LC',
       },
     ];

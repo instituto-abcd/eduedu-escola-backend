@@ -821,28 +821,42 @@ export class StudentService {
     const schoolGradeYear = await this.getSchoolGradeByStudentId(studentId);
 
     const axisCodes = ['ES', 'EA', 'LC'];
+    const studentExamResults = [];
     for (const axis_code of axisCodes) {
-      const studentExamResult = {
+      studentExamResults.push({
         percentage: await this.calculatePercentage(studentId, axis_code),
         level: await this.findStudentLevel(studentId, axis_code),
         axisCode: axis_code,
         studentId: studentId,
         resume: '',
         examDate: studentExam.examDate,
-      };
-      studentExamResult.resume = this.getStudentAxisResume(
-        studentExamResult.level,
-        axis_code,
-        schoolGradeYear,
-        student.name,
-      );
+      });
+    }
+
+    const allAxesIdeal = studentExamResults.every(
+      (result) => result.level === 'IDEAL',
+    );
+
+    for (const studentExamResult of studentExamResults) {
+      studentExamResult.resume = allAxesIdeal
+        ? this.getAllAxesIdealResume(
+            studentExamResult.axisCode,
+            schoolGradeYear,
+            student.name,
+          )
+        : this.getStudentAxisResume(
+            studentExamResult.level,
+            studentExamResult.axisCode,
+            schoolGradeYear,
+            student.name,
+          );
       await this.saveStudentExamResult(studentExamResult);
 
       if (studentExamResult.percentage < 100) {
         planets = [
           ...planets,
           ...(await this.getPlanetsByAxisAndLevel(
-            axis_code,
+            studentExamResult.axisCode,
             studentExamResult.level,
           )),
         ];
@@ -1379,6 +1393,19 @@ export class StudentService {
     );
 
     return resume.text.replaceAll(examResumes.ReplaceTerm, studentName);
+  }
+
+  private getAllAxesIdealResume(
+    axis_code: string,
+    school_year: SchoolGradeEnum,
+    studentName: string,
+  ) {
+    const examResumes = new ExamResumes();
+    const variant =
+      examResumes.AllAxesIdealResume[school_year] ??
+      examResumes.AllAxesIdealResume.default;
+    const text = variant[axis_code] ?? '';
+    return text.split(examResumes.ReplaceTerm).join(studentName);
   }
 
   // Persistir registro student_examResult
