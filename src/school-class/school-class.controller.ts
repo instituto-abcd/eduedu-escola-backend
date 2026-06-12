@@ -83,10 +83,15 @@ export class SchoolClassController {
   @ApiOperation({ summary: 'Criar uma nova turma' })
   @ApiCreatedResponse({ type: SchoolClassResponseDto })
   async create(
+    @Req() req,
     @Body() createSchoolClassDto: CreateSchoolClassDto,
     @SchoolId() schoolId: string,
   ): Promise<CreateSchoolClassResponseDto> {
-    return await this.schoolClassService.create(createSchoolClassDto, schoolId);
+    return await this.schoolClassService.create(
+      createSchoolClassDto,
+      schoolId,
+      req.user.profile,
+    );
   }
 
   @Get('all')
