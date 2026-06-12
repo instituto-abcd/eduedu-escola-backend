@@ -8,6 +8,7 @@ import * as mime from 'mime-types';
 import { ApiGatewayService } from '../planet-sync/apiGateway.service';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
+import { RequestContext } from '../common/request-context';
 
 type StoredFile = { name: string; mimeType: string; extension: string };
 
@@ -59,7 +60,13 @@ export class ExamStorageService {
 
     const fileIdArray = fileId.split('.');
 
-    const fileServerUrl = process.env.FILE_SERVER_URL || '';
+    // Em contexto HTTP a URL é montada a partir do host da própria requisição
+    // (ver storage.service.ts); FILE_SERVER_URL é só o fallback fora de
+    // requisições (ex.: jobs do Bull).
+    const requestBaseUrl = RequestContext.baseUrl();
+    const fileServerUrl = requestBaseUrl
+      ? `${requestBaseUrl}/assets-data`
+      : process.env.FILE_SERVER_URL || '';
     // Replace /assets-data with /assets-data-exam for exam assets
     const examFileServerUrl = fileServerUrl.replace(
       '/assets-data',
