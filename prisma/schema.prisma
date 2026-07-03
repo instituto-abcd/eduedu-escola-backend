@@ -219,6 +219,7 @@ model Settings {
   school                 School   @relation(fields: [schoolId], references: [id])
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  accessKey              String
 }
 
 // Model for Dashboard

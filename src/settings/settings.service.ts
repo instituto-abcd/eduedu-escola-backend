@@ -6,10 +6,10 @@ import { UpdateSchoolNameDto } from './dto/update-school-name';
 import { BcryptService } from '../common/services/bcrypt.service';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { StatusResponseDto } from './dto/status-response.dto';
-import { CreateUserRequestDto } from 'src/user/dto/request/create-user-request.dto';
-import { UserService } from 'src/user/user.service';
-import { AuthService } from 'src/auth/auth.service';
-import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
+import { CreateUserRequestDto } from '../user/dto/request/create-user-request.dto';
+import { UserService } from '../user/user.service';
+import { AuthService } from '../auth/auth.service';
+import { AuthResponseDto } from '../auth/dto/response/auth-response.dto';
 import { ValidationUtilsService } from '../common/utils/validation-utils.service';
 
 @Injectable()
@@ -54,6 +54,7 @@ export class SettingsService {
       schoolId: settings.schoolId,
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
+      accessKey: settings.accessKey,
     };
   }
 
@@ -64,6 +65,7 @@ export class SettingsService {
     if (!schoolId) {
       throw new EduException('MISSING_REQUIRED_FIELDS');
     }
+
     const settings = await this.getSettingsBySchoolId(schoolId);
 
     const updateData: any = {};
@@ -103,6 +105,10 @@ export class SettingsService {
       updateData.school = { update: { name: updateSettingsDto.schoolName } };
     }
 
+    if (updateSettingsDto.accessKey !== undefined) {
+      updateData.accessKey = updateSettingsDto.accessKey;
+    }
+
     const updatedSettings = await this.prismaService.settings.update({
       where: { id: settings.id },
       data: updateData,
@@ -120,6 +126,7 @@ export class SettingsService {
       schoolId: updatedSettings.schoolId,
       createdAt: updatedSettings.createdAt,
       updatedAt: updatedSettings.updatedAt,
+      accessKey: updateSettingsDto.accessKey,
     };
   }
 

@@ -24,10 +24,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "containers": "docker-compose up -d",
     "migrations": "npx prisma migrate deploy",
-    "migrations:reset": "npx prisma migrate reset --force",
-    "env:login": "npx dotenv-vault@latest new vlt_b5a0e2d2ee0ae08a8a496e20309e02fa1438465eb69dac223f246994ebb33a31",
-    "env:pull": "npx dotenv-vault@latest pull production .env",
-    "env:push": "npx dotenv-vault@latest push production .env"
+    "migrations:reset": "npx prisma migrate reset --force"
   },
   "dependencies": {
     "@nestjs/bull": "^10.0.1",
@@ -54,19 +51,21 @@
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
     "file-type": "^18.5.0",
-    "firebase-admin": "^11.9.0",
     "fs-extra": "^11.1.1",
     "ftp": "^0.3.10",
     "got": "^11.8.2",
     "mime-types": "^2.1.35",
     "mongoose": "^7.2.4",
     "mustache": "^4.2.0",
+    "nest-winston": "^1.10.2",
     "nodemailer": "^6.9.3",
     "prisma": "^4.14.1",
     "puppeteer": "^21.1.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
+    "unzipper": "^0.12.3",
     "uuid": "^9.0.0",
+    "winston": "^3.17.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -86,6 +85,7 @@
     "@types/node": "18.15.11",
     "@types/nodemailer": "^6.4.8",
     "@types/supertest": "^2.0.11",
+    "@types/unzipper": "^0.10.11",
     "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",

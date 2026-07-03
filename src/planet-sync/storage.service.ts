@@ -1,246 +1,259 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
-import * as admin from 'firebase-admin';
 import { InjectModel } from '@nestjs/mongoose';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { Model } from 'mongoose';
 import * as fs from 'fs-extra';
+import * as path from 'path';
+import * as unzipper from 'unzipper';
 import * as mime from 'mime-types';
+import { ApiGatewayService } from './apiGateway.service';
+import { pipeline } from 'stream/promises';
+import { Transform } from 'stream';
+
+type StoredFile = { name: string; mimeType: string; extension: string };
 
 @Injectable()
 export class StorageService {
-  private files: any[] = [];
+  private files: StoredFile[] = [];
+  private readonly assetsDir: string;
 
   constructor(
     @InjectModel(DownloadedFile.name)
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
-
-  async initialize(): Promise<any> {
-    const bucket = admin.storage().bucket();
-    const assetsFiles = (await bucket.getFiles({ prefix: 'assets' }))[0];
-    const planetsFiles = (await bucket.getFiles({ prefix: 'planets' }))[0];
-    const examFiles = (await bucket.getFiles({ prefix: 'exam' }))[0];
-    const studentFiles = (await bucket.getFiles({ prefix: 'student' }))[0];
-
-    const allFiles = [
-      ...assetsFiles,
-      ...planetsFiles,
-      ...examFiles,
-      ...studentFiles,
-    ];
-
-    this.files = allFiles;
-  }
-
-  async recoverFileURL(
-    id: string | null,
-    url: string | null,
-    bucket: string,
-  ): Promise<string | null> {
-    if (id === null || id === undefined || id === '') {
-      return;
-    }
-
-    if (process.env.ASSETS !== 'LOCAL') {
-      return url;
-    }
-
-    const fileExtension = await this.getFileExtensionByFileName(bucket, id);
-
-    const fileServerUrl = process.env.FILE_SERVER_URL;
-    const [fileName] = id.split('.');
-
-    return `${fileServerUrl}/${fileName}${fileExtension}`;
-  }
-
-  private async getFileExtensionByFileName(
-    bucketName: string,
-    fileName: string,
   ) {
-    const bucket = admin.storage().bucket();
+    this.assetsDir = path.resolve(__dirname, '../../assets-data');
+
+    if (!fs.existsSync(this.assetsDir)) {
+      fs.mkdirSync(this.assetsDir, { recursive: true });
+      this.files = [];
+    } else {
+      this.reloadFiles();
+    }
+  }
+
+  private reloadFiles() {
+    this.files = fs
+      .readdirSync(this.assetsDir)
+      .filter((file) => fs.statSync(path.join(this.assetsDir, file)).isFile())
+      .map((file) => {
+        const mimeType = mime.lookup(file) || 'application/octet-stream';
+
+        const extension = (path.extname(file) || '').replace(/^\./, '');
+        return {
+          name: path.parse(file).name,
+          mimeType,
+          extension,
+        } as StoredFile;
+      });
+  }
+
+  getFiles(): StoredFile[] {
+    return this.files;
+  }
+
+  async recoverFileURL(fileId?: string): Promise<string | null> {
+    if (!fileId) {
+      return null;
+    }
+
+    const fileExtension = await this.getFileExtensionByFileId(fileId);
+    if (!fileExtension) {
+      // console.log(`Extensão não encontrada para fileId=${fileId}`);
+      return null;
+    }
+
+    const fileIdArray = fileId.split('.');
+
+    const fileServerUrl = process.env.FILE_SERVER_URL || '';
+
+    // Previne extensões de arquivo duplas, como .tar.gz ou mp3.mp3
+
+    const url =
+      fileIdArray.length > 1
+        ? `${fileServerUrl}/${fileIdArray[0]}.${fileExtension}`
+        : `${fileServerUrl}/${fileId}.${fileExtension}`;
+    return url;
+  }
+
+  private async getFileExtensionByFileId(
+    fileId: string,
+  ): Promise<string | null> {
+    if (!fileId) return null;
+
+    const normalizedId = path
+      .parse(fileId)
+      .name.trim()
+      .toLowerCase()
+      .replace(/^\./, '');
+
+    const file = this.files.find(
+      (f) => f.name.trim().toLowerCase() === normalizedId,
+    );
+
+    if (!file) {
+      // console.log(`[!] Extensão não encontrada para fileId=${fileId}`);
+      return null;
+    }
+
+    return file.extension;
+  }
+
+  async downloadPlanetFiles(accessKey: string) {
+    try {
+      console.log('Iniciando download dos artefatos de planetas');
+      await this.cacheManager.set('planet-sync-running', true, 0);
+      await this.cacheManager.set('planet-sync-synced-files', 0, 0);
+
+      await this.cacheManager.set(
+        'planet-sync-current-operation',
+        'Limpando pasta...',
+        0,
+      );
+      await fs.emptyDir(this.assetsDir);
+      await this.downloadedFileModel.deleteMany();
+
+      // 🔹 Etapa 1: Download ZIP
+      await this.cacheManager.set(
+        'planet-sync-current-operation',
+        'Baixando ZIP de planetas...',
+        0,
+      );
+      await this.downloadPlanetZipAssets(accessKey);
+
+      // 🔹 Etapa 2: Extração
+      await this.cacheManager.set(
+        'planet-sync-current-operation',
+        'Extraindo arquivos de planetas...',
+        0,
+      );
+      const filesLength = await this.extrairZip();
+
+      await this.cacheManager.set('planet-sync-total-files', filesLength, 0);
+      console.log('Download e extração de planetas concluídos.');
+
+      await this.cacheManager.set('planet-sync-running', false, 0);
+    } catch (error) {
+      console.error('Erro no download dos artefatos de planetas:', error);
+      await this.cacheManager.set('planet-sync-running', false, 0);
+      throw error;
+    }
+  }
+
+  async downloadPlanetZipAssets(accessKey: string): Promise<void> {
+    console.log('Iniciando download do zip de assets...');
+    const outputFile = path.join(this.assetsDir, 'assets.zip');
+    await fs.ensureDir(this.assetsDir);
 
     try {
-      const file = await this.files.find(
-        (file) => file.name == `${bucketName}/${fileName}`,
-      );
+      const assetsResponse = await ApiGatewayService.getPlanetAssets(accessKey);
+      const totalLength = Number(assetsResponse.headers['content-length']) || 0;
 
-      const [metadata] = await file.getMetadata();
-      const contentType = metadata.contentType;
-
-      if (contentType === 'application/x-www-form-urlencoded;charset=UTF-8')
-        return;
-
-      const extension = await this.getExt(file);
-      if (extension) return extension;
-      else return '';
-    } catch (error) {
-      console.log(
-        `Erro ao obter extensão do arquivo ${fileName}, no bucket ${bucketName}`,
-      );
-      console.log('Efetuando tentativa alternativa...');
-
-      const extensions = ['.svg', '.mp4', '.mp3', '.png', '.json'];
-      for (const ext of extensions) {
-        try {
-          const file = await this.files.find(
-            (file) => file.name == `${bucketName}/${fileName}/${ext}`,
-          );
-          const extension = await this.getExt(file);
-
-          if (extension) {
-            console.log('Tudo Ok');
-            console.log(
-              '----------------------------------------------------------------------------',
+      let downloaded = 0;
+      const progress = new Transform({
+        transform: async (chunk, _encoding, callback) => {
+          downloaded += chunk.length;
+          if (totalLength) {
+            const percent = ((downloaded / totalLength) * 100).toFixed(2);
+            const globalPercent = ((+percent / 100) * 30).toFixed(2); // 30% da etapa total
+            await this.cacheManager.set(
+              'planet-sync-current-operation',
+              `Baixando ZIP de planetas (${percent}%)`,
+              0,
             );
-            return extension;
-          } else {
-            console.log('Não deu =/');
-            console.log(
-              '----------------------------------------------------------------------------',
+            await this.cacheManager.set(
+              'planet-sync-global-progress',
+              +globalPercent,
+              0,
             );
-            return '';
           }
-        } catch {}
-      }
+          callback(null, chunk);
+        },
+      });
+
+      await pipeline(
+        assetsResponse.data,
+        progress,
+        fs.createWriteStream(outputFile),
+      );
+      console.log('ZIP de planetas baixado com sucesso!');
+    } catch (err) {
+      await this.cacheManager.set(
+        'planet-sync-current-operation',
+        'Erro no download do ZIP de planetas',
+        0,
+      );
+      throw new Error('Erro ao baixar o arquivo ZIP de assets de planetas');
     }
   }
 
-  async downloadFiles() {
-    await this.downloadedFileModel.deleteMany();
+  async extrairZip(): Promise<number> {
+    const zipPath = path.join(this.assetsDir, 'assets.zip');
+    if (!fs.existsSync(zipPath)) {
+      throw new Error(`Arquivo ZIP não encontrado: ${zipPath}`);
+    }
 
-    console.log('Planet Sync - Iniciando download dos artefatos');
-    this.createDirectoryInRoot('dist/assets-data');
-    const bucket = admin.storage().bucket();
+    console.log('Descompactando ZIP de planetas...');
+    const zipFiles = await unzipper.Open.file(zipPath);
+    const total = zipFiles.files.length;
+    let processed = 0;
 
-    const assetsFiles = (await bucket.getFiles({ prefix: 'assets' }))[0];
-    const planetsFiles = (await bucket.getFiles({ prefix: 'planets' }))[0];
-    const examFiles = (await bucket.getFiles({ prefix: 'exam' }))[0];
-    const studentFiles = (await bucket.getFiles({ prefix: 'student' }))[0];
+    await this.cacheManager.set('planet-sync-total-files', total, 0);
+    await this.cacheManager.set('planet-sync-synced-files', 0, 0);
 
-    let allFiles = [
-      ...assetsFiles,
-      ...planetsFiles,
-      ...examFiles,
-      ...studentFiles,
-    ];
+    for (const entry of zipFiles.files) {
+      const fileName = entry.path;
+      const outputPath = path.join(this.assetsDir, fileName);
+      await fs.ensureDir(path.dirname(outputPath));
 
-    allFiles = allFiles.filter(
-      (file) =>
-        file.metadata.contentType !=
-        'application/x-www-form-urlencoded;charset=UTF-8',
-    );
+      await this.downloadedFileModel.findOneAndUpdate(
+        { fileName },
+        { fileName },
+        { upsert: true, new: true },
+      );
 
-    await this.cacheManager.set('sync-total-files', allFiles.length, 0);
+      await new Promise<void>((resolve, reject) => {
+        entry
+          .stream()
+          .pipe(fs.createWriteStream(outputPath))
+          .on('finish', resolve)
+          .on('error', reject);
+      });
 
-    for (const file of allFiles) {
-      try {
-        await this.downloadSingleFile(file);
-      } catch (error) {
-        console.log(file.name);
-        console.log(error);
+      processed++;
+
+      if (processed % 10 === 0 || processed === total) {
+        const percent = (processed / total) * 100;
+        const globalPercent = 30 + (percent / 100) * 40;
+
+        await this.cacheManager.set(
+          'planet-sync-current-operation',
+          `Extraindo arquivos de planetas (${percent.toFixed(2)}%)`,
+          0,
+        );
+        await this.cacheManager.set(
+          'planet-sync-global-progress',
+          +globalPercent.toFixed(2),
+          0,
+        );
       }
     }
 
-    await this.cacheManager.set(
-      'sync-current-operation',
-      'Baixando Metadados',
-      0,
-    );
-    console.log('Planet Sync - Download dos artefatos concluído');
-  }
-
-  async downloadSingleFile(file: any): Promise<boolean> {
-    const bucket = admin.storage().bucket();
-    const fileExt = await this.getExt(file);
-
-    const fileName =
-      file.name
-        .replace(/\.[^/.]+$/, '')
-        .replace('assets/', '')
-        .replace('planets/', '')
-        .replace('exam/', '')
-        .replace('student/', '') + fileExt;
-
-    await bucket
-      .file(file.name)
-      .download({ destination: `dist/assets-data/${fileName}` });
-
-    await this.downloadedFileModel.findOneAndUpdate(
-      { fileName },
-      { fileName },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
-
-    return true;
+    this.reloadFiles();
+    console.log('Descompactação de planetas concluída!');
+    return total;
   }
 
   async getLottie(lottieId: string) {
-    const rootPath = process.cwd();
-    const lottiePath = `${rootPath}/dist/assets-data/${lottieId}.json`;
-
-    if (process.env.ASSETS != 'LOCAL') {
-      await this.downloadLottieFile(lottieId);
-    }
+    const lottiePath = path.join(this.assetsDir, `${lottieId}.json`);
 
     try {
       const lottie = await fs.readJson(lottiePath, { encoding: 'utf-8' });
       return JSON.stringify(lottie);
     } catch (error) {
-      throw new Error(`Erro ao ler o arquivo: ${error}`);
+      throw new Error(`Erro ao ler o arquivo Lottie (${lottiePath}): ${error}`);
     }
-  }
-
-  private async downloadLottieFile(lottieId: string): Promise<string> {
-    await this.createDirectoryInRoot('dist/assets-data');
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(`assets/${lottieId}`);
-    await file.download({ destination: `dist/assets-data/${lottieId}.json` });
-    return lottieId;
-  }
-
-  public async downloadFile(
-    fileId: string,
-    bucketName: string,
-  ): Promise<string> {
-    await this.createDirectoryInRoot('dist/assets-data');
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(`${bucketName}/${fileId}`);
-    await this.downloadSingleFile(file);
-    return fileId;
-  }
-
-  async createDirectoryInRoot(directoryName: string): Promise<void> {
-    const rootPath = process.cwd();
-    const directoryPath = `${rootPath}/${directoryName}`;
-
-    try {
-      await fs.ensureDir(directoryPath);
-      console.log(`Diretório '${directoryName}' criado em ${directoryPath}`);
-    } catch (error) {
-      throw new Error(`Erro ao criar o diretório: ${error}`);
-    }
-  }
-
-  async getExt(file: any) {
-    const [metadata] = await file.getMetadata();
-    const contentType = metadata.contentType;
-
-    const extension = mime.extension(contentType);
-    if (!extension) {
-      console.log(`Extensão não encontrada: Arquivo ${file.name}`);
-      throw new Error(`Extensão não encontrada: Arquivo ${file.name}`);
-    }
-
-    const extExceptions = [{ ext: 'mpga', replaceWith: 'mp3' }];
-
-    return (
-      '.' +
-      (extExceptions.some((e) => e.ext === extension)
-        ? extExceptions.find((e) => e.ext === extension)?.replaceWith
-        : extension)
-    );
   }
 }

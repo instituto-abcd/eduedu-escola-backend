@@ -28,6 +28,7 @@ export type Question = {
     description: string;
     position: number;
     isCorrect: boolean;
+    id: string;
   }[];
   titles: {
     file_url: string;

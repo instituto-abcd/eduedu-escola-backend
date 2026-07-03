@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   SchoolGradeEnum,
   StudentExamResult,
@@ -18,7 +18,7 @@ import {
   ClassificationDetailedSummaryDto,
   SchoolClassDetailedSummaryDto,
 } from './dto/response/school-class-detailed-summary.dto';
-import { PerformanceResultUtilsService } from 'src/common/utils/performance-result-utils.service';
+import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
 import { ExamPerformanceResponse } from './dto/response/exam-performance.response';
 import { PlanetsPerformanceResponse } from './dto/response/planets-performance.dto';
 import { IdealStudentsDto } from './dto/response/ideal-students.dto';

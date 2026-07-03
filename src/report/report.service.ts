@@ -94,7 +94,10 @@ export class ReportService {
 
     try {
       // Inicialize o navegador Puppeteer
-      const browser = await puppeteer.launch();
+      const browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
       const page = await browser.newPage();
 
       // Carregue o HTML na página Puppeteer

@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -17,12 +18,10 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get(':schoolYear')
-  @ApiOperation({ summary: 'Obter contadores de Turmas' })
-  @ApiResponse({
-    status: 200,
-    description: 'Painel de controle obtido com sucesso',
-    type: DashboardDto,
+  @ApiOperation({
+    summary: 'Informações sobre todas as turmas do ano escolar requisitado',
   })
+  @ApiOkResponse({ type: DashboardDto })
   @ApiOperation({ summary: 'Obter dashboard por ano escolar' })
   async getDashboard(
     @Req() req,

@@ -7,7 +7,7 @@ import { EduException } from '../common/exceptions/edu-school.exception';
 import { PlanetTrackDto } from './dto/planet-track.dto';
 import { PlanetDto } from './dto/planet.dto';
 import { StudentExamDto } from './dto/studentexam.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class StudentExamService {
@@ -86,11 +86,11 @@ export class StudentExamService {
           canExecutePlanet,
         };
 
-        planetTrack.push(planetDto);
-
         if (hideLastPlanets && !canExecutePlanet) {
           break;
         }
+
+        planetTrack.push(planetDto);
       }
 
       return {
@@ -117,7 +117,7 @@ export class StudentExamService {
 
       return false;
     } catch (error) {
-      console.error('Error fetching exam performed status:', error.message);
+      console.error('Error fetching exam performed status:', ( error as any ).message);
       return false;
     }
   }

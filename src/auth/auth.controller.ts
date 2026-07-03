@@ -3,16 +3,19 @@ import {
   Controller,
   Post,
   Req,
-  UnauthorizedException, UseGuards
-} from "@nestjs/common";
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import {
-  ApiBadRequestResponse, ApiBearerAuth,
+  ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
-  ApiTags
-} from "@nestjs/swagger";
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthRequestDto } from './dto/request/auth-request.dto';
 import { AuthResponseDto } from './dto/response/auth-response.dto';
@@ -22,21 +25,22 @@ import { ResetPasswordResponseDto } from './dto/response/reset-password-response
 import { ChangePasswordResponseDto } from './dto/response/change-password-response.dto';
 import { Request } from 'express';
 import { AuthAccessKeyDto } from './dto/request/AuthAccessKey.dto';
-import { UserGuard } from "./guard/user.guard";
+import { UserGuard } from './guard/user.guard';
 
 @ApiTags('Autenticação')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /*
+   *  Login
+   */
+
   @Post()
-  @ApiOperation({ summary: 'Realizar login' })
-  @ApiCreatedResponse({
-    description: 'Login bem-sucedido',
-    type: AuthResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Requisição inválida' })
-  @ApiResponse({ status: 401, description: 'Email ou senha inválidos' })
+  @ApiOperation({ summary: 'Logar no administrativo (diretor ou professor)' })
+  @ApiOkResponse({ type: AuthResponseDto })
+  @ApiBadRequestResponse({ description: 'Corpo da requisição inválido' })
+  @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
   async login(
     @Body() authRequestDto: AuthRequestDto,
   ): Promise<AuthResponseDto> {
@@ -49,10 +53,18 @@ export class AuthController {
     return authResponseDto;
   }
 
+  /*
+   *  Reset de senha
+   */
+
   @Post('reset-password')
-  @ApiOperation({ summary: 'Redefinir senha' })
+  @ApiOperation({
+    summary: 'Redefinir senha',
+    description:
+      'Gera um Token e o envia para o email do usuário junto de um link, que ao acessá-lo, será verificado a integridade do token e se este for válido o usuário será permitido inputar uma nova senha',
+  })
   @ApiCreatedResponse({
-    description: 'Token de redefinição de senha gerado com sucesso',
+    description: 'Token gerado e link enviado para o e-mail',
     type: ResetPasswordResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
@@ -63,6 +75,10 @@ export class AuthController {
     const { email } = resetPasswordDto;
     return await this.authService.resetPassword(email, req.headers.origin);
   }
+
+  /*
+   *  Alteração de senha
+   */
 
   @Post('change-password')
   @ApiOperation({ summary: 'Alterar senha' })
@@ -82,8 +98,16 @@ export class AuthController {
     );
   }
 
+  /*
+   *  Chaves de acesso
+   *  - endpoint não utilizado
+   */
+
   @Post('access-key')
-  @ApiOperation({ summary: 'Autenticar via chave (código) de acesso' })
+  @ApiOperation({
+    summary: 'Autenticar via chave (código) de acesso',
+    deprecated: true,
+  })
   @ApiResponse({
     status: 200,
     description: 'Autenticação bem-sucedida',
@@ -94,6 +118,10 @@ export class AuthController {
     return this.authService.authenticateAccessKey(body.accessKey);
   }
 
+  /*
+   *  Logout
+   */
+
   @Post('logout')
   @UseGuards(UserGuard)
   @ApiBearerAuth()
@@ -101,7 +129,6 @@ export class AuthController {
     const userId = req.user.id;
 
     await this.authService.logout(userId);
-
     return { message: 'Usuário desconectado com sucesso' };
   }
 }

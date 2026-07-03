@@ -3,19 +3,19 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Planet } from './schemas/planet.schema';
 import { PlanetOrigin } from './schemas/planet-origin.schema';
 import { Model } from 'mongoose';
-import { FirestoreService } from './firestore.service';
+import { GatewayService } from './gateway.service';
 import { PlanetSync } from './schemas/sync-list.schema';
 import { StorageService } from './storage.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { DateFormatterUtilsService } from 'src/common/utils/date-formatter-utils.service';
+import { DateFormatterUtilsService } from '../common/utils/date-formatter-utils.service';
 import { DownloadedFile } from './schemas/download-file.schema';
 import { StudentService } from '../student/student.service';
-import { ExamService } from '../exam/exam.service';
 import { LastSync } from './schemas/last-sync.schema';
-import { LastSyncResponseDto } from './dto/last-sync-response.dto';
+import { LastPlanetSyncResponseDto } from './dto/last-planet-sync-response.dto';
+import { AccessKeyService } from 'src/access-key/accessKey.service';
 
 @Injectable()
 export class PlanetSyncService {
@@ -27,11 +27,11 @@ export class PlanetSyncService {
     private downloadedFileModel: Model<DownloadedFile>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectQueue('planet-sync') private readonly planetSyncQueue: Queue,
-    private readonly firestoreService: FirestoreService,
+    private readonly gatewayService: GatewayService,
     private readonly storageService: StorageService,
     private readonly studentService: StudentService,
-    private readonly examService: ExamService,
-  ) {}
+    private readonly accessKeyService: AccessKeyService,
+  ) { }
 
   async testStream() {
     // IMAGEM
@@ -59,39 +59,41 @@ export class PlanetSyncService {
     // let assetFileId = '00zPfsrj2f6uUqeeTO1K';
     // let assetFileExtension = await this.storageService.handleFile('assets', assetFileId);
 
-    await this.storageService.downloadFiles();
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
+    await this.storageService.downloadPlanetFiles(accessKey);
 
     return true;
   }
 
   async getPlanetSyncStatus(): Promise<any> {
     const empty = [undefined, null];
-    const cachedValue = await this.cacheManager.get('sync-running');
+    const cachedValue = await this.cacheManager.get('planet-sync-running');
     const running = cachedValue !== undefined ? cachedValue : false;
 
     const currentOperationCached = await this.cacheManager.get(
-      'sync-current-operation',
+      'planet-sync-current-operation',
     );
     const currentOperation =
       currentOperationCached !== undefined ? currentOperationCached : '';
 
     const totalFiles = empty.includes(
-      await this.cacheManager.get('sync-total-files'),
+      await this.cacheManager.get('planet-sync-total-files'),
     )
       ? 0
-      : await this.cacheManager.get('sync-total-files');
+      : await this.cacheManager.get('planet-sync-total-files');
 
     const totalPlanetsCached = await this.cacheManager.get(
-      'sync-total-planets',
+      'planet-sync-total-planets',
     );
     const totalPlanets =
       totalPlanetsCached !== undefined ? totalPlanetsCached : 0;
 
     const syncCurrentStart = (await this.cacheManager.get(
-      'sync-current-start',
+      'planet-sync-current-start',
     )) as Date;
     const syncCurrentEnd = (await this.cacheManager.get(
-      'sync-current-end',
+      'planet-sync-current-end',
     )) as Date;
 
     let duration = '00:00:00';
@@ -110,21 +112,19 @@ export class PlanetSyncService {
     const syncedFiles = await this.downloadedFileModel.countDocuments();
 
     const syncedPlanetsCached = await this.cacheManager.get(
-      'sync-synced-planets',
+      'planet-sync-synced-planets',
     );
     const syncedPlanets =
       syncedPlanetsCached !== undefined ? syncedPlanetsCached : 0;
 
-    const factor = +totalFiles / +totalPlanets;
-    const percent =
-      +(
-        +totalFiles + +totalPlanets > 0
-          ? ((+syncedFiles + +syncedPlanets * factor) /
-              (+totalFiles + +totalPlanets * factor)) *
-            100
-          : 0
-      ).toFixed(2) ?? 0;
+    let percent = 0;
 
+    if (+totalFiles > 0) {
+      percent = (syncedFiles / +totalFiles) * 100;
+    }
+
+    // garante número e arredonda
+    percent = Number(percent.toFixed(2)) || 0;
     return {
       totalFiles,
       syncedFiles,
@@ -138,22 +138,38 @@ export class PlanetSyncService {
   }
 
   async enqueueSyncAll() {
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
+    // Em caso de chave inválida, lança exceção, mas o status code não será enviado
+    // por conta de como a controller lida com erros (catch)
+    await this.gatewayService.validateKey(accessKey);
+
     const start = new Date();
-    await this.cacheManager.del('sync-current-end');
-    await this.cacheManager.set('sync-current-start', start, 0);
+    await this.cacheManager.del('planet-sync-current-end');
+    await this.cacheManager.set('planet-sync-current-start', start, 0);
+
+    //FIXME: O melhor caminho seria verificar se há jobs ativos e então cancelar a adição de mais um
+    await this.planetSyncQueue.obliterate({ force: true });
+
     this.planetSyncQueue.add('planet-job', { planetSync: new Date() });
-    await this.cacheManager.set('sync-running', true, 0);
+    await this.cacheManager.set('planet-sync-running', true, 0);
   }
 
   async handleSyncAll() {
     console.log(
       'Planet Sync - Iniciando sincronização de documentos do firestore',
     );
-    
+
     await this.updateLastSync();
-    
-    const planetsFromFirestore = await this.firestoreService.getPlanets();
-    this.cacheManager.set('sync-total-planets', planetsFromFirestore.length, 0);
+
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
+    await this.storageService.downloadPlanetFiles(accessKey);
+
+    const planetsFromFirestore = await this.gatewayService.getPlanets(
+      accessKey,
+    );
+    this.cacheManager.set('planet-sync-total-planets', planetsFromFirestore.length, 0);
 
     const planetsInsertedOrUpdated = [];
     for (let index = 0; index < planetsFromFirestore.length; index++) {
@@ -171,7 +187,7 @@ export class PlanetSyncService {
 
         planetsInsertedOrUpdated.push(planet);
         this.cacheManager.set(
-          'sync-synced-planets',
+          'planet-sync-synced-planets',
           planetsInsertedOrUpdated.length,
           0,
         );
@@ -184,7 +200,7 @@ export class PlanetSyncService {
     }
 
     await this.cacheManager.set(
-      'sync-current-operation',
+      'planet-sync-current-operation',
       'Baixando Artefatos',
       0,
     );
@@ -200,12 +216,15 @@ export class PlanetSyncService {
     };
   }
 
-  async getLastSync(): Promise<LastSyncResponseDto> {
+  async getLastSync(): Promise<LastPlanetSyncResponseDto> {
     const lastSync = await this.lastSyncModel.findOneAndUpdate();
-    
+
     const syncedAt = lastSync?.syncedAt ?? null;
     const daysSinceLastSync = syncedAt
-      ? Math.floor((new Date().getTime() - new Date(syncedAt).getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor(
+        (new Date().getTime() - new Date(syncedAt).getTime()) /
+        (1000 * 60 * 60 * 24),
+      )
       : null;
     const showReminder = daysSinceLastSync === null || daysSinceLastSync >= 60;
 
@@ -242,9 +261,11 @@ export class PlanetSyncService {
     if (!planetsToSync.length)
       return { success: true, planetsSynced: 0, planetsUpdated: 0 };
 
+    const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
+
     const planetsFromFirestore = await Promise.all(
       planetsToSync.map((planet) =>
-        this.firestoreService.getPlanet(planet.planetId),
+        this.gatewayService.getPlanet(planet.planetId, accessKey),
       ),
     );
 
@@ -285,9 +306,7 @@ export class PlanetSyncService {
       const planet = new Planet();
       planet.avatar_id = planetOrigin?.avatar?.replace(/^planets\//, '');
       planet.avatar_url = await this.storageService.recoverFileURL(
-        planet.avatar_id,
-        planetOrigin?.avatar_url,
-        'planets',
+        planet?.avatar_id,
       );
       planet.axis_code = this.getAxisCode(planetOrigin.axis_id);
       planet.domain_code = planetOrigin.domain_code;
@@ -333,14 +352,10 @@ export class PlanetSyncService {
             sound_id: optionOrigin.sound_id,
             image_id: optionOrigin.image_id,
             sound_url: await this.storageService.recoverFileURL(
-              optionOrigin.sound_id,
-              optionOrigin.sound_url,
-              'assets',
+              optionOrigin?.sound_id,
             ),
             image_url: await this.storageService.recoverFileURL(
-              optionOrigin.image_id,
-              optionOrigin.image_url,
-              'assets',
+              optionOrigin?.image_id,
             ),
             description: optionOrigin.description,
             position:
@@ -362,9 +377,7 @@ export class PlanetSyncService {
           const title = {
             file_id: titleOrigin.file_id,
             file_url: await this.storageService.recoverFileURL(
-              titleOrigin.file_id,
-              titleOrigin.file_url,
-              'assets',
+              titleOrigin?.file_id,
             ),
             description: titleOrigin.description,
             position: titleOrigin.position,
@@ -434,63 +447,55 @@ export class PlanetSyncService {
 export class PlanetSyncProcessor {
   constructor(
     private readonly planetSyncService: PlanetSyncService,
-    private readonly studentService: StudentService,
-    private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dateFormatterUtilsService: DateFormatterUtilsService,
-    private readonly examService: ExamService,
-  ) {}
+  ) { }
 
   @Process('planet-job')
   async processPlanetSync() {
+    const syncKey = 'planet-sync-running';
+    await this.cacheManager.set(syncKey, true, 0);
+    await this.cacheManager.set(
+      'planet-sync-current-operation',
+      'Preparando para baixar ZIP de planetas...',
+      0,
+    );
+    await this.cacheManager.set('planet-sync-global-progress', 0, 0);
+
     try {
-      console.log('Planet Sync - Iniciando sincronização');
-      this.cacheManager.set('sync-synced-planets', 0, 0);
-
-      const syncKey = 'sync-running';
-      const syncValue = true;
-      const syncDuration = 0;
-
-      await this.cacheManager.set(syncKey, syncValue, syncDuration);
-
-      await this.cacheManager.set(
-        'sync-current-operation',
-        'Baixando Artefatos',
-        0,
-      );
-
-      const promises = [];
-
-      await this.storageService.initialize();
-
-      promises.push(this.planetSyncService.handleSyncAll());
-
-      if (process.env.ASSETS === 'LOCAL') {
-        promises.push(this.storageService.downloadFiles());
-      }
-
-      promises.push(this.examService.syncExams());
-      promises.push(this.studentService.syncPlanetStudent());
+      console.log('Planet Sync - Iniciando sincronizacao de planetas');
 
       const start = new Date();
 
-      await Promise.all(promises);
+      await this.cacheManager.set(
+        'planet-sync-current-operation',
+        'Sincronizando Planetas',
+        0,
+      );
+
+      await this.planetSyncService.handleSyncAll();
+
+      await this.cacheManager.set('planet-sync-global-progress', 100, 0);
+      await this.cacheManager.set('planet-sync-current-operation', 'Concluido', 0);
 
       const end = new Date();
       const duration = this.dateFormatterUtilsService.convertMsToTime(
         end.getTime() - start.getTime(),
       );
 
-      await this.cacheManager.set('sync-current-end', end, 0);
-      await this.cacheManager.set(syncKey, !syncValue, syncDuration);
+      await this.cacheManager.set('planet-sync-current-end', end, 0);
+      await this.cacheManager.set(syncKey, false, 0);
 
-      await this.cacheManager.set('sync-current-operation', '', 0);
-
-      console.log('Planet Sync - Sincronização concluída');
-      console.log('-------------------------------------');
-      console.log('Planet Sync - Duração Sincronização: ' + duration);
+      console.log(`Planet Sync concluido em ${duration}`);
     } catch (error) {
-      console.error('Erro durante a sincronização:', error);
+      console.error('Erro durante a sincronizacao de planetas:', error);
+      await this.cacheManager.set(
+        'planet-sync-current-operation',
+        'Erro na sincronizacao',
+        0,
+      );
+    } finally {
+      await this.cacheManager.set(syncKey, false, 0);
     }
   }
 }

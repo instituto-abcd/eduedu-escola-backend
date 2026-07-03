@@ -10,7 +10,6 @@ import { SchoolClassController } from './school-class/school-class.controller';
 import { SchoolClassModule } from './school-class/school-class.module';
 import { SchoolYearModule } from './school-year/school-year.module';
 import { UserModule } from './user/user.module';
-import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { StudentModule } from './student/student.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -31,6 +30,7 @@ import {
   StudentExam,
   StudentExamSchema,
 } from './student/schemas/studentExam.schema';
+import { Exam, ExamSchema } from './exam/schemas/exam.schema';
 import { PlanetModule } from './planet/planet.module';
 import { SchoolClassResultService } from './school-class/school-class-result.service';
 import { ReportModule } from './report/report.module';
@@ -38,6 +38,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from './common/utils/utils.module';
 import { LottieModule } from './lottie/lottie.module';
+import { AccessKeyModule } from './access-key/accessKey.module';
 import { BackupModule } from './backup/backup.module';
 
 @Module({
@@ -59,8 +60,13 @@ import { BackupModule } from './backup/backup.module';
       rootPath: join(__dirname, '..', 'assets-data'),
       serveRoot: '/assets-data',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'assets-data-exam'),
+      serveRoot: '/assets-data-exam',
+    }),
     MongooseModule.forFeature([
       { name: StudentExam.name, schema: StudentExamSchema },
+      { name: Exam.name, schema: ExamSchema },
     ]),
     BullModule.forRoot({
       redis: {
@@ -75,7 +81,6 @@ import { BackupModule } from './backup/backup.module';
     JwtEduModule,
     SchoolClassModule,
     PlanetSyncModule,
-    // RabbitMQModule,
     StudentModule,
     SettingsModule,
     DashboardModule,
@@ -87,6 +92,7 @@ import { BackupModule } from './backup/backup.module';
     ReportModule,
     UtilsModule,
     LottieModule,
+    AccessKeyModule,
     BackupModule,
   ],
   providers: [

@@ -21,10 +21,7 @@ export class AwardsController {
 
   @Post()
   @ApiOperation({ summary: 'Criar um novo prêmio' })
-  @ApiCreatedResponse({
-    description: 'Prêmio criado com sucesso',
-    type: AwardDto,
-  })
+  @ApiCreatedResponse({ type: AwardDto })
   @ApiBadRequestResponse({ description: 'Requisição inválida' })
   async createAward(@Body() createAwardDto: CreateAwardDto): Promise<AwardDto> {
     try {

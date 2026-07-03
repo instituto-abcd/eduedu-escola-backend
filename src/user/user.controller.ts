@@ -21,7 +21,9 @@ import { SchoolId } from '../common/school-id.decorator';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -39,10 +41,12 @@ import { InativeUserRequestDto } from './dto/request/inative-user-request.dto';
 import { InativeUserResponseDto } from './dto/response/inative-user-response.dto';
 import { UserAccessCodeResponseDto } from './dto/response/user-access-code-response.dto';
 import { UserAccessCodeOptionResponseDto } from './dto/response/user-access-code-option-response.dto';
-import { UserGuard } from 'src/auth/guard/user.guard';
+import { UserGuard } from '../auth/guard/user.guard';
 import { UpdatePasswordRequestDto } from './dto/request/update-password-request.dto';
-import { AuthResponseDto } from 'src/auth/dto/response/auth-response.dto';
-import { AuditGuard } from 'src/common/guard/audit.guard';
+import { ResetPasswordByDirectorRequestDto } from './dto/request/reset-password-by-director-request.dto';
+import { DirectorAuthGuard } from '../auth/guard/director-auth.guard';
+import { AuthResponseDto } from '../auth/dto/response/auth-response.dto';
+import { AuditGuard } from '../common/guard/audit.guard';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
@@ -50,6 +54,7 @@ import { Response } from 'express';
 import { join } from 'path';
 import { UserSchoolClassesDto } from './dto/response/user-classes.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { ApiPaginatedResponse } from 'src/common/pagination/pagination-decorator';
 
 @ApiTags('Usuário')
 @Controller('user')
@@ -58,17 +63,12 @@ export class UserController {
 
   @AuditGuard()
   @Post()
-  @ApiResponse({
-    status: 201,
-    description: 'Usuário criado com sucesso',
-    type: UserResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiResponse({
+  @ApiCreatedResponse({ type: UserResponseDto })
+  @ApiBadRequestResponse({
     status: ErrorDetails.EMAIL_CONFLICT.status,
     description: ErrorDetails.EMAIL_CONFLICT.message,
   })
-  @ApiResponse({
+  @ApiBadRequestResponse({
     status: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.status,
     description: ErrorDetails.PERSONAL_DOCUMENT_CONFLICT.message,
   })
@@ -90,7 +90,7 @@ export class UserController {
   @AuditGuard()
   @Post('/spreadsheet')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Adicionar usuários por meio de uma planilha' })
+  @ApiOperation({ summary: 'Criar usuários cadastrados na planilha' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async addUsersFromSpreadsheet(
@@ -98,8 +98,9 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
     @Req() request: Request,
   ): Promise<AddUsersResponseDto> {
-    const usersData: AddUsersDto[] =
-      await this.userService.parseSpreadsheet(file);
+    const usersData: AddUsersDto[] = await this.userService.parseSpreadsheet(
+      file,
+    );
 
     return await this.userService.addUsers(
       usersData,
@@ -111,10 +112,6 @@ export class UserController {
   @Get('/spreadsheet-template')
   @ApiOperation({
     summary: 'Download do modelo de planilha para upload de usuários',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Modelo de planilha baixado com sucesso',
   })
   downloadSpreadsheetTemplate(@Res() res: Response): void {
     try {
@@ -132,17 +129,8 @@ export class UserController {
   }
 
   @Get('all')
-  @ApiResponse({
-    status: 200,
-    description: 'Usuários encontrados com sucesso',
-    type: PaginationResponse,
-  })
-  @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiResponse({
-    status: ErrorDetails.INVALID_PAGINATION_PARAMETERS.status,
-    description: ErrorDetails.INVALID_PAGINATION_PARAMETERS.message,
-  })
-  @ApiOperation({ summary: 'Obter todos os usuários' })
+  @ApiPaginatedResponse(UserResponseDto)
+  @ApiOperation({ summary: 'Listar usuários (paginado)' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async findAll(
@@ -169,13 +157,9 @@ export class UserController {
   }
 
   @Get(':id')
-  @ApiResponse({
-    status: 200,
-    description: 'Usuário encontrado com sucesso',
-    type: User,
-  })
+  @ApiOkResponse({ type: UserResponseDto })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  @ApiOperation({ summary: 'Obter usuário por ID' })
+  @ApiOperation({ summary: 'Buscar usuário' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
@@ -183,14 +167,9 @@ export class UserController {
   }
 
   @Patch(':id')
-  @ApiResponse({
-    status: 200,
-    description: 'Usuário atualizado com sucesso',
-    type: User,
-  })
+  @ApiOkResponse({ type: UpdateUserRequestDto })
   @ApiNotFoundResponse({ description: 'Usuário não encontrado' })
-  @ApiBadRequestResponse({ description: 'Erro na requisição' })
-  @ApiOperation({ summary: 'Atualizar usuário por ID' })
+  @ApiOperation({ summary: 'Atualizar usuário' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async update(
@@ -202,11 +181,7 @@ export class UserController {
 
   @AuditGuard()
   @Delete()
-  @ApiResponse({
-    status: 200,
-    description: 'Usuários removidos com sucesso',
-    type: DeleteUserResponseDto,
-  })
+  @ApiResponse({ type: DeleteUserResponseDto })
   @ApiOperation({ summary: 'Excluir usuários' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -219,11 +194,7 @@ export class UserController {
 
   @Post('inactivate')
   @ApiOperation({ summary: 'Desativar usuários' })
-  @ApiResponse({
-    status: 200,
-    description: 'Usuários desativados com sucesso',
-    type: InativeUserRequestDto,
-  })
+  @ApiResponse({ type: InativeUserRequestDto })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async deactivateUsers(
@@ -233,13 +204,9 @@ export class UserController {
   }
 
   @Get(':id/access-key')
-  @ApiOperation({ summary: 'Obter Código de Acesso do Usuário' })
+  @ApiOperation({ summary: 'Código de Acesso do Usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
-  @ApiResponse({
-    status: 200,
-    description: 'Código de Acesso do Usuário',
-    type: UserAccessCodeResponseDto,
-  })
+  @ApiOkResponse({ type: UserAccessCodeResponseDto })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async getAccessCode(
@@ -251,11 +218,7 @@ export class UserController {
   @Put(':id/access-key')
   @ApiOperation({ summary: 'Atualizar Código de Acesso do Usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
-  @ApiResponse({
-    status: 200,
-    description: 'Código de Acesso atualizado do Usuário',
-    type: UserAccessCodeResponseDto,
-  })
+  @ApiResponse({ type: UserAccessCodeResponseDto })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async updateAccessCode(
@@ -265,26 +228,47 @@ export class UserController {
   }
 
   @Get(':schoolClassId/access-key-options')
-  @ApiOperation({ summary: 'Obter Alternativas de Código de Acesso do Usuário' })
-  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
-  @ApiResponse({
-    status: 200,
-    description: 'Alternativas de Código de Acesso do Usuário',
-    type: UserAccessCodeOptionResponseDto,
+  @ApiOperation({
+    summary: 'Lista com 3 códigos de acesso inválidos e apenas 1 válido',
+    description: 'Usado no portal aluno no fluxo de login de aluno/turma',
   })
+  @ApiParam({ name: 'id', description: 'ID do usuário', type: 'string' })
+  @ApiResponse({ type: UserAccessCodeOptionResponseDto, isArray: true })
   async getAccessCodeOptions(
     @Param('schoolClassId') schoolClassId: string,
   ): Promise<UserAccessCodeOptionResponseDto[]> {
-    const userId = await this.userService.getFirstUserIdBySchoolClassId(schoolClassId);
+    const userId = await this.userService.getFirstUserIdBySchoolClassId(
+      schoolClassId,
+    );
     return await this.userService.getAccessCodeOptions(userId);
   }
 
-  @ApiOperation({ summary: 'Trocar a senha do usuário logado' })
-  @ApiResponse({
-    status: 200,
-    description: 'Alteração de senha realizada com sucesso',
-    type: AuthResponseDto,
+  @Put(':id/password/reset')
+  @ApiOperation({
+    summary: 'Redefinir senha de um professor (uso exclusivo do diretor)',
   })
+  @ApiParam({ name: 'id', description: 'ID do professor', type: 'string' })
+  @ApiOkResponse({ description: 'Senha redefinida com sucesso' })
+  @ApiBadRequestResponse({
+    status: ErrorDetails.WEAK_PASSWORD.status,
+    description: ErrorDetails.WEAK_PASSWORD.message,
+  })
+  @ApiBadRequestResponse({
+    status: ErrorDetails.INVALID_TARGET_PROFILE.status,
+    description: ErrorDetails.INVALID_TARGET_PROFILE.message,
+  })
+  @ApiNotFoundResponse({ description: ErrorDetails.USER_NOT_FOUND.message })
+  @UseGuards(DirectorAuthGuard)
+  @ApiBearerAuth()
+  async resetPasswordByDirector(
+    @Param('id') id: string,
+    @Body() { newPassword }: ResetPasswordByDirectorRequestDto,
+  ): Promise<{ success: boolean }> {
+    return this.userService.resetPasswordByDirector(id, newPassword);
+  }
+
+  @ApiOperation({ summary: 'Trocar a senha do usuário logado' })
+  @ApiOkResponse({ type: AuthResponseDto })
   @UseGuards(UserGuard)
   @ApiBearerAuth()
   @Put('password')
@@ -298,12 +282,9 @@ export class UserController {
       newPassword,
     );
   }
-  
-  @ApiOperation({ summary: 'Turmas do usuário logado' })
-  @ApiResponse({
-    status: 200,
-    type: [UserSchoolClassesDto],
-  })
+
+  @ApiOperation({ summary: 'Turmas do usuário (autenticado)' })
+  @ApiOkResponse({ type: UserSchoolClassesDto, isArray: true })
   @UseGuards(UserGuard)
   @ApiBearerAuth()
   @Get('school-classes/all')

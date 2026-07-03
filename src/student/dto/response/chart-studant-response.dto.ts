@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PlanetAxis } from './planet-chart.-axis-dto';
 import { ChartDatasetDto } from './chart-dataset-dto';
 
 export class ChartStudentResponse {
@@ -9,6 +8,7 @@ export class ChartStudentResponse {
   })
   labels: string[];
 
+  // TODO: datasets types
   @ApiProperty({ type: [ChartDatasetDto], isArray: true })
   datasets: ChartDatasetDto[];
 }

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-class QuestionTitleDto {
+export class QuestionTitleDto {
   @ApiProperty()
   file_url: string;
 

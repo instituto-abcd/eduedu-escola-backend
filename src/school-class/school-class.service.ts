@@ -1,5 +1,8 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { PrismaService } from '../prisma/prisma.service';
+import { Exam, ExamDocument } from '../exam/schemas/exam.schema';
 import { CreateSchoolClassDto } from './dto/create-school-class.dto';
 import { EduException } from '../common/exceptions/edu-school.exception';
 import { CreateSchoolClassResponseDto } from './dto/response/create-school-class-response';
@@ -32,12 +35,19 @@ export class SchoolClassService {
     private readonly prismaService: PrismaService,
     private readonly dashboard: DashboardService,
     private readonly studentExamService: StudentExamService,
-  ) {}
+    @InjectModel(Exam.name)
+    private examModel: Model<ExamDocument>,
+  ) { }
 
   async create(
     createSchoolClassDto: CreateSchoolClassDto,
     schoolId: string,
+    profile: Profile,
   ): Promise<CreateSchoolClassResponseDto> {
+    if (profile !== Profile.DIRECTOR) {
+      throw new EduException('INVALID_PROFILE');
+    }
+
     try {
       const { teacherIds, ...schoolClassData } =
         createSchoolClassDto as CreateSchoolClassDto;
@@ -79,7 +89,7 @@ export class SchoolClassService {
         teachers: teacherIdsAssociated,
       };
     } catch (e) {
-      if (e.code === 'P2002') {
+      if ((e as any).code === 'P2002') {
         throw new EduException('SCHOOL_CLASS_EXISTS');
       }
       throw new EduException('UNKNOWN_ERROR');
@@ -371,12 +381,24 @@ export class SchoolClassService {
   async updateSchoolClass(
     id: string,
     updateSchoolClassDto: UpdateSchoolClassRequestDto,
+    profile: Profile,
   ): Promise<CreateSchoolClassResponseDto> {
     const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
     await this.validateSchoolClassExists(id);
+
+    if (teacherIds != null && profile !== Profile.DIRECTOR) {
+      const existingUserIds = await this.getExistingUserIdsForClass(id);
+      const changesTeachers =
+        teacherIds.length !== existingUserIds.length ||
+        teacherIds.some((teacherId) => !existingUserIds.includes(teacherId));
+      if (changesTeachers) {
+        throw new EduException('INVALID_PROFILE');
+      }
+    }
+
     await this.updateClassData(id, schoolClassData);
-    if (teacherIds != null) {
+    if (teacherIds != null && profile === Profile.DIRECTOR) {
       await this.handleUserSchoolClassUpdates(id, teacherIds);
     }
 
@@ -718,6 +740,12 @@ export class SchoolClassService {
       throw new EduException('SCHOOL_CLASS_NOT_FOUND');
     }
 
+    const exam = await this.examModel.findOne({ status: 'ACTIVE' });
+
+    if (!exam) {
+      throw new EduException('STUDENT_CREATE_NO_EXAM');
+    }
+
     const createdStudents: Student[] = [];
 
     for (const studentData of studentsData) {
@@ -932,15 +960,15 @@ export class SchoolClassService {
       const count: number = await this.prismaService.schoolClass.count({
         where: {
           schoolGrade,
-        }
-      })
-      
+        },
+      });
+
       response.push({
         schoolGrade,
         count,
       });
     }
-    
+
     return response;
   }
 }

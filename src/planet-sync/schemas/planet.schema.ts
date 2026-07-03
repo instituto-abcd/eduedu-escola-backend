@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { ApiProperty } from '@nestjs/swagger';
 import { HydratedDocument } from 'mongoose';
+import { QuestionDto } from 'src/exam/dto/question.dto';
 
 export type Question = {
   orderedAnswer: boolean;
@@ -22,6 +24,7 @@ export type Question = {
     description: string;
     position: number;
     isCorrect: boolean;
+    id: string;
   }[];
   titles: {
     file_id?: string | null;
@@ -42,42 +45,55 @@ export type PlanetDocument = HydratedDocument<Planet>;
 
 @Schema()
 export class Planet {
+  @ApiProperty()
   @Prop()
   avatar_id: string;
 
+  @ApiProperty()
   @Prop()
   avatar_url: string;
 
+  @ApiProperty()
   @Prop()
   axis_code: string;
 
+  @ApiProperty()
   @Prop()
   domain_code: string;
 
+  @ApiProperty()
   @Prop()
   enable: boolean;
 
+  @ApiProperty()
   @Prop()
   id: string;
 
+  @ApiProperty()
   @Prop()
   level: string;
 
+  @ApiProperty()
   @Prop()
   next_planet_id: string | null;
 
+  @ApiProperty()
   @Prop()
   position: number;
 
+  @ApiProperty()
   @Prop()
   status: string;
 
+  @ApiProperty()
   @Prop()
   title: string;
 
+  @ApiProperty()
   @Prop({ type: { seconds: Number, nanoseconds: Number }, _id: false })
   updated_at: { seconds: number; nanoseconds: number };
 
+  @ApiProperty({ type: QuestionDto, isArray: true })
   @Prop()
   questions: Question[];
 }

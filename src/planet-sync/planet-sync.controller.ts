@@ -1,14 +1,13 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Post,
+} from '@nestjs/common';
 import { SyncPlanetResponse } from './dto/sync-success.dto';
 import { PlanetSyncService } from './planet-sync.service';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { LastSyncResponseDto } from './dto/last-sync-response.dto';
-// import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { LastPlanetSyncResponseDto } from './dto/last-planet-sync-response.dto';
 
 @ApiTags('Sincronizar Planetas')
 @Controller('planet-sync')
@@ -16,65 +15,60 @@ export class PlanetSyncController {
   constructor(private readonly planetSyncService: PlanetSyncService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Sincronizar planetas da fila' })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
-    type: SyncPlanetResponse,
+  @ApiOperation({
+    summary: 'Sincronizar planetas da fila',
+    description:
+      'Sincronizara planetas apenas com a propriedade `synced: false`. Apos cada sincronizacao, um planeta e marcado com `synced: true`, para evitar de baixar o mesmo planeta multiplas vezes.',
   })
+  @ApiOkResponse({ type: SyncPlanetResponse })
   sync() {
     return this.planetSyncService.sync();
   }
 
-  @Post('sync-all')
+  @Post('sync')
   @ApiOperation({
-    summary: 'Sincronizar planetas do Firestore (ignora a fila)',
+    summary: 'Sincronizar planetas (assets e dados) - Enfileira em background',
+    description:
+      'Enfileira a sincronizacao de planetas para execucao em background. Baixa os assets de planeta do endpoint /asset/planet, extrai para assets-data/, e sincroniza dados dos planetas do Firestore para o MongoDB local.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
-    type: SyncPlanetResponse,
-  })
-  syncAll() {
-    if (process.env.ASSETS != 'LOCAL') {
-      return this.planetSyncService.handleSyncAll();
-    } else {
-      return this.planetSyncService.enqueueSyncAll();
+  @ApiOkResponse({ type: SyncPlanetResponse })
+  async syncAll() {
+    try {
+      await this.planetSyncService.enqueueSyncAll();
+      return {
+        message: 'Sincronizacao de planetas enfileirada.',
+        status: 202,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Falha ao enfileirar sincronizacao de planetas: ' + error.message,
+      );
     }
   }
 
-  @Post('force-sync-all')
+  @Post('force-sync')
   @ApiOperation({
-    summary: 'Força Sincronizar planetas do Firestore',
+    summary: 'Sincronizar planetas de forma sincrona (ignora fila)',
+    description:
+      'Executa a sincronizacao de planetas de forma sincrona, sem usar a fila.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Status da operação',
-    type: SyncPlanetResponse,
-  })
+  @ApiOkResponse({ type: SyncPlanetResponse })
   forceSyncAll() {
     return this.planetSyncService.handleSyncAll();
   }
 
   @Get('sync-status')
   @ApiOperation({
-    summary: 'Retorna o status da sincronização atual de planetas',
-  })
-  @ApiResponse({
-    status: 200,
+    summary: 'Status da operacao de sincronizacao de planetas',
   })
   getPlanetSyncStatus() {
     return this.planetSyncService.getPlanetSyncStatus();
   }
 
   @Get('last-sync')
-  @ApiOperation({
-    summary: 'Retorna a última data de sincronização',
-  })
-  @ApiResponse({
-    status: 200,
-  })
-  getLastSync(): Promise<LastSyncResponseDto> {
+  @ApiOperation({ summary: 'Ultima data de sincronizacao de planetas' })
+  @ApiOkResponse({ type: LastPlanetSyncResponseDto })
+  getLastSync(): Promise<LastPlanetSyncResponseDto> {
     return this.planetSyncService.getLastSync();
   }
 }

@@ -1,3 +1,3 @@
-import { Planet } from "src/planet-sync/schemas/planet.schema";
+import { Planet } from "../../planet-sync/schemas/planet.schema";
 
-export class PlanetDto extends Planet { }
+export class PlanetDto extends Planet {}

@@ -1,45 +1,45 @@
-import { Module } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { ValidationUtilsService } from '../common/utils/validation-utils.service';
-import { BcryptService } from '../common/services/bcrypt.service';
-import { StudentService } from './student.service';
-import { StudentController } from './student.controller';
-import { DashboardService } from '../dashboard/dashboard.service';
-import { DateApiService } from '../common/services/date-api.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { StudentExam, StudentExamSchema } from './schemas/studentExam.schema';
-import { StudentExamService } from './studentExam.service';
-import { AwardsService } from '../awards/awards.service';
-import { Exam, ExamSchema } from '../exam/schemas/exam.schema';
-import { Planet, PlanetSchema } from 'src/planet-sync/schemas/planet.schema';
-import { StudentAwardService } from './studentAward.service';
-import { StudentResultService } from './studentResult.service';
-import { PerformanceResultUtilsService } from '../common/utils/performance-result-utils.service';
-import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
+import { Module } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { ValidationUtilsService } from "../common/utils/validation-utils.service";
+import { BcryptService } from "../common/services/bcrypt.service";
+import { StudentService } from "./student.service";
+import { StudentController } from "./student.controller";
+import { DashboardService } from "../dashboard/dashboard.service";
+import { DateApiService } from "../common/services/date-api.service";
+import { MongooseModule } from "@nestjs/mongoose";
+import { StudentExam, StudentExamSchema } from "./schemas/studentExam.schema";
+import { StudentExamService } from "./studentExam.service";
+import { AwardsService } from "../awards/awards.service";
+import { Exam, ExamSchema } from "../exam/schemas/exam.schema";
+import { Planet, PlanetSchema } from "../planet-sync/schemas/planet.schema";
+import { StudentAwardService } from "./studentAward.service";
+import { StudentResultService } from "./studentResult.service";
+import { PerformanceResultUtilsService } from "../common/utils/performance-result-utils.service";
+import { StudentPlanetExecutionService } from "./studentPlanetExecution.service";
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: StudentExam.name, schema: StudentExamSchema },
-      { name: Exam.name, schema: ExamSchema },
-      { name: Planet.name, schema: PlanetSchema },
-    ]),
-  ],
-  exports: [PerformanceResultUtilsService, StudentResultService],
-  controllers: [StudentController],
-  providers: [
-    StudentService,
-    PrismaService,
-    ValidationUtilsService,
-    BcryptService,
-    DashboardService,
-    DateApiService,
-    StudentExamService,
-    AwardsService,
-    StudentAwardService,
-    StudentResultService,
-    StudentPlanetExecutionService,
-    PerformanceResultUtilsService,
-  ],
+	imports: [
+		MongooseModule.forFeature([
+			{ name: StudentExam.name, schema: StudentExamSchema },
+			{ name: Exam.name, schema: ExamSchema },
+			{ name: Planet.name, schema: PlanetSchema },
+		]),
+	],
+	exports: [PerformanceResultUtilsService, StudentResultService],
+	controllers: [StudentController],
+	providers: [
+		StudentService,
+		PrismaService,
+		ValidationUtilsService,
+		BcryptService,
+		DashboardService,
+		DateApiService,
+		StudentExamService,
+		AwardsService,
+		StudentAwardService,
+		StudentResultService,
+		StudentPlanetExecutionService,
+		PerformanceResultUtilsService,
+	],
 })
 export class StudentModule {}

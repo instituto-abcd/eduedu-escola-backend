@@ -19,7 +19,7 @@ export class AwardsService {
       },
     });
 
-    return { id: createdAward.id, name: createdAward.name };
+    return createdAward;
   }
 
   async getStudentAwards(studentId: string): Promise<Award[]> {
@@ -42,7 +42,7 @@ export class AwardsService {
     const currentAwards = await this.getStudentAwards(studentId);
 
     return currentAwards.filter(
-      award => !oldAwards.find(item => item.id === award.id)
+      (award) => !oldAwards.find((item) => item.id === award.id),
     );
   }
 }
