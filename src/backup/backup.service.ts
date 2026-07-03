@@ -6,7 +6,7 @@ import * as archiver from 'archiver';
 
 @Injectable()
 export class BackupService {
-  private readonly backupDir = path.join(__dirname, '..', '..', 'backup');
+  private readonly backupDir = path.join(process.cwd(), 'backup');
   private readonly pgUser = 'postgres';
   private readonly pgPassword = 'senhaS3creta';
   private readonly mongoUser = 'root';

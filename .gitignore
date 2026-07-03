@@ -43,3 +43,5 @@ assets-data
 .flaskenv*
 !.env.project
 !.env.vault
+# Local database backups
+/backup
