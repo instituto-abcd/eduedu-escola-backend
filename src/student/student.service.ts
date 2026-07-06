@@ -39,6 +39,8 @@ import { PlanetDocument } from '../planet-sync/schemas/planet.schema';
 import { ExamResumes } from '../templates/exam-resume-templates';
 import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
+import { ReleasePlanetsRequestDto } from './dto/request/release-planets-request.dto';
+import { ReleasePlanetsResponseDto } from './dto/request/release-planets-response.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 import { AwardsService } from '../awards/awards.service';
@@ -1031,11 +1033,43 @@ export class StudentService {
       lastExam: true,
     });
 
+    this.applyPlanetRelease(studentExam);
+
+    await studentExam.save();
+  }
+
+  async releasePlanetsBulk(
+    requestDto: ReleasePlanetsRequestDto,
+  ): Promise<ReleasePlanetsResponseDto> {
+    const { ids } = requestDto;
+
+    if (!ids || ids.length === 0) {
+      throw new EduException('IDS_REQUIRED');
+    }
+
+    const studentExams = await this.studentExamModel.find({
+      studentId: { $in: ids },
+      lastExam: true,
+    });
+
+    // Fail-all: se algum aluno não tem prova atual, nada é liberado
+    const foundIds = new Set(studentExams.map((exam) => exam.studentId));
+    if (ids.some((id) => !foundIds.has(id))) {
+      throw new EduException('EXAM_NOT_FOUND');
+    }
+
+    for (const studentExam of studentExams) {
+      this.applyPlanetRelease(studentExam);
+      await studentExam.save();
+    }
+
+    return { success: true };
+  }
+
+  private applyPlanetRelease(studentExam: StudentExamDocument): void {
     let counter = 1;
     const nextAvaiableDate = new Date();
     nextAvaiableDate.setUTCHours(0, 0, 0, 0);
-
-    const plantTrackToUpdate = studentExam.planetTrack;
 
     studentExam.planetTrack
       .filter((item) => item.availableAt > new Date())
@@ -1051,11 +1085,9 @@ export class StudentService {
         }
       });
 
-    studentExam.planetTrack = plantTrackToUpdate.sort(
+    studentExam.planetTrack = studentExam.planetTrack.sort(
       (a, b) => a.order - b.order,
     );
-
-    await studentExam.save();
   }
 
   private async getPlanetsByAxisAndLevel(
