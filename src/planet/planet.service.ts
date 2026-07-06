@@ -16,6 +16,8 @@ import {
   StudentExam,
   StudentExamDocument,
 } from '../student/schemas/studentExam.schema';
+import { StorageService } from '../planet-sync/storage.service';
+import { ExamStorageService } from '../exam/exam-storage.service';
 
 @Injectable()
 export class PlanetService {
@@ -28,7 +30,41 @@ export class PlanetService {
     private readonly studentService: StudentService,
     @InjectModel(StudentExam.name)
     private studentExamModel: Model<StudentExamDocument>,
+    private readonly storageService: StorageService,
+    private readonly examStorageService: ExamStorageService,
   ) {}
+
+  // As URLs de assets são montadas na leitura (e nunca persistidas/cacheadas)
+  // para refletirem sempre o FILE_SERVER_URL atual. Questões de planeta usam
+  // sound_id/image_id/file_id; questões de prova usam sound_name/image_name/file_name.
+  private async enrichQuestionUrls(question: any): Promise<any> {
+    if (!question) return question;
+    const enriched = { ...question };
+    if (enriched.options) {
+      enriched.options = await Promise.all(
+        enriched.options.map(async (option: any) => ({
+          ...option,
+          sound_url: option.sound_id
+            ? await this.storageService.recoverFileURL(option.sound_id)
+            : await this.examStorageService.recoverFileURL(option.sound_name),
+          image_url: option.image_id
+            ? await this.storageService.recoverFileURL(option.image_id)
+            : await this.examStorageService.recoverFileURL(option.image_name),
+        })),
+      );
+    }
+    if (enriched.titles) {
+      enriched.titles = await Promise.all(
+        enriched.titles.map(async (title: any) => ({
+          ...title,
+          file_url: title.file_id
+            ? await this.storageService.recoverFileURL(title.file_id)
+            : await this.examStorageService.recoverFileURL(title.file_name),
+        })),
+      );
+    }
+    return enriched;
+  }
 
   async findAll(): Promise<PlanetDto[]> {
     const planets = await this.planetModel.find();
@@ -224,7 +260,7 @@ export class PlanetService {
       (question) => question.id == questionId,
     );
 
-    return result;
+    return this.enrichQuestionUrls(result);
   }
 
   async findPlanetQuestions(planetId: string): Promise<Question[]> {
@@ -232,7 +268,9 @@ export class PlanetService {
       id: planetId,
     });
 
-    return planet.questions;
+    return Promise.all(
+      planet.questions.map((question) => this.enrichQuestionUrls(question)),
+    );
   }
 
   async resetAllPlanetQuestionsCache() {
@@ -297,7 +335,9 @@ export class PlanetService {
       await this.cacheManager.set(`DEBUG_QUESTIONS_${modelId}`, finalResult, 0);
     }
 
-    return finalResult;
+    return Promise.all(
+      finalResult.map((question) => this.enrichQuestionUrls(question)),
+    );
   }
 
   async findAllPlanetQuestionsTest(modelId: string): Promise<any[]> {
@@ -344,7 +384,9 @@ export class PlanetService {
       )
       .sort((a, b) => a.id.localeCompare(b.id));
 
-    return finalResult;
+    return Promise.all(
+      finalResult.map((question) => this.enrichQuestionUrls(question)),
+    );
   }
 
   private async findAllExamQuestions(modelId: string): Promise<any[]> {

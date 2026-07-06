@@ -351,12 +351,8 @@ export class PlanetSyncService {
           const option = {
             sound_id: optionOrigin.sound_id,
             image_id: optionOrigin.image_id,
-            sound_url: await this.storageService.recoverFileURL(
-              optionOrigin?.sound_id,
-            ),
-            image_url: await this.storageService.recoverFileURL(
-              optionOrigin?.image_id,
-            ),
+            sound_url: null,
+            image_url: null,
             description: optionOrigin.description,
             position:
               questionOrigin.model_id == 'MODEL3'
@@ -376,9 +372,7 @@ export class PlanetSyncService {
           const titleOrigin = questionOrigin.titles[titleIndex];
           const title = {
             file_id: titleOrigin.file_id,
-            file_url: await this.storageService.recoverFileURL(
-              titleOrigin?.file_id,
-            ),
+            file_url: null,
             description: titleOrigin.description,
             position: titleOrigin.position,
             placeholder: titleOrigin.placeholder,

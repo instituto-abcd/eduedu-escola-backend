@@ -11,6 +11,7 @@ import * as mime from 'mime-types';
 import { ApiGatewayService } from './apiGateway.service';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
+import { RequestContext } from '../common/request-context';
 
 type StoredFile = { name: string; mimeType: string; extension: string };
 
@@ -67,7 +68,14 @@ export class StorageService {
 
     const fileIdArray = fileId.split('.');
 
-    const fileServerUrl = process.env.FILE_SERVER_URL || '';
+    // Em contexto HTTP a URL é montada a partir do host da própria requisição,
+    // para que clientes em outros dispositivos da rede consigam alcançá-la
+    // mesmo quando o IP da máquina muda. FILE_SERVER_URL é só o fallback
+    // fora de requisições (ex.: jobs do Bull).
+    const requestBaseUrl = RequestContext.baseUrl();
+    const fileServerUrl = requestBaseUrl
+      ? `${requestBaseUrl}/assets-data`
+      : process.env.FILE_SERVER_URL || '';
 
     // Previne extensões de arquivo duplas, como .tar.gz ou mp3.mp3
 

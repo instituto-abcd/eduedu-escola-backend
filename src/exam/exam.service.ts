@@ -26,7 +26,28 @@ export class ExamService {
 
   async getExamQuestions(): Promise<Question[]> {
     const currentExam = await this.examModel.findOne({ status: 'ACTIVE' });
-    return currentExam.questions;
+    return this.enrichExamQuestionsUrls(currentExam.questions);
+  }
+
+  async enrichExamQuestionsUrls(questions: Question[]): Promise<Question[]> {
+    return Promise.all(questions.map((q) => this.enrichExamQuestionUrls(q)));
+  }
+
+  async enrichExamQuestionUrls(question: Question): Promise<Question> {
+    const options = await Promise.all(
+      question.options.map(async (option) => ({
+        ...option,
+        image_url: await this.examStorageService.recoverFileURL(option.image_name),
+        sound_url: await this.examStorageService.recoverFileURL(option.sound_name),
+      })),
+    );
+    const titles = await Promise.all(
+      question.titles.map(async (title) => ({
+        ...title,
+        file_url: await this.examStorageService.recoverFileURL(title.file_name),
+      })),
+    );
+    return { ...question, options, titles };
   }
 
   async enqueueSyncExams() {
@@ -147,8 +168,7 @@ export class ExamService {
       );
       await this.cacheManager.set('exam-sync-global-progress', 90, 0);
 
-      const _exams = await this.gatewayService.getExams();
-      const exams = await this.handleFileURLs(_exams);
+      const exams = await this.gatewayService.getExams();
 
       const mutation = await this.examModel.bulkWrite(
         exams.map((exam) => ({
@@ -183,42 +203,6 @@ export class ExamService {
       await this.cacheManager.set('exam-sync-running', false, 0);
       return null;
     }
-  }
-
-  private async handleFileURLs(exams: IExam[]): Promise<IExam[]> {
-    const promises = exams.map(async (exam) => {
-      const newQuestions = exam.questions.map(async (question) => {
-        const newOptions = question.options.map(async (option) => {
-          option.image_url = await this.examStorageService.recoverFileURL(
-            option?.image_name,
-          );
-          option.sound_url = await this.examStorageService.recoverFileURL(
-            option?.sound_name,
-          );
-
-          return option;
-        });
-
-        question.options = await Promise.all(newOptions);
-
-        const newTitles = question.titles.map(async (title) => {
-          title.file_url = await this.examStorageService.recoverFileURL(
-            title?.file_name,
-          );
-
-          return title;
-        });
-
-        question.titles = await Promise.all(newTitles);
-
-        return question;
-      });
-
-      exam.questions = await Promise.all(newQuestions);
-      return exam;
-    });
-
-    return await Promise.all(promises);
   }
 
   private padTo2Digits(num: number) {

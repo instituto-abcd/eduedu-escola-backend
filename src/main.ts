@@ -4,6 +4,7 @@ import { WinstonModule } from 'nest-winston';
 import { AppModule } from './app.module';
 import { instance } from './logger/logger.module';
 import { SchoolClassScheduleService } from './schedules/school-class-schedule.service';
+import { requestContextMiddleware } from './common/request-context';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -11,6 +12,8 @@ async function bootstrap() {
       instance,
     }),
   });
+
+  app.use(requestContextMiddleware);
 
   const config = new DocumentBuilder()
     .setTitle('EduEdu Escola')
