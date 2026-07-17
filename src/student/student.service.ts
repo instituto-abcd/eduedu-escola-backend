@@ -962,6 +962,24 @@ export class StudentService {
     }
   }
 
+  async pullOrphanPlanetsFromTracks(validPlanetIds: string[]): Promise<void> {
+    if (!validPlanetIds.length) return;
+
+    await this.studentExamModel.updateMany(
+      { 'planetTrack.planetId': { $nin: validPlanetIds } },
+      { $pull: { planetTrack: { planetId: { $nin: validPlanetIds } } } },
+    );
+  }
+
+  async pullPlanetsFromTracks(planetIds: string[]): Promise<void> {
+    if (!planetIds.length) return;
+
+    await this.studentExamModel.updateMany(
+      { 'planetTrack.planetId': { $in: planetIds } },
+      { $pull: { planetTrack: { planetId: { $in: planetIds } } } },
+    );
+  }
+
   async syncPlanetByStudent(studentId: string): Promise<boolean> {
     try {
       console.log(

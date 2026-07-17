@@ -9,4 +9,7 @@ export class SyncPlanetResponse {
 
   @ApiProperty({ description: 'Quantidade de planetas atualizados' })
   planetsUpdated: number;
+
+  @ApiProperty({ description: 'Quantidade de planetas removidos' })
+  planetsDeleted?: number;
 }
