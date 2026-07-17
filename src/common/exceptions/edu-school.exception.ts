@@ -246,6 +246,11 @@ export const ErrorDetails = {
 		message: "Prova não encontrada.",
 		status: HttpStatus.NOT_FOUND,
 	},
+	STUDENTS_WITHOUT_EXAM: {
+		message:
+			"Novos planetas só podem ser liberados para alunos que já realizaram uma prova.",
+		status: HttpStatus.BAD_REQUEST,
+	},
 	PLANET_NOT_FOUND: {
 		message: "Planeta não encontrado.",
 		status: HttpStatus.NOT_FOUND,

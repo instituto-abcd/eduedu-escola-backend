@@ -1103,8 +1103,23 @@ export class StudentService {
 
     // Fail-all: se algum aluno não tem prova atual, nada é liberado
     const foundIds = new Set(studentExams.map((exam) => exam.studentId));
-    if (ids.some((id) => !foundIds.has(id))) {
-      throw new EduException('EXAM_NOT_FOUND');
+    const missingIds = ids.filter((id) => !foundIds.has(id));
+    if (missingIds.length > 0) {
+      const studentsWithoutExam = await this.prisma.student.findMany({
+        where: { id: { in: missingIds } },
+        select: { id: true, name: true },
+      });
+      const namesById = new Map(
+        studentsWithoutExam.map((student) => [student.id, student.name]),
+      );
+      const studentList = missingIds
+        .map((id) => `- ${namesById.get(id) ?? id}`)
+        .join('\n');
+
+      throw new EduException(
+        'STUDENTS_WITHOUT_EXAM',
+        `Novos planetas só podem ser liberados para alunos que já realizaram uma prova. Alunos que não tem prova registrada:\n${studentList}`,
+      );
     }
 
     for (const studentExam of studentExams) {
