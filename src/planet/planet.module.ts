@@ -21,7 +21,6 @@ import { AwardsService } from "../awards/awards.service";
 import { StudentAwardService } from "../student/studentAward.service";
 import { StudentPlanetExecutionService } from "../student/studentPlanetExecution.service";
 import { PlanetSyncModule } from "../planet-sync/planet-sync.module";
-import { ExamStorageService } from "../exam/exam-storage.service";
 
 @Module({
 	imports: [
@@ -48,7 +47,6 @@ import { ExamStorageService } from "../exam/exam-storage.service";
 		StudentResultService,
 		StudentPlanetExecutionService,
 		PerformanceResultUtilsService,
-		ExamStorageService,
 	],
 })
 export class PlanetModule {}
