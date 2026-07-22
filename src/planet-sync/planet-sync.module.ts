@@ -73,6 +73,7 @@ import { ExamStorageService } from '../exam/exam-storage.service';
     PlanetSyncModule,
     GatewayService,
     StorageService,
+    ExamStorageService,
     BullModule,
     PerformanceResultUtilsService,
     StudentResultService,

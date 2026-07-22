@@ -17,7 +17,6 @@ import { StudentResultService } from "./studentResult.service";
 import { PerformanceResultUtilsService } from "../common/utils/performance-result-utils.service";
 import { StudentPlanetExecutionService } from "./studentPlanetExecution.service";
 import { PlanetSyncModule } from "../planet-sync/planet-sync.module";
-import { ExamStorageService } from "../exam/exam-storage.service";
 
 @Module({
 	imports: [
@@ -43,7 +42,6 @@ import { ExamStorageService } from "../exam/exam-storage.service";
 		StudentResultService,
 		StudentPlanetExecutionService,
 		PerformanceResultUtilsService,
-		ExamStorageService,
 	],
 })
 export class StudentModule {}
