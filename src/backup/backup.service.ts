@@ -18,12 +18,17 @@ export class BackupService {
   private readonly mongoUser = 'root';
   private readonly mongoPassword = 'senhaS3creta';
 
-  // Tabelas preservadas: School/Settings/_prisma_migrations nunca são tocadas,
-  // e de User só as linhas com owner=true são mantidas (o restante é
-  // truncado e recarregado do backup, junto com todas as demais tabelas).
+  // Tabelas preservadas: School/Settings/BackupSchedule/_prisma_migrations
+  // nunca são tocadas, e de User só as linhas com owner=true são mantidas (o
+  // restante é truncado e recarregado do backup, junto com todas as demais
+  // tabelas). BackupSchedule fica de fora porque o agendamento e a data do
+  // último backup são estado desta instalação: restaurar os valores que
+  // vinham no zip faria a máquina achar que já rodou (ou que está em atraso)
+  // em relação a um backup de outro computador.
   private readonly PRESERVED_TABLES = [
     'School',
     'Settings',
+    'BackupSchedule',
     'User',
     '_prisma_migrations',
   ];
@@ -91,7 +96,16 @@ export class BackupService {
       this.deleteBackupInContainer(mongoContainerName, mongoBackupFile),
     ]);
 
-    await this.zipBackupFiles([pgBackupFile, mongoBackupFile], backupFilePath);
+    // O zip é montado com um nome temporário e só ganha o nome final depois
+    // de fechado. Sem isso, uma máquina desligada no meio da compactação
+    // deixaria um `backup-*.zip` truncado na pasta, indistinguível de um
+    // backup íntegro — justamente o arquivo que alguém tentaria restaurar.
+    const unfinishedFilePath = `${backupFilePath}${BackupService.UNFINISHED_SUFFIX}`;
+    await this.zipBackupFiles(
+      [pgBackupFile, mongoBackupFile],
+      unfinishedFilePath,
+    );
+    fs.renameSync(unfinishedFilePath, backupFilePath);
 
     await Promise.all([
       this.deleteLocalBackupFile(pgBackupFile),
@@ -99,6 +113,56 @@ export class BackupService {
     ]);
 
     return backupFileName;
+  }
+
+  private static readonly UNFINISHED_SUFFIX = '.part';
+  private static readonly BACKUP_FILE_PATTERN = /^backup-.+\.zip$/;
+
+  // Nomes dos backups existentes, do mais recente para o mais antigo. A
+  // ordenação é pelo nome porque o timestamp faz parte dele (ISO 8601), o
+  // que evita depender de mtime — em pasta sincronizada (OneDrive) ou depois
+  // de uma cópia manual, mtime não corresponde à data do backup.
+  listBackupFiles(): string[] {
+    this.ensureBackupDirectory();
+
+    return fs
+      .readdirSync(this.backupDir)
+      .filter((fileName) => BackupService.BACKUP_FILE_PATTERN.test(fileName))
+      .sort()
+      .reverse();
+  }
+
+  // Apaga os zips que passam do limite de retenção e devolve o que foi
+  // removido. O disco dessas máquinas é pequeno e ninguém acompanha a pasta,
+  // então sem isso um backup semanal enche a máquina sozinho.
+  pruneBackups(keep: number): string[] {
+    const removable = this.listBackupFiles().slice(Math.max(keep, 1));
+
+    return removable.filter((fileName) => {
+      try {
+        fs.unlinkSync(path.join(this.backupDir, fileName));
+        return true;
+      } catch (error) {
+        console.warn(`Não foi possível remover o backup ${fileName}:`, error);
+        return false;
+      }
+    });
+  }
+
+  // Restos de compactações interrompidas (ver `createBackup`). Chamado na
+  // inicialização, quando é certo que nenhuma compactação está em curso.
+  cleanupUnfinishedBackups(): void {
+    this.ensureBackupDirectory();
+
+    for (const fileName of fs.readdirSync(this.backupDir)) {
+      if (!fileName.endsWith(BackupService.UNFINISHED_SUFFIX)) continue;
+
+      try {
+        fs.unlinkSync(path.join(this.backupDir, fileName));
+      } catch (error) {
+        console.warn(`Não foi possível remover ${fileName}:`, error);
+      }
+    }
   }
 
   // Prefixo das pastas de extração temporária do restore, sempre criadas
