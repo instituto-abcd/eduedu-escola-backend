@@ -42,7 +42,12 @@ export class SchoolClassService {
   async create(
     createSchoolClassDto: CreateSchoolClassDto,
     schoolId: string,
+    profile: Profile,
   ): Promise<CreateSchoolClassResponseDto> {
+    if (profile !== Profile.DIRECTOR) {
+      throw new EduException('INVALID_PROFILE');
+    }
+
     try {
       const { teacherIds, ...schoolClassData } =
         createSchoolClassDto as CreateSchoolClassDto;
@@ -381,6 +386,16 @@ export class SchoolClassService {
     const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
     await this.validateSchoolClassExists(id);
+
+    if (teacherIds != null && profile !== Profile.DIRECTOR) {
+      const existingUserIds = await this.getExistingUserIdsForClass(id);
+      const changesTeachers =
+        teacherIds.length !== existingUserIds.length ||
+        teacherIds.some((teacherId) => !existingUserIds.includes(teacherId));
+      if (changesTeachers) {
+        throw new EduException('INVALID_PROFILE');
+      }
+    }
 
     await this.updateClassData(id, schoolClassData);
     if (teacherIds != null && profile === Profile.DIRECTOR) {

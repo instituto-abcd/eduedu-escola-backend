@@ -49,6 +49,8 @@ import { QuestionDto } from '../exam/dto/question.dto';
 import { ExamEvaluationResponseDto } from './dto/response/exam-evaluation-response.dto';
 import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
+import { ReleasePlanetsRequestDto } from './dto/request/release-planets-request.dto';
+import { ReleasePlanetsResponseDto } from './dto/request/release-planets-response.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanet } from './schemas/studentExam.schema';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
@@ -274,6 +276,21 @@ export class StudentController {
       hideLastPlanets,
       canExecuteAnyPlanet,
     );
+  }
+
+  @Put('release-planets')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Marca planetas como disponíveis na trilha de vários alunos',
+    description:
+      'A operação é realizada manualmente no portal Admin, na listagem de alunos',
+  })
+  @ApiOkResponse({ type: ReleasePlanetsResponseDto })
+  async releasePlanetsBulk(
+    @Body() requestDto: ReleasePlanetsRequestDto,
+  ): Promise<ReleasePlanetsResponseDto> {
+    return this.studentService.releasePlanetsBulk(requestDto);
   }
 
   @Put('/:id/release-planets')

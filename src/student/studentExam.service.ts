@@ -8,6 +8,7 @@ import { PlanetTrackDto } from './dto/planet-track.dto';
 import { PlanetDto } from './dto/planet.dto';
 import { StudentExamDto } from './dto/studentexam.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { rebaseAssetUrl } from '../common/request-context';
 
 @Injectable()
 export class StudentExamService {
@@ -81,7 +82,11 @@ export class StudentExamService {
         const planetDto = {
           planetId: studentExam.planetTrack[index].planetId,
           planetName: studentExam.planetTrack[index].planetName,
-          planetAvatar: studentExam.planetTrack[index].planetAvatar,
+          // O avatar foi persistido com o host vigente na sincronização;
+          // reescreve para o host desta requisição.
+          planetAvatar: rebaseAssetUrl(
+            studentExam.planetTrack[index].planetAvatar,
+          ),
           stars: currentPlanetStars,
           canExecutePlanet,
         };

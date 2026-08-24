@@ -77,6 +77,11 @@ export const ErrorDetails = {
 		status: HttpStatus.BAD_REQUEST,
 	},
 
+	INVALID_TARGET_PROFILE: {
+		message: "Apenas professores podem ter a senha redefinida por um diretor.",
+		status: HttpStatus.BAD_REQUEST,
+	},
+
 	INVALID_PASSWORD: {
 		message: "Senha inválida.",
 		status: HttpStatus.BAD_REQUEST,
@@ -240,6 +245,11 @@ export const ErrorDetails = {
 	EXAM_NOT_FOUND: {
 		message: "Prova não encontrada.",
 		status: HttpStatus.NOT_FOUND,
+	},
+	STUDENTS_WITHOUT_EXAM: {
+		message:
+			"Novos planetas só podem ser liberados para alunos que já realizaram uma prova.",
+		status: HttpStatus.BAD_REQUEST,
 	},
 	PLANET_NOT_FOUND: {
 		message: "Planeta não encontrado.",

@@ -43,6 +43,8 @@ import { UserAccessCodeResponseDto } from './dto/response/user-access-code-respo
 import { UserAccessCodeOptionResponseDto } from './dto/response/user-access-code-option-response.dto';
 import { UserGuard } from '../auth/guard/user.guard';
 import { UpdatePasswordRequestDto } from './dto/request/update-password-request.dto';
+import { ResetPasswordByDirectorRequestDto } from './dto/request/reset-password-by-director-request.dto';
+import { DirectorAuthGuard } from '../auth/guard/director-auth.guard';
 import { AuthResponseDto } from '../auth/dto/response/auth-response.dto';
 import { AuditGuard } from '../common/guard/audit.guard';
 import { EduException } from '../common/exceptions/edu-school.exception';
@@ -239,6 +241,30 @@ export class UserController {
       schoolClassId,
     );
     return await this.userService.getAccessCodeOptions(userId);
+  }
+
+  @Put(':id/password/reset')
+  @ApiOperation({
+    summary: 'Redefinir senha de um professor (uso exclusivo do diretor)',
+  })
+  @ApiParam({ name: 'id', description: 'ID do professor', type: 'string' })
+  @ApiOkResponse({ description: 'Senha redefinida com sucesso' })
+  @ApiBadRequestResponse({
+    status: ErrorDetails.WEAK_PASSWORD.status,
+    description: ErrorDetails.WEAK_PASSWORD.message,
+  })
+  @ApiBadRequestResponse({
+    status: ErrorDetails.INVALID_TARGET_PROFILE.status,
+    description: ErrorDetails.INVALID_TARGET_PROFILE.message,
+  })
+  @ApiNotFoundResponse({ description: ErrorDetails.USER_NOT_FOUND.message })
+  @UseGuards(DirectorAuthGuard)
+  @ApiBearerAuth()
+  async resetPasswordByDirector(
+    @Param('id') id: string,
+    @Body() { newPassword }: ResetPasswordByDirectorRequestDto,
+  ): Promise<{ success: boolean }> {
+    return this.userService.resetPasswordByDirector(id, newPassword);
   }
 
   @ApiOperation({ summary: 'Trocar a senha do usuário logado' })

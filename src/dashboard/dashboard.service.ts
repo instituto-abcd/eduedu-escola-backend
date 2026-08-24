@@ -288,6 +288,7 @@ export class DashboardService {
 
 			if (!dashboardGrade) {
 				this.logger.log(`Dashboard School Grade not found for name: ${grade}`);
+				return;
 			}
 
 			const data = {
