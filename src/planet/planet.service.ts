@@ -18,6 +18,7 @@ import {
 } from '../student/schemas/studentExam.schema';
 import { StorageService } from '../planet-sync/storage.service';
 import { ExamStorageService } from '../exam/exam-storage.service';
+import { rebaseAssetUrl } from '../common/request-context';
 
 @Injectable()
 export class PlanetService {
@@ -68,7 +69,10 @@ export class PlanetService {
 
   async findAll(): Promise<PlanetDto[]> {
     const planets = await this.planetModel.find();
-    return planets;
+    return planets.map((planet) => {
+      const plain = planet.toObject();
+      return { ...plain, avatar_url: rebaseAssetUrl(plain.avatar_url) };
+    }) as PlanetDto[];
   }
 
   async findAllPlanetsByAxisAndLevel(
