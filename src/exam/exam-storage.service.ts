@@ -9,6 +9,7 @@ import { ApiGatewayService } from '../planet-sync/apiGateway.service';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
 import { RequestContext } from '../common/request-context';
+import { StorageService } from '../planet-sync/storage.service';
 
 type StoredFile = { name: string; mimeType: string; extension: string };
 
@@ -16,15 +17,59 @@ type StoredFile = { name: string; mimeType: string; extension: string };
 export class ExamStorageService {
   private files: StoredFile[] = [];
   private readonly assetsDir: string;
+  private readonly legacyAssetsDir: string;
 
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
-    this.assetsDir = path.resolve(__dirname, '../../assets-data-exam');
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly storageService: StorageService,
+  ) {
+    // Os assets de prova ficam num subdiretório de assets-data porque essa é a
+    // única pasta com volume no docker-compose do instalador. Antes viviam em
+    // assets-data-exam/, fora de qualquer volume, e por isso eram perdidos toda
+    // vez que o container era recriado (atualização, troca de versão, down/up),
+    // fazendo recoverFileURL devolver null e o portal exibir o texto alternativo.
+    this.assetsDir = path.resolve(__dirname, '../../assets-data/exam');
+    this.legacyAssetsDir = path.resolve(__dirname, '../../assets-data-exam');
 
-    if (!fs.existsSync(this.assetsDir)) {
-      fs.mkdirSync(this.assetsDir, { recursive: true });
-      this.files = [];
-    } else {
-      this.reloadFiles();
+    fs.ensureDirSync(this.assetsDir);
+    this.migrateLegacyAssets();
+    this.reloadFiles();
+  }
+
+  // Instalações que ainda não recriaram o container têm os arquivos no lugar
+  // antigo; move para o novo em vez de exigir uma nova sincronização de provas.
+  private migrateLegacyAssets() {
+    try {
+      if (!fs.existsSync(this.legacyAssetsDir)) {
+        return;
+      }
+
+      const legacyFiles = fs
+        .readdirSync(this.legacyAssetsDir)
+        .filter((file) =>
+          fs.statSync(path.join(this.legacyAssetsDir, file)).isFile(),
+        );
+
+      if (!legacyFiles.length) {
+        return;
+      }
+
+      console.log(
+        `Movendo ${legacyFiles.length} assets de prova de ${this.legacyAssetsDir} para ${this.assetsDir}`,
+      );
+
+      for (const file of legacyFiles) {
+        fs.moveSync(
+          path.join(this.legacyAssetsDir, file),
+          path.join(this.assetsDir, file),
+          { overwrite: true },
+        );
+      }
+    } catch (error) {
+      console.error(
+        'Erro ao migrar assets de prova do diretório antigo:',
+        error,
+      );
     }
   }
 
@@ -55,7 +100,11 @@ export class ExamStorageService {
 
     const fileExtension = await this.getFileExtensionByFileId(fileId);
     if (!fileExtension) {
-      return null;
+      // O ZIP de planetas também traz os assets de prova, e assets-data é
+      // persistido. Quando o store de prova está vazio - container recriado
+      // antes de uma nova sincronização de provas - o arquivo ainda pode ser
+      // servido de lá, em vez de devolver null e cair no placeholder.
+      return this.storageService.recoverFileURL(fileId);
     }
 
     const fileIdArray = fileId.split('.');

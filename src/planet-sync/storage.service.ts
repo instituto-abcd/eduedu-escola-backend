@@ -55,6 +55,21 @@ export class StorageService {
     return this.files;
   }
 
+  // Remove apenas os arquivos da raiz de assets-data, preservando
+  // subdiretórios. O store de provas vive em assets-data/exam e um
+  // emptyDir aqui apagaria os assets de prova junto.
+  private async clearAssetFiles() {
+    await fs.ensureDir(this.assetsDir);
+
+    const entries = await fs.readdir(this.assetsDir);
+    for (const entry of entries) {
+      const entryPath = path.join(this.assetsDir, entry);
+      if ((await fs.stat(entryPath)).isFile()) {
+        await fs.remove(entryPath);
+      }
+    }
+  }
+
   async recoverFileURL(fileId?: string): Promise<string | null> {
     if (!fileId) {
       return null;
@@ -120,7 +135,7 @@ export class StorageService {
         'Limpando pasta...',
         0,
       );
-      await fs.emptyDir(this.assetsDir);
+      await this.clearAssetFiles();
       await this.downloadedFileModel.deleteMany();
 
       // 🔹 Etapa 1: Download ZIP
