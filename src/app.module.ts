@@ -39,6 +39,7 @@ import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from './common/utils/utils.module';
 import { LottieModule } from './lottie/lottie.module';
 import { AccessKeyModule } from './access-key/accessKey.module';
+import { BackupModule } from './backup/backup.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { AccessKeyModule } from './access-key/accessKey.module';
     UtilsModule,
     LottieModule,
     AccessKeyModule,
+    BackupModule,
   ],
   providers: [
     PrismaService,
