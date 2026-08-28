@@ -11,6 +11,7 @@ import * as mime from 'mime-types';
 import { ApiGatewayService } from './apiGateway.service';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
+import { RequestContext } from '../common/request-context';
 
 type StoredFile = { name: string; mimeType: string; extension: string };
 
@@ -54,6 +55,21 @@ export class StorageService {
     return this.files;
   }
 
+  // Remove apenas os arquivos da raiz de assets-data, preservando
+  // subdiretórios. O store de provas vive em assets-data/exam e um
+  // emptyDir aqui apagaria os assets de prova junto.
+  private async clearAssetFiles() {
+    await fs.ensureDir(this.assetsDir);
+
+    const entries = await fs.readdir(this.assetsDir);
+    for (const entry of entries) {
+      const entryPath = path.join(this.assetsDir, entry);
+      if ((await fs.stat(entryPath)).isFile()) {
+        await fs.remove(entryPath);
+      }
+    }
+  }
+
   async recoverFileURL(fileId?: string): Promise<string | null> {
     if (!fileId) {
       return null;
@@ -67,7 +83,14 @@ export class StorageService {
 
     const fileIdArray = fileId.split('.');
 
-    const fileServerUrl = process.env.FILE_SERVER_URL || '';
+    // Em contexto HTTP a URL é montada a partir do host da própria requisição,
+    // para que clientes em outros dispositivos da rede consigam alcançá-la
+    // mesmo quando o IP da máquina muda. FILE_SERVER_URL é só o fallback
+    // fora de requisições (ex.: jobs do Bull).
+    const requestBaseUrl = RequestContext.baseUrl();
+    const fileServerUrl = requestBaseUrl
+      ? `${requestBaseUrl}/assets-data`
+      : process.env.FILE_SERVER_URL || '';
 
     // Previne extensões de arquivo duplas, como .tar.gz ou mp3.mp3
 
@@ -112,7 +135,7 @@ export class StorageService {
         'Limpando pasta...',
         0,
       );
-      await fs.emptyDir(this.assetsDir);
+      await this.clearAssetFiles();
       await this.downloadedFileModel.deleteMany();
 
       // 🔹 Etapa 1: Download ZIP

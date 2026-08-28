@@ -39,6 +39,8 @@ import { PlanetDocument } from '../planet-sync/schemas/planet.schema';
 import { ExamResumes } from '../templates/exam-resume-templates';
 import { AuthorizeNewExamResponseDto } from './dto/request/authorize-new-exam-response.dto';
 import { AuthorizeNewExamRequestDto } from './dto/request/authorize-new-exam-request.dto';
+import { ReleasePlanetsRequestDto } from './dto/request/release-planets-request.dto';
+import { ReleasePlanetsResponseDto } from './dto/request/release-planets-response.dto';
 import { QuestionPlanentDto } from '../exam/dto/question-planet.dto';
 import { AnswersPlanetResponseDto } from '../exam/dto/response/answers-planet-response.dto';
 import { AwardsService } from '../awards/awards.service';
@@ -46,6 +48,8 @@ import { StudentAwardService } from './studentAward.service';
 import { StudentPlanetExecutionService } from './studentPlanetExecution.service';
 import { StudentExamService } from './studentExam.service';
 import { UpdateStudentReservedResponseDto } from './dto/response/update-student-reserved-response';
+import { StorageService } from '../planet-sync/storage.service';
+import { ExamStorageService } from '../exam/exam-storage.service';
 
 @Injectable()
 export class StudentService {
@@ -62,7 +66,53 @@ export class StudentService {
     private studentExamModel: Model<StudentExamDocument>,
     @InjectModel(Planet.name)
     private planetModel: Model<PlanetDocument>,
+    private readonly storageService: StorageService,
+    private readonly examStorageService: ExamStorageService,
   ) {}
+
+  private async enrichPlanetQuestionUrls(question: any): Promise<any> {
+    if (!question) return question;
+    if (question.options) {
+      question.options = await Promise.all(
+        question.options.map(async (option: any) => ({
+          ...option,
+          sound_url: await this.storageService.recoverFileURL(option.sound_id),
+          image_url: await this.storageService.recoverFileURL(option.image_id),
+        })),
+      );
+    }
+    if (question.titles) {
+      question.titles = await Promise.all(
+        question.titles.map(async (title: any) => ({
+          ...title,
+          file_url: await this.storageService.recoverFileURL(title.file_id),
+        })),
+      );
+    }
+    return question;
+  }
+
+  private async enrichExamQuestionUrls(question: any): Promise<any> {
+    if (!question) return question;
+    if (question.options) {
+      question.options = await Promise.all(
+        question.options.map(async (option: any) => ({
+          ...option,
+          image_url: await this.examStorageService.recoverFileURL(option.image_name),
+          sound_url: await this.examStorageService.recoverFileURL(option.sound_name),
+        })),
+      );
+    }
+    if (question.titles) {
+      question.titles = await Promise.all(
+        question.titles.map(async (title: any) => ({
+          ...title,
+          file_url: await this.examStorageService.recoverFileURL(title.file_name),
+        })),
+      );
+    }
+    return question;
+  }
 
   async create(
     createStudentDto: CreateStudentRequestDto,
@@ -789,18 +839,19 @@ export class StudentService {
       const firstQuestion = sortedQuestions[0];
 
       // Mapeia o primeiro elemento para o formato do QuestionDto
+      const enriched = await this.enrichExamQuestionUrls(firstQuestion);
       return {
-        id: firstQuestion.id,
-        axis_code: firstQuestion.axis_code,
-        order: firstQuestion.order,
-        category: firstQuestion.category,
-        school_year: firstQuestion.school_year,
-        level: firstQuestion.level,
-        description: firstQuestion.description,
-        model_id: firstQuestion.model_id,
-        titles: firstQuestion.titles,
-        options: firstQuestion.options,
-        orderedAnswer: firstQuestion.orderedAnswer,
+        id: enriched.id,
+        axis_code: enriched.axis_code,
+        order: enriched.order,
+        category: enriched.category,
+        school_year: enriched.school_year,
+        level: enriched.level,
+        description: enriched.description,
+        model_id: enriched.model_id,
+        titles: enriched.titles,
+        options: enriched.options,
+        orderedAnswer: enriched.orderedAnswer,
       };
     } catch (error) {
       console.log(error);
@@ -909,6 +960,24 @@ export class StudentService {
       console.error('Erro ao sincronizar alunos e planetas:', error);
       return { success: false }; // Retornar um objeto indicando falha
     }
+  }
+
+  async pullOrphanPlanetsFromTracks(validPlanetIds: string[]): Promise<void> {
+    if (!validPlanetIds.length) return;
+
+    await this.studentExamModel.updateMany(
+      { 'planetTrack.planetId': { $nin: validPlanetIds } },
+      { $pull: { planetTrack: { planetId: { $nin: validPlanetIds } } } },
+    );
+  }
+
+  async pullPlanetsFromTracks(planetIds: string[]): Promise<void> {
+    if (!planetIds.length) return;
+
+    await this.studentExamModel.updateMany(
+      { 'planetTrack.planetId': { $in: planetIds } },
+      { $pull: { planetTrack: { planetId: { $in: planetIds } } } },
+    );
   }
 
   async syncPlanetByStudent(studentId: string): Promise<boolean> {
@@ -1031,11 +1100,58 @@ export class StudentService {
       lastExam: true,
     });
 
+    this.applyPlanetRelease(studentExam);
+
+    await studentExam.save();
+  }
+
+  async releasePlanetsBulk(
+    requestDto: ReleasePlanetsRequestDto,
+  ): Promise<ReleasePlanetsResponseDto> {
+    const { ids } = requestDto;
+
+    if (!ids || ids.length === 0) {
+      throw new EduException('IDS_REQUIRED');
+    }
+
+    const studentExams = await this.studentExamModel.find({
+      studentId: { $in: ids },
+      lastExam: true,
+    });
+
+    // Fail-all: se algum aluno não tem prova atual, nada é liberado
+    const foundIds = new Set(studentExams.map((exam) => exam.studentId));
+    const missingIds = ids.filter((id) => !foundIds.has(id));
+    if (missingIds.length > 0) {
+      const studentsWithoutExam = await this.prisma.student.findMany({
+        where: { id: { in: missingIds } },
+        select: { id: true, name: true },
+      });
+      const namesById = new Map(
+        studentsWithoutExam.map((student) => [student.id, student.name]),
+      );
+      const studentList = missingIds
+        .map((id) => `- ${namesById.get(id) ?? id}`)
+        .join('\n');
+
+      throw new EduException(
+        'STUDENTS_WITHOUT_EXAM',
+        `Novos planetas só podem ser liberados para alunos que já realizaram uma prova. Alunos que não tem prova registrada:\n${studentList}`,
+      );
+    }
+
+    for (const studentExam of studentExams) {
+      this.applyPlanetRelease(studentExam);
+      await studentExam.save();
+    }
+
+    return { success: true };
+  }
+
+  private applyPlanetRelease(studentExam: StudentExamDocument): void {
     let counter = 1;
     const nextAvaiableDate = new Date();
     nextAvaiableDate.setUTCHours(0, 0, 0, 0);
-
-    const plantTrackToUpdate = studentExam.planetTrack;
 
     studentExam.planetTrack
       .filter((item) => item.availableAt > new Date())
@@ -1051,11 +1167,9 @@ export class StudentService {
         }
       });
 
-    studentExam.planetTrack = plantTrackToUpdate.sort(
+    studentExam.planetTrack = studentExam.planetTrack.sort(
       (a, b) => a.order - b.order,
     );
-
-    await studentExam.save();
   }
 
   private async getPlanetsByAxisAndLevel(
@@ -1871,7 +1985,7 @@ export class StudentService {
       return null;
     }
 
-    return aggregationResult[0].questions[0];
+    return this.enrichExamQuestionUrls(aggregationResult[0].questions[0]);
   }
 
   // Obter a próxima questão do eixo seguinte (se houver questão do eixo finaliza a prova)
@@ -1934,9 +2048,10 @@ export class StudentService {
           schoolGradeYear,
           'LC',
         );
+        return question;
       }
 
-      return question;
+      return this.enrichExamQuestionUrls(question);
     } else {
       return await this.finishExam(studentId, examId);
     }
@@ -2462,7 +2577,7 @@ export class StudentService {
     planetId: string,
     questionId: string,
   ): Promise<QuestionPlanentDto> {
-    const question = await this.planetModel
+    const result = await this.planetModel
       .aggregate([
         {
           $match: {
@@ -2490,14 +2605,14 @@ export class StudentService {
       ])
       .exec();
 
-    return question[0].question;
+    return this.enrichPlanetQuestionUrls(result[0].question);
   }
 
   async getQuestionByPlanetIdAndPosition(
     planetId: string,
     position: number,
   ): Promise<QuestionPlanentDto> {
-    const question = await this.planetModel
+    const result = await this.planetModel
       .aggregate([
         {
           $match: {
@@ -2525,7 +2640,7 @@ export class StudentService {
       ])
       .exec();
 
-    return question[0].question;
+    return this.enrichPlanetQuestionUrls(result[0].question);
   }
 
   private async saveAnswerPlanet(

@@ -61,7 +61,10 @@ import { BackupModule } from './backup/backup.module';
       serveRoot: '/assets-data',
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'assets-data-exam'),
+      // Os arquivos vivem em assets-data/exam (dentro do único volume do
+      // instalador), mas a rota pública segue /assets-data-exam para não
+      // invalidar nenhuma URL já em uso pelos portais.
+      rootPath: join(__dirname, '..', 'assets-data', 'exam'),
       serveRoot: '/assets-data-exam',
     }),
     MongooseModule.forFeature([

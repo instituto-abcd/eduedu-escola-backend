@@ -6,7 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Exam, ExamSchema } from './schemas/exam.schema';
 import { LastExamSync, LastExamSyncSchema } from './schemas/last-exam-sync.schema';
 import { PlanetSyncModule } from '../planet-sync/planet-sync.module';
-import { ExamStorageService } from './exam-storage.service';
 import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from '../common/utils/utils.module';
 
@@ -24,7 +23,6 @@ import { UtilsModule } from '../common/utils/utils.module';
   providers: [
     ExamService,
     ExamSyncProcessor,
-    ExamStorageService,
     GatewayService,
   ],
 })

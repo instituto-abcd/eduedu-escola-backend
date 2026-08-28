@@ -32,6 +32,7 @@ import { StudentAwardService } from '../student/studentAward.service';
 import { StudentPlanetExecutionService } from '../student/studentPlanetExecution.service';
 import { LastSync, LastSyncSchema } from './schemas/last-sync.schema';
 import { AccessKeyService } from 'src/access-key/accessKey.service';
+import { ExamStorageService } from '../exam/exam-storage.service';
 
 @Module({
   imports: [
@@ -66,11 +67,13 @@ import { AccessKeyService } from 'src/access-key/accessKey.service';
     StudentPlanetExecutionService,
     PerformanceResultUtilsService,
     AccessKeyService,
+    ExamStorageService,
   ],
   exports: [
     PlanetSyncModule,
     GatewayService,
     StorageService,
+    ExamStorageService,
     BullModule,
     PerformanceResultUtilsService,
     StudentResultService,

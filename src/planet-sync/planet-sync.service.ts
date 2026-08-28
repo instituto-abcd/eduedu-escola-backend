@@ -199,6 +199,21 @@ export class PlanetSyncService {
       }
     }
 
+    const idsFromFirestore = planetsFromFirestore.map((planet) => planet.id);
+
+    if (idsFromFirestore.length > 0) {
+      const { deletedCount } = await this.planetModel.deleteMany({
+        id: { $nin: idsFromFirestore },
+      });
+
+      if (deletedCount > 0) {
+        console.log(
+          `Planet Sync - ${deletedCount} planeta(s) órfão(s) removido(s) do banco local`,
+        );
+        await this.studentService.pullOrphanPlanetsFromTracks(idsFromFirestore);
+      }
+    }
+
     await this.cacheManager.set(
       'planet-sync-current-operation',
       'Baixando Artefatos',
@@ -263,29 +278,60 @@ export class PlanetSyncService {
 
     const { accessKey } = await this.accessKeyService.getSettingsBySchoolId();
 
-    const planetsFromFirestore = await Promise.all(
-      planetsToSync.map((planet) =>
-        this.gatewayService.getPlanet(planet.planetId, accessKey),
-      ),
+    const fetched = await Promise.all(
+      planetsToSync.map(async (planet) => {
+        try {
+          const origin = await this.gatewayService.getPlanet(
+            planet.planetId,
+            accessKey,
+          );
+          return { planetId: planet.planetId, origin: origin ?? null };
+        } catch (error) {
+          return { planetId: planet.planetId, origin: null };
+        }
+      }),
     );
 
-    const planetsToPersist = planetsFromFirestore.map((planetOrigin) => {
-      return this.parsePlanetOriginToPlanet(planetOrigin);
-    });
+    const deletedPlanetIds = fetched
+      .filter((item) => !item.origin)
+      .map((item) => item.planetId);
 
-    const resolvedPlanets = await Promise.all(planetsToPersist);
+    const existingOrigins = fetched
+      .filter((item) => item.origin)
+      .map((item) => item.origin);
 
-    const mutation = await this.planetModel.bulkWrite(
-      resolvedPlanets.map((planet) => ({
-        updateOne: {
-          filter: { id: planet.id },
-          update: planet,
-          upsert: true,
-        },
-      })),
-    );
+    if (deletedPlanetIds.length > 0) {
+      await this.planetModel.deleteMany({ id: { $in: deletedPlanetIds } });
+      await this.studentService.pullPlanetsFromTracks(deletedPlanetIds);
+    }
 
-    if (mutation.isOk()) {
+    let upsertedCount = 0;
+    let modifiedCount = 0;
+    let success = true;
+
+    if (existingOrigins.length > 0) {
+      const resolvedPlanets = await Promise.all(
+        existingOrigins.map((planetOrigin) =>
+          this.parsePlanetOriginToPlanet(planetOrigin),
+        ),
+      );
+
+      const mutation = await this.planetModel.bulkWrite(
+        resolvedPlanets.map((planet) => ({
+          updateOne: {
+            filter: { id: planet.id },
+            update: planet,
+            upsert: true,
+          },
+        })),
+      );
+
+      success = mutation.isOk();
+      upsertedCount = mutation.upsertedCount;
+      modifiedCount = mutation.modifiedCount;
+    }
+
+    if (success) {
       await this.planetSyncModel.updateMany(
         { synced: false },
         { synced: true, syncedAt: new Date() },
@@ -293,9 +339,10 @@ export class PlanetSyncService {
     }
 
     return {
-      success: mutation.isOk(),
-      planetsSynced: mutation.upsertedCount,
-      planetsUpdated: mutation.modifiedCount,
+      success,
+      planetsSynced: upsertedCount,
+      planetsUpdated: modifiedCount,
+      planetsDeleted: deletedPlanetIds.length,
     };
   }
 
@@ -351,12 +398,8 @@ export class PlanetSyncService {
           const option = {
             sound_id: optionOrigin.sound_id,
             image_id: optionOrigin.image_id,
-            sound_url: await this.storageService.recoverFileURL(
-              optionOrigin?.sound_id,
-            ),
-            image_url: await this.storageService.recoverFileURL(
-              optionOrigin?.image_id,
-            ),
+            sound_url: null,
+            image_url: null,
             description: optionOrigin.description,
             position:
               questionOrigin.model_id == 'MODEL3'
@@ -376,9 +419,7 @@ export class PlanetSyncService {
           const titleOrigin = questionOrigin.titles[titleIndex];
           const title = {
             file_id: titleOrigin.file_id,
-            file_url: await this.storageService.recoverFileURL(
-              titleOrigin?.file_id,
-            ),
+            file_url: null,
             description: titleOrigin.description,
             position: titleOrigin.position,
             placeholder: titleOrigin.placeholder,

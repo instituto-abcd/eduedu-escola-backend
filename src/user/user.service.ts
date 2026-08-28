@@ -649,6 +649,10 @@ export class UserService {
 		const user = await this.prismaService.userSchoolClass.findFirst({
 			where: {
 				schoolClassId,
+				user: { profile: Profile.TEACHER },
+			},
+			orderBy: {
+				user: { createdAt: "asc" },
 			},
 			select: {
 				userId: true,
