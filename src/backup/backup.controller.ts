@@ -3,13 +3,18 @@ import {
   Body,
   Controller,
   Get,
+  Header,
+  Param,
   Post,
   Put,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { createReadStream } from 'fs';
+import { basename } from 'path';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -56,6 +61,37 @@ export class BackupController {
     @Body() updateBackupScheduleDto: UpdateBackupScheduleDto,
   ): Promise<BackupScheduleResponseDto> {
     return this.backupScheduleService.updateSchedule(updateBackupScheduleDto);
+  }
+
+  @Get('files')
+  @ApiOperation({
+    summary: 'Backups disponíveis nesta máquina, do mais recente para o mais antigo',
+  })
+  @ApiOkResponse({ type: [String], description: 'Nomes dos arquivos .zip' })
+  @UseGuards(DirectorAuthGuard)
+  @ApiBearerAuth()
+  async listBackups(): Promise<string[]> {
+    return this.backupService.listBackupFiles();
+  }
+
+  // Sem esta rota o .zip nao tem como sair da maquina: ele e escrito dentro
+  // do container do backend, e no setup a pasta nao e volume — o arquivo
+  // morre no proximo `docker compose down` (toda atualizacao recria o
+  // container) e a retencao apaga os antigos antes de alguem ve-los.
+  @Get('files/:fileName')
+  @ApiOperation({ summary: 'Baixar um arquivo de backup' })
+  @Header('Content-Type', 'application/zip')
+  @UseGuards(DirectorAuthGuard)
+  @ApiBearerAuth()
+  async downloadBackup(
+    @Param('fileName') fileName: string,
+  ): Promise<StreamableFile> {
+    const filePath = this.backupService.resolveBackupFile(fileName);
+
+    return new StreamableFile(createReadStream(filePath), {
+      type: 'application/zip',
+      disposition: `attachment; filename="${basename(filePath)}"`,
+    });
   }
 
   @Get()
