@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { MONGO_DATABASE } from './config/mongo';
 import { AuthModule } from './auth/auth.module';
 import { JwtEduModule } from './auth/jwt-edu.module';
 import { PlanetSyncModule } from './planet-sync/planet-sync.module';
@@ -50,7 +51,7 @@ import { BackupModule } from './backup/backup.module';
         username: process.env.MONGO_USER,
         password: process.env.MONGO_PASSWORD,
       },
-      dbName: process.env.DB_MONGO || 'eduedu-escola-admin',
+      dbName: MONGO_DATABASE,
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'dist', 'templates'),

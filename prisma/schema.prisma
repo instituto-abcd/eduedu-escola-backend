@@ -222,6 +222,33 @@ model Settings {
   accessKey              String
 }
 
+// Model for BackupSchedule
+// Linha única com o agendamento do backup automático e o estado da última
+// execução. Não tem schoolId de propósito: é uma configuração da instalação
+// (desta máquina), e não um dado da escola — por isso também faz parte das
+// tabelas preservadas em um restore (ver PRESERVED_TABLES no BackupService).
+model BackupSchedule {
+  id             String    @id @default(uuid())
+  enabled        Boolean   @default(true)
+  // 0 = domingo ... 6 = sábado
+  dayOfWeek      Int       @default(0)
+  hour           Int       @default(2)
+  minute         Int       @default(0)
+  // Quantos arquivos de backup manter na pasta antes de apagar os mais antigos
+  retentionCount Int       @default(4)
+  // Último backup concluído com sucesso — é o que define se a janela da
+  // semana já foi atendida ou se o backup ainda está em atraso
+  lastRunAt      DateTime?
+  lastRunFile    String?
+  lastAttemptAt  DateTime?
+  lastError      String?
+  // Preenchido enquanto um backup está em andamento, para uma segunda
+  // execução não começar em cima da primeira
+  runningSince   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
 // Model for Dashboard
 model Dashboard {
   id                    String                 @id @default(uuid())
