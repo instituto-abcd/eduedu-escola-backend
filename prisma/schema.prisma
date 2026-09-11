@@ -158,6 +158,7 @@ model UserSchoolClass {
   user          User        @relation(fields: [userId], references: [id])
   schoolClassId String
   schoolClass   SchoolClass @relation(fields: [schoolClassId], references: [id])
+  createdAt     DateTime    @default(now())
 
   @@id([userId, schoolClassId])
 }

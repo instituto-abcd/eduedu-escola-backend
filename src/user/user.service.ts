@@ -651,9 +651,7 @@ export class UserService {
 				schoolClassId,
 				user: { profile: Profile.TEACHER },
 			},
-			orderBy: {
-				user: { createdAt: "asc" },
-			},
+			orderBy: [{ createdAt: "asc" }, { userId: "asc" }],
 			select: {
 				userId: true,
 			},
