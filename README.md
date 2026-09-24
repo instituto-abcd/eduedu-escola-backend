@@ -309,7 +309,6 @@ Para obter o token, faça login via `POST /auth/login` com as credenciais.
 | `POST` | `/school-year`  | Criar ano letivo         |
 | `GET`  | `/exam`         | Listar avaliações        |
 | `GET`  | `/dashboard`    | Dados do dashboard       |
-| `GET`  | `/report`       | Relatórios de desempenho |
 | `GET`  | `/user`         | Listar usuários          |
 | `POST` | `/user`         | Criar usuário            |
 
