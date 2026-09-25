@@ -34,7 +34,6 @@ import {
 import { Exam, ExamSchema } from './exam/schemas/exam.schema';
 import { PlanetModule } from './planet/planet.module';
 import { SchoolClassResultService } from './school-class/school-class-result.service';
-import { ReportModule } from './report/report.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
 import { UtilsModule } from './common/utils/utils.module';
@@ -93,7 +92,6 @@ import { BackupModule } from './backup/backup.module';
     AwardsModule,
     ExamModule,
     PlanetModule,
-    ReportModule,
     UtilsModule,
     LottieModule,
     AccessKeyModule,

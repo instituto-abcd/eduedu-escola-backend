@@ -12,7 +12,6 @@ ARG PG_MAJOR=17
 ARG MONGO_TOOLS_VERSION=100.10.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      chromium \
       ca-certificates \
       curl \
       gnupg \
@@ -34,9 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && mongorestore --version
 
 WORKDIR /usr/src/app
-
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 COPY package.json package-lock.json ./
 
