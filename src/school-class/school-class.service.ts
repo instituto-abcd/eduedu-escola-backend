@@ -385,7 +385,7 @@ export class SchoolClassService {
   ): Promise<CreateSchoolClassResponseDto> {
     const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
-    await this.validateSchoolClassExists(id);
+    const existingSchoolClass = await this.validateSchoolClassExists(id);
 
     if (teacherIds != null && profile !== Profile.DIRECTOR) {
       const existingUserIds = await this.getExistingUserIdsForClass(id);
@@ -402,7 +402,7 @@ export class SchoolClassService {
       await this.handleUserSchoolClassUpdates(id, teacherIds);
     }
 
-    await this.updateDashboardData(id);
+    await this.updateDashboardData(id, existingSchoolClass.schoolYearId);
 
     return await this.createResponseDto(id);
   }
@@ -462,9 +462,25 @@ export class SchoolClassService {
     }
   }
 
-  private async updateDashboardData(id: string) {
+  // Se a turma trocou de ano letivo, recalcula também o dashboard do ano antigo, e nessa
+  // ordem: o ano atual primeiro move a cópia da turma (com o desempenho) para o dashboard
+  // dele; o ano antigo antes removeria a cópia como turma que não é mais dele (EEP-676).
+  private async updateDashboardData(id: string, previousSchoolYearId?: string) {
     const schoolYear = await this.getSchoolYearNameFromClassId(id);
-    await this.dashboard.updateDashboardData(schoolYear);
+    const schoolYears = [schoolYear];
+
+    if (previousSchoolYearId) {
+      const previousSchoolYear = await this.prismaService.schoolYear.findUnique(
+        {
+          where: { id: previousSchoolYearId },
+        },
+      );
+      if (previousSchoolYear && previousSchoolYear.name !== schoolYear) {
+        schoolYears.push(previousSchoolYear.name);
+      }
+    }
+
+    await this.dashboard.updateDashboardDataArray(schoolYears);
   }
 
   private async createResponseDto(

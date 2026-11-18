@@ -510,8 +510,16 @@ export class DashboardService {
 				if (dashboardSchoolGrade) {
 					await this.prisma.dashboardSchoolClass.upsert({
 						where: { id: schoolClass.id },
+						// Nome e série acompanham a edição da turma. O card é o da série no ano atual
+						// dela, então a cópia também muda de ano junto com a turma (EEP-676).
 						update: {
+							name: schoolClass.name,
 							studentsCounter: studentsCounterClass,
+							dashboardGrade: {
+								connect: {
+									id: dashboardSchoolGrade.id,
+								},
+							},
 						},
 						create: {
 							id: schoolClass.id,
