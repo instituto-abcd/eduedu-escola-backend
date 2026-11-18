@@ -495,31 +495,45 @@ export class SchoolClassService {
       throw new EduException('IDS_REQUIRED');
     }
 
-    await this.prismaService.schoolClassStudent.deleteMany({
-      where: {
-        schoolClassId: {
-          in: ids,
+    // Anos letivos das turmas, para recalcular os dashboards certos depois da exclusão.
+    const schoolClasses = await this.prismaService.schoolClass.findMany({
+      where: { id: { in: ids } },
+      select: { schoolYear: { select: { name: true } } },
+    });
+    const schoolYears = [
+      ...new Set(schoolClasses.map(({ schoolYear }) => schoolYear.name)),
+    ];
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.schoolClassStudent.deleteMany({
+        where: {
+          schoolClassId: {
+            in: ids,
+          },
         },
-      },
+      });
+
+      await tx.userSchoolClass.deleteMany({
+        where: {
+          schoolClassId: {
+            in: ids,
+          },
+        },
+      });
+
+      // A cópia da turma no dashboard não sai junto com a turma (EEP-299).
+      await this.dashboard.removeSchoolClasses(ids, tx);
+
+      await tx.schoolClass.deleteMany({
+        where: {
+          id: {
+            in: ids,
+          },
+        },
+      });
     });
 
-    await this.prismaService.userSchoolClass.deleteMany({
-      where: {
-        schoolClassId: {
-          in: ids,
-        },
-      },
-    });
-
-    this.dashboard.updateDashboardData().then();
-
-    await this.prismaService.schoolClass.deleteMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-    });
+    await this.dashboard.updateDashboardDataArray(schoolYears);
 
     return { success: true };
   }
