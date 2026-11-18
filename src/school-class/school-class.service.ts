@@ -385,7 +385,7 @@ export class SchoolClassService {
   ): Promise<CreateSchoolClassResponseDto> {
     const { teacherIds, ...schoolClassData } = updateSchoolClassDto;
 
-    await this.validateSchoolClassExists(id);
+    const existingSchoolClass = await this.validateSchoolClassExists(id);
 
     if (teacherIds != null && profile !== Profile.DIRECTOR) {
       const existingUserIds = await this.getExistingUserIdsForClass(id);
@@ -402,7 +402,7 @@ export class SchoolClassService {
       await this.handleUserSchoolClassUpdates(id, teacherIds);
     }
 
-    await this.updateDashboardData(id);
+    await this.updateDashboardData(id, existingSchoolClass.schoolYearId);
 
     return await this.createResponseDto(id);
   }
@@ -462,9 +462,25 @@ export class SchoolClassService {
     }
   }
 
-  private async updateDashboardData(id: string) {
+  // Se a turma trocou de ano letivo, recalcula também o dashboard do ano antigo, e nessa
+  // ordem: o ano atual primeiro move a cópia da turma (com o desempenho) para o dashboard
+  // dele; o ano antigo antes removeria a cópia como turma que não é mais dele (EEP-676).
+  private async updateDashboardData(id: string, previousSchoolYearId?: string) {
     const schoolYear = await this.getSchoolYearNameFromClassId(id);
-    await this.dashboard.updateDashboardData(schoolYear);
+    const schoolYears = [schoolYear];
+
+    if (previousSchoolYearId) {
+      const previousSchoolYear = await this.prismaService.schoolYear.findUnique(
+        {
+          where: { id: previousSchoolYearId },
+        },
+      );
+      if (previousSchoolYear && previousSchoolYear.name !== schoolYear) {
+        schoolYears.push(previousSchoolYear.name);
+      }
+    }
+
+    await this.dashboard.updateDashboardDataArray(schoolYears);
   }
 
   private async createResponseDto(
@@ -495,31 +511,45 @@ export class SchoolClassService {
       throw new EduException('IDS_REQUIRED');
     }
 
-    await this.prismaService.schoolClassStudent.deleteMany({
-      where: {
-        schoolClassId: {
-          in: ids,
+    // Anos letivos das turmas, para recalcular os dashboards certos depois da exclusão.
+    const schoolClasses = await this.prismaService.schoolClass.findMany({
+      where: { id: { in: ids } },
+      select: { schoolYear: { select: { name: true } } },
+    });
+    const schoolYears = [
+      ...new Set(schoolClasses.map(({ schoolYear }) => schoolYear.name)),
+    ];
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.schoolClassStudent.deleteMany({
+        where: {
+          schoolClassId: {
+            in: ids,
+          },
         },
-      },
+      });
+
+      await tx.userSchoolClass.deleteMany({
+        where: {
+          schoolClassId: {
+            in: ids,
+          },
+        },
+      });
+
+      // A cópia da turma no dashboard não sai junto com a turma (EEP-299).
+      await this.dashboard.removeSchoolClasses(ids, tx);
+
+      await tx.schoolClass.deleteMany({
+        where: {
+          id: {
+            in: ids,
+          },
+        },
+      });
     });
 
-    await this.prismaService.userSchoolClass.deleteMany({
-      where: {
-        schoolClassId: {
-          in: ids,
-        },
-      },
-    });
-
-    this.dashboard.updateDashboardData().then();
-
-    await this.prismaService.schoolClass.deleteMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-    });
+    await this.dashboard.updateDashboardDataArray(schoolYears);
 
     return { success: true };
   }

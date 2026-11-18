@@ -91,7 +91,7 @@ export class DashboardService {
 				dashboard.dashboardSchoolGrades.map(async (grade) => {
 					const mappedSchoolClasses = await Promise.all(
 						grade.dashboardSchoolClass.map(async (schoolClass) =>
-							this.mapSchoolClassDto(schoolClass),
+							this.mapSchoolClassDto(schoolClass, grade.name),
 						),
 					);
 
@@ -132,14 +132,15 @@ export class DashboardService {
 		return uniqueClassIds.map(({ schoolClassId }) => schoolClassId);
 	}
 
-	private async mapSchoolClassDto(schoolClass): Promise<SchoolClassDto> {
+	// A série vem do card em que a turma está (DashboardSchoolGrade): a cópia da turma no
+	// dashboard não guarda a série, e buscá-la pela SchoolClass trazia uma turma qualquer.
+	private async mapSchoolClassDto(
+		schoolClass,
+		schoolGrade: SchoolGradeEnum,
+	): Promise<SchoolClassDto> {
 		if (!schoolClass || !schoolClass.dashboardPerformances) {
 			throw new EduException("INVALID_DATA");
 		}
-
-		const schoolClassEntity = await this.prisma.schoolClass.findFirst({
-			where: { id: schoolClass.schoolGrade },
-		});
 
 		// Objeto para armazenar performances de exame e planetas agrupadas por eixo
 		const performancesMap = {
@@ -156,7 +157,7 @@ export class DashboardService {
 			if (performance.type === "EXAM") {
 				const color =
 					this.performanceResultUtilsService.getStudentClassificationColor(
-						this.mapSchoolGradeToNumeric(schoolClassEntity.schoolGrade),
+						this.mapSchoolGradeToNumeric(schoolGrade),
 						performance.axis,
 						performance.level,
 					);
@@ -419,6 +420,12 @@ export class DashboardService {
 					dashboard.id,
 				);
 
+				// O dashboard só tem as séries do Infantil ao 3º ano. Sem este desvio, o upsert
+				// abaixo recebia where.id = null no 4º ano e o recálculo parava antes das turmas.
+				if (!gradeId) {
+					continue;
+				}
+
 				const teachersCounterGrade = await this.prisma.userSchoolClass.count({
 					where: {
 						schoolClass: {
@@ -503,10 +510,19 @@ export class DashboardService {
 				if (dashboardSchoolGrade) {
 					await this.prisma.dashboardSchoolClass.upsert({
 						where: { id: schoolClass.id },
+						// Nome e série acompanham a edição da turma. O card é o da série no ano atual
+						// dela, então a cópia também muda de ano junto com a turma (EEP-676).
 						update: {
+							name: schoolClass.name,
 							studentsCounter: studentsCounterClass,
+							dashboardGrade: {
+								connect: {
+									id: dashboardSchoolGrade.id,
+								},
+							},
 						},
 						create: {
+							id: schoolClass.id,
 							name: schoolClass.name,
 							studentsCounter: studentsCounterClass,
 							dashboardGrade: {
@@ -518,9 +534,40 @@ export class DashboardService {
 					});
 				}
 			}
+
+			// Turmas excluídas não podem continuar no dashboard (EEP-299).
+			const staleSchoolClasses = await this.prisma.dashboardSchoolClass.findMany({
+				where: {
+					dashboardGrade: { dashboardId: dashboard.id },
+					id: { notIn: schoolClasses.map((schoolClass) => schoolClass.id) },
+				},
+				select: { id: true },
+			});
+			await this.removeSchoolClasses(staleSchoolClasses.map(({ id }) => id));
 		} catch (error) {
 			this.logger.log("Error updating dashboard data:", error);
 		}
+	}
+
+	/**
+	 * Remove a cópia das turmas no dashboard. A DashboardSchoolClass usa o mesmo id da
+	 * SchoolClass, mas não há chave estrangeira entre as duas, então excluir a turma não
+	 * remove a cópia. Aceita o cliente de uma transação para excluir junto com a turma.
+	 */
+	async removeSchoolClasses(
+		schoolClassIds: string[],
+		prisma: Prisma.TransactionClient = this.prisma,
+	): Promise<void> {
+		if (schoolClassIds.length === 0) {
+			return;
+		}
+
+		await prisma.dashboardPerformance.deleteMany({
+			where: { dashboardSchoolClassId: { in: schoolClassIds } },
+		});
+		await prisma.dashboardSchoolClass.deleteMany({
+			where: { id: { in: schoolClassIds } },
+		});
 	}
 
 	async updateDashboardPerformance(studentId: string, type: string) {
